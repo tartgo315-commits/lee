@@ -1,0 +1,13 @@
+{
+  "name": "lee-wealth-functions",
+  "description": "HTTP proxy for LEE Wealth (Yahoo/RSS/汇率等，白名单域名)",
+  "main": "index.js",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.6.0",
+    "firebase-functions": "^5.1.1"
+  },
+  "private": true
+}
