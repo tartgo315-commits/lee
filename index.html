@@ -1214,10 +1214,13 @@ async function fetchYahooStockPrice(ticker){
   return mergeStockQuotes([p1,p2,p3]);
 }
 
-// ══ FINNHUB WebSocket：美股实时成交（浏览器直连，令牌对访客可见；勿用于对公站点） ══
-const FINNHUB_WS_URL='wss://ws.finnhub.io?token=cv67m61r01qj8itpq7mgcv67m61r01qj8itpq7n0';
+// ══ FINNHUB：与 Dashboard 里 API key 保持一致，改这一处即可同步 WS + REST ══
+const FINNHUB_API_TOKEN='cv67m61r01qj8itpq7mgcv67m61r01qj8itpq7n0';
+const FINNHUB_WS_URL='wss://ws.finnhub.io?token='+encodeURIComponent(FINNHUB_API_TOKEN);
 const FINNHUB_WATCH_SYMBOLS=['NVDA','TSLA','PLTR','VOO','CRCL'];
-let finnhubWs=null,finnhubReconnectTimer=null,finnhubCloseIntent=false,finnhubSaveTimer=null,finnhubAggTimer=null;
+/** REST 轮询间隔（ms）：成交 WS 在「无撮合」时不会推价，用 quote 补刷新；免费档注意别低于约 1s×标的数 以免撞限流 */
+const FINNHUB_QUOTE_POLL_MS=8000;
+let finnhubWs=null,finnhubReconnectTimer=null,finnhubCloseIntent=false,finnhubSaveTimer=null,finnhubAggTimer=null,finnhubQuotePollTimer=null;
 const finnhubSubscribed=new Set();
 function finnhubDesiredSymbols(){
   const s=new Set(FINNHUB_WATCH_SYMBOLS.map(x=>String(x).toUpperCase()));
@@ -1356,12 +1359,36 @@ function scheduleFinnhubReconnect(){
   clearTimeout(finnhubReconnectTimer);
   finnhubReconnectTimer=setTimeout(()=>connectFinnhubWs(),5000);
 }
+async function pollFinnhubQuotesOnce(){
+  if(document.hidden||!FINNHUB_API_TOKEN)return;
+  const syms=[...finnhubDesiredSymbols()];
+  if(!syms.length)return;
+  const tok=encodeURIComponent(FINNHUB_API_TOKEN);
+  await Promise.all(syms.map(async sym=>{
+    try{
+      const r=await fetch('https://finnhub.io/api/v1/quote?symbol='+encodeURIComponent(sym)+'&token='+tok,{cache:'no-store'});
+      if(!r.ok)return;
+      const j=await r.json();
+      if(j&&typeof j.c==='number'&&j.c>0)patchUsStockLiveRow(sym,j.c);
+    }catch(e){}
+  }));
+}
+function startFinnhubQuotePolling(){
+  if(finnhubQuotePollTimer)clearInterval(finnhubQuotePollTimer);
+  finnhubQuotePollTimer=setInterval(()=>pollFinnhubQuotesOnce(),FINNHUB_QUOTE_POLL_MS);
+  pollFinnhubQuotesOnce();
+}
 function initFinnhubUsLive(){
   finnhubCloseIntent=false;
   connectFinnhubWs();
+  startFinnhubQuotePolling();
+  document.addEventListener('visibilitychange',()=>{
+    if(!document.hidden)pollFinnhubQuotesOnce();
+  });
   window.addEventListener('beforeunload',()=>{
     finnhubCloseIntent=true;
     clearTimeout(finnhubReconnectTimer);
+    if(finnhubQuotePollTimer){clearInterval(finnhubQuotePollTimer);finnhubQuotePollTimer=null;}
     if(finnhubWs){try{finnhubWs.close();}catch(e){}finnhubWs=null;}
   });
 }
