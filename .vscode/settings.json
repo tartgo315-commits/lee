@@ -1,0 +1,11 @@
+{
+  "emeraldwalk.runonsave": {
+    "commands": [
+      {
+        "match": ".*[/\\\\]index\\.html$",
+        "cmd": "git add . && git commit -m \"auto update\" && git push",
+        "isAsync": true
+      }
+    ]
+  }
+}
