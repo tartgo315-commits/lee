@@ -219,6 +219,11 @@ body.light .ov-dash-toprow #ov-mile-body .ov-mile-stat{background:var(--bg3)}
 .product-row:last-child{border-bottom:none}
 .product-row:hover{background:var(--bg3)}
 .product-row.hdr{background:var(--bg3);border-bottom:1px solid var(--border2);padding:var(--s-3) var(--card-pad)}
+/* Finnhub 实时现价：仅数字变色，避免整卡重绘 */
+.fh-px{font-variant-numeric:tabular-nums;font-weight:600;transition:color .18s ease}
+.fh-px.fh-up{color:var(--green)}
+.fh-px.fh-down{color:var(--red)}
+.fh-px.fh-flat{color:var(--text2)}
 .pl{font-size:var(--text-xs);color:var(--text3);font-family:var(--mono);font-weight:600;letter-spacing:var(--track-label);text-transform:uppercase;line-height:var(--lh-snug)}
 .pl.r{text-align:right}
 .pr-name{font-weight:400;font-size:var(--text-base);line-height:var(--lh-snug)}
@@ -1208,6 +1213,159 @@ async function fetchYahooStockPrice(ticker){
   const p3=parseStooqCsv(t3);
   return mergeStockQuotes([p1,p2,p3]);
 }
+
+// ══ FINNHUB WebSocket：美股实时成交（浏览器直连，令牌对访客可见；勿用于对公站点） ══
+const FINNHUB_WS_URL='wss://ws.finnhub.io?token=cv67m61r01qj8itpq7mgcv67m61r01qj8itpq7n0';
+const FINNHUB_WATCH_SYMBOLS=['NVDA','TSLA','PLTR','VOO','CRCL'];
+let finnhubWs=null,finnhubReconnectTimer=null,finnhubCloseIntent=false,finnhubSaveTimer=null,finnhubAggTimer=null;
+const finnhubSubscribed=new Set();
+function finnhubDesiredSymbols(){
+  const s=new Set(FINNHUB_WATCH_SYMBOLS.map(x=>String(x).toUpperCase()));
+  D.products.filter(p=>p.type==='stock_us'&&p.ticker).forEach(p=>s.add(String(p.ticker).trim().toUpperCase()));
+  return s;
+}
+function finnhubSendSub(ws,sym,sub){
+  if(ws&&ws.readyState===1)ws.send(JSON.stringify({type:sub?'subscribe':'unsubscribe',symbol:sym}));
+}
+function finnhubSyncSubscriptions(){
+  const want=finnhubDesiredSymbols();
+  if(!finnhubWs||finnhubWs.readyState!==1)return;
+  for(const x of [...finnhubSubscribed]){
+    if(!want.has(x)){finnhubSendSub(finnhubWs,x,false);finnhubSubscribed.delete(x);}
+  }
+  want.forEach(x=>{
+    if(!finnhubSubscribed.has(x)){finnhubSendSub(finnhubWs,x,true);finnhubSubscribed.add(x);}
+  });
+}
+function debouncedFinnhubSave(){
+  clearTimeout(finnhubSaveTimer);
+  finnhubSaveTimer=setTimeout(()=>{try{save();}catch(e){}},1200);
+}
+function scheduleUsLiveAggregates(){
+  clearTimeout(finnhubAggTimer);
+  finnhubAggTimer=setTimeout(()=>updateUsLiveAggregates(),180);
+}
+function usAccountHeaderCNY(acc){
+  const aps=D.products.filter(p=>p.region==='us'&&p.account===acc);
+  const productCashCny=sumUsdCashCNY(aps);
+  const man=usManualIdleUsd(acc);
+  let acny=aps.reduce((s,x)=>s+pCNY(x),0);
+  if(man!=null)acny+=toCNY(man,'USD')-productCashCny;
+  return acny;
+}
+function updateUsLiveAggregates(){
+  const onUs=document.getElementById('page-us')?.classList.contains('active');
+  const rcny=totalCNY('us');
+  if(onUs){
+    const elT=document.getElementById('us-total');if(elT)elT.textContent=fc(fromCNY(rcny,'USD'),'USD',2);
+    const elS=document.getElementById('us-sub');if(elS)elS.textContent=fc(rcny,'CNY')+' | '+fc(fromCNY(rcny,'AUD'),'AUD');
+    const ps=D.products.filter(p=>p.region==='us');
+    const accounts=[...new Set(ps.map(p=>p.account||'未分类'))];
+    const blocks=[...document.querySelectorAll('#us-blocks .account-block')];
+    accounts.forEach((acc,i)=>{
+      const aps=ps.filter(p=>p.account===acc);
+      const acny=usAccountHeaderCNY(acc);
+      const alocal=fromCNY(acny,'USD');
+      const key=acc+'_us';
+      const header=[...document.querySelectorAll('#page-us .account-header[data-key]')].find(h=>h.dataset.key===key);
+      if(header){
+        const ap=header.querySelector('.acc-primary');if(ap)ap.textContent=fc(alocal,'USD',0);
+        const as=header.querySelector('.acc-secondary');
+        if(as)as.innerHTML=fc(acny,'CNY',0)+' &nbsp;|&nbsp; '+fc(fromCNY(acny,'AUD'),'AUD',0);
+      }
+      const blk=blocks[i];
+      if(blk){
+        const uasv=blk.querySelector('.us-acc-split .uas-v');
+        if(uasv){
+          const stockCny=sumStockUsCNY(aps);
+          uasv.textContent=fc(fromCNY(stockCny,'USD'),'USD',2);
+        }
+      }
+    });
+  }
+  refreshOVTotals();
+  renderSidebar();
+}
+function patchUsStockLiveRow(sym,price){
+  const T=String(sym||'').trim().toUpperCase();
+  if(!T||!(price>0))return;
+  const p=D.products.find(x=>x.type==='stock_us'&&String(x.ticker||'').trim().toUpperCase()===T);
+  if(!p)return;
+  const prev=parseFloat(p.currentPrice)||0;
+  p.currentPrice=price;
+  p.updatedAt=today();
+  debouncedFinnhubSave();
+  const row=[...document.querySelectorAll('#page-us .product-row[data-us-ticker]')].find(r=>r.dataset.usTicker===T);
+  if(row){
+    const pxEl=row.querySelector('.fh-px');
+    if(pxEl){
+      pxEl.textContent=fmtUsdShare(price);
+      pxEl.classList.remove('fh-up','fh-down','fh-flat');
+      if(prev>0){
+        if(price>prev)pxEl.classList.add('fh-up');
+        else if(price<prev)pxEl.classList.add('fh-down');
+        else pxEl.classList.add('fh-flat');
+      }else pxEl.classList.add('fh-flat');
+    }
+    const shares=p.shares||0,cost=p.costPrice||0;
+    const mkt=shares*price,pnlUSD=shares*(price-cost),pct=cost>0?(price-cost)/cost*100:0;
+    const mUsd=row.querySelector('.fh-mkt-usd');if(mUsd)mUsd.textContent=fc(mkt,'USD',2);
+    const acny=usAccountHeaderCNY(p.account||'未分类');
+    const rowPct=acny>0?(pCNY(p)/acny*100).toFixed(2):'—';
+    const mCny=row.querySelector('.fh-mkt-cny');if(mCny)mCny.textContent=fc(pCNY(p),'CNY',0);
+    const rPct=row.querySelector('.fh-row-pct');if(rPct)rPct.textContent=rowPct==='—'?rowPct:rowPct+'%';
+    const pnlEl=row.querySelector('.fh-pnl-usd');
+    const pnlWrap=row.querySelector('.pr-pnl');
+    if(pnlEl)pnlEl.innerHTML=(pnlUSD>=0?'+':'')+fc(pnlUSD,'USD',2)+'<br>'+(pnlUSD>=0?'+':'')+pct.toFixed(2)+'%';
+    if(pnlWrap){
+      pnlWrap.classList.remove('pos','neg','neu');
+      pnlWrap.classList.add(pnlUSD>=0?'pos':'neg');
+    }
+  }
+  scheduleUsLiveAggregates();
+}
+function connectFinnhubWs(){
+  if(finnhubCloseIntent)return;
+  try{finnhubWs=new WebSocket(FINNHUB_WS_URL);}catch(e){scheduleFinnhubReconnect();return;}
+  finnhubWs.onopen=()=>{
+    finnhubSubscribed.clear();
+    finnhubSyncSubscriptions();
+  };
+  finnhubWs.onmessage=ev=>{
+    let msg=null;
+    try{msg=JSON.parse(ev.data);}catch(e){return;}
+    if(msg.type==='ping'){
+      try{finnhubWs.send(JSON.stringify({type:'pong'}));}catch(e){}
+      return;
+    }
+    if(msg.type==='trade'&&Array.isArray(msg.data)){
+      for(const t of msg.data){
+        if(t&&t.s&&t.p>0)patchUsStockLiveRow(t.s,t.p);
+      }
+    }
+  };
+  finnhubWs.onerror=()=>{};
+  finnhubWs.onclose=()=>{
+    finnhubWs=null;
+    finnhubSubscribed.clear();
+    scheduleFinnhubReconnect();
+  };
+}
+function scheduleFinnhubReconnect(){
+  if(finnhubCloseIntent)return;
+  clearTimeout(finnhubReconnectTimer);
+  finnhubReconnectTimer=setTimeout(()=>connectFinnhubWs(),5000);
+}
+function initFinnhubUsLive(){
+  finnhubCloseIntent=false;
+  connectFinnhubWs();
+  window.addEventListener('beforeunload',()=>{
+    finnhubCloseIntent=true;
+    clearTimeout(finnhubReconnectTimer);
+    if(finnhubWs){try{finnhubWs.close();}catch(e){}finnhubWs=null;}
+  });
+}
+
 // ══ NEWS (RSS + 持仓关键词) ══
 const NEWS_RSS_FEEDS=[
   {src:'BBC 商业',url:'https://feeds.bbci.co.uk/news/business/rss.xml'},
@@ -1934,6 +2092,7 @@ function renderRegion(region){
     document.getElementById('us-total').textContent=fc(primaryVal,'USD',2);
     document.getElementById('us-sub').textContent=fc(rcny,'CNY')+' | '+fc(fromCNY(rcny,'AUD'),'AUD');
     document.getElementById('us-blocks').innerHTML=buildAccountBlocks(ps,region);
+    finnhubSyncSubscriptions();
   } else if(region==='au'){
     maybeRollAuWeeklyCompound();
     document.getElementById('au-total').textContent=fc(primaryVal,'AUD');
@@ -2029,6 +2188,8 @@ function buildProductRow(p,region,primaryCur,accountTotalCNY){
   const rowPct=acny>0?(pCNY(p)/acny*100).toFixed(2):'—';
   const cny=pCNY(p);
   const local=fromCNY(cny,primaryCur);
+  const stockTick=p.type==='stock_us'?(p.ticker||'').trim().toUpperCase():'';
+  const usTickerAttr=stockTick?` data-us-ticker="${escAttr(stockTick)}"`:'';
   let nameCell,amtCell,pnlCell;
 
   if(p.type==='gold'){
@@ -2040,13 +2201,16 @@ function buildProductRow(p,region,primaryCur,accountTotalCNY){
   } else if(p.type==='stock_us'){
     const price=p.currentPrice||0,cost=p.costPrice||0,shares=p.shares||0;
     const mkt=shares*price,pnlUSD=shares*(price-cost),pct=cost>0?(price-cost)/cost*100:0;
-    const tick=(p.ticker||'').trim()||'—';
+    const tick=stockTick||'—';
     const nm=(p.name||'').trim();
     const title=nm&&nm.toUpperCase()!==tick.toUpperCase()?`${nm} (${tick})`:tick;
     const etfTag=/^(SGOV|SHV|BIL|VOO|IVV|SPY|QQQ|IWM|GLD|TLT)$/i.test(tick)?' · ETF':'';
-    nameCell=`<div><div class="pr-name">${title}</div><div class="pr-sub">${fmt(shares,4)} 股 · 成本 ${fc(cost,'USD',2)}${etfTag}</div></div>`;
-    amtCell=price?`<div class="pr-amt primary">${fc(mkt,'USD',2)}</div>`:`<div class="pr-amt muted">待刷新</div>`;
-    pnlCell=price?`<div class="pr-pnl ${pnlUSD>=0?'pos':'neg'}">${pnlUSD>=0?'+':''}${fc(pnlUSD,'USD',2)}<br>${(pnlUSD>=0?'+':'')+pct.toFixed(2)}%</div>`:`<div class="pr-pnl neu">—</div>`;
+    const pxShow=price?fmtUsdShare(price):'—';
+    nameCell=`<div><div class="pr-name">${title}</div><div class="pr-sub">${fmt(shares,4)} 股 · 成本 ${fc(cost,'USD',2)}${etfTag} · 现价 <span class="fh-px fh-flat" data-ticker="${escAttr(tick)}">${pxShow}</span></div></div>`;
+    amtCell=`<div class="pr-amt primary"><span class="fh-mkt-usd" data-ticker="${escAttr(tick)}">${price?fc(mkt,'USD',2):'—'}</span></div>${price?'':'<div class="pr-amt dim" style="font-size:11px;margin-top:2px">WS/手动刷新</div>'}`;
+    pnlCell=price
+      ?`<div class="pr-pnl ${pnlUSD>=0?'pos':'neg'}"><span class="fh-pnl-usd" data-ticker="${escAttr(tick)}">${pnlUSD>=0?'+':''}${fc(pnlUSD,'USD',2)}<br>${(pnlUSD>=0?'+':'')+pct.toFixed(2)}%</span></div>`
+      :`<div class="pr-pnl neu"><span class="fh-pnl-usd" data-ticker="${escAttr(tick)}">—</span></div>`;
   } else if(p.type==='fund_cn'){
     const cur=p.fundCurrency||'CNY';
     const price=p.fundPrice||0,shares=p.fundShares||0,cost=p.fundCost||0;
@@ -2077,11 +2241,17 @@ function buildProductRow(p,region,primaryCur,accountTotalCNY){
     pnlCell=`<div class="pr-pnl neu">—</div>`;
   }
 
-  return `<div class="product-row">
+  const cnyCell=stockTick
+    ?`<div class="pr-amt dim" style="text-align:right"><span class="fh-mkt-cny" data-ticker="${escAttr(stockTick)}">${fc(cny,'CNY',0)}</span></div>`
+    :`<div class="pr-amt dim" style="text-align:right">${fc(cny,'CNY',0)}</div>`;
+  const pctCell=stockTick
+    ?`<div class="pr-pct"><span class="fh-row-pct" data-ticker="${escAttr(stockTick)}">${rowPct==='—'?rowPct:rowPct+'%'}</span></div>`
+    :`<div class="pr-pct">${rowPct==='—'?rowPct:rowPct+'%'}</div>`;
+  return `<div class="product-row"${usTickerAttr}>
     ${nameCell}
     <div style="text-align:right">${amtCell}</div>
-    <div class="pr-amt dim" style="text-align:right">${fc(cny,'CNY',0)}</div>
-    <div class="pr-pct">${rowPct==='—'?rowPct:rowPct+'%'}</div>
+    ${cnyCell}
+    ${pctCell}
     ${pnlCell}
     <div class="pr-acts">
       <button class="btn btn-ghost btn-sm" onclick="editProduct(${p.id})">✏️</button>
@@ -2152,7 +2322,7 @@ async function refreshStocks(){
   const stocks=D.products.filter(p=>p.type==='stock_us'&&p.ticker);
   if(!stocks.length){alert('没有美股持仓');return;}
   const el=document.getElementById('us-refresh-status');
-  el.innerHTML='<div class="alert alert-info">🔄 正在获取美股行情...</div>';
+  el.innerHTML='<div class="alert alert-info">🔄 正在全量校准美股（Yahoo 多源；日常现价由 Finnhub WebSocket 推送）...</div>';
   let ok=0,fail=[];
   for(const s of stocks){
     try{
@@ -2165,7 +2335,7 @@ async function refreshStocks(){
   refreshOVTotals();
   el.innerHTML=fail.length
     ?`<div class="alert alert-warn">✅ 更新 ${ok} 个 ⚠️ 失败: ${fail.join(', ')}（多源综合：Yahoo Chart / Yahoo Quote / Stooq；失败多为网络或代码无效）</div>`
-    :`<div class="alert alert-ok">✅ 已更新 ${ok} 只股票（多源综合报价）</div>`;
+    :`<div class="alert alert-ok">✅ 已更新 ${ok} 只股票（多源综合报价；已持仓标的另享 WS 实时）</div>`;
   setTimeout(()=>el.innerHTML='',8000);
 }
 
@@ -2997,6 +3167,7 @@ function importCbaAuPreset(){
 })();
 renderOverview();
 renderSidebar();
+initFinnhubUsLive();
 
 // Live reverse rate preview as user types
 ['fx-usd','fx-aud','fx-usdaud'].forEach(id=>{
