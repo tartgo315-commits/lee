@@ -1,7 +1,7 @@
 /**
  * 站点门禁：在 Vercel 环境变量中同时设置 SITE_PASSWORD 与 SITE_AUTH_SECRET 后生效。
  * 未设置则直接放行（避免误锁站）。
- * （与仓库根目录 middleware.js 内容一致；Root Directory 为 public 时使用本文件。）
+ * 与仓库根目录 middleware.js 保持一致；仅当 Vercel Root Directory 为 public 时使用本文件。
  */
 function getCookie(header, name) {
   if (!header) return '';
