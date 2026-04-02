@@ -156,6 +156,26 @@ body.night .news-item:hover{background:rgba(255,255,255,.04)}
 .ov-dash-toprow #ov-mile-body .ov-mile-stat .val{font-size:12px;margin-top:var(--s-1);line-height:var(--lh-tight)}
 .ov-dash-toprow #ov-mile-body .ov-mile-foot{font-size:9px;line-height:1.35;margin-top:var(--s-2);color:var(--text3);font-family:var(--mono)}
 body.night .ov-dash-toprow #ov-mile-body .ov-mile-stat{background:var(--bg3)}
+/* 总览「配置/流动性/到期/快照」一行：红框内文字约 ×2 */
+#page-overview .ov-dash-toprow>.card .card-title{font-size:24px}
+#page-overview .ov-dash-toprow .ov-liq-hd,#page-overview .ov-dash-toprow .ov-liq-hd b{font-size:20px}
+#page-overview .ov-dash-toprow .ov-up-list{font-size:22px}
+#page-overview .ov-dash-toprow .ov-up-item .u-meta{font-size:20px}
+#page-overview .ov-dash-toprow #ov-mile-body .ov-mile-stat .lbl{font-size:18px}
+#page-overview .ov-dash-toprow #ov-mile-body .ov-mile-stat .val{font-size:24px}
+#page-overview .ov-dash-toprow #ov-mile-body .ov-mile-foot{font-size:18px}
+#page-overview .ov-dash-toprow .ov-dash-empty{font-size:26px;line-height:var(--lh-body)}
+#page-overview .ov-dash-toprow .ov-donut-wrap{height:140px}
+/* 总览三国别卡片头部（红框）：标题 + 三币种 + 美股附注 */
+#ov-regions .ov-col-name{font-size:26px}
+#ov-regions .ov-col-meta{font-size:20px;padding:6px 14px}
+#ov-regions .ov-head-cell{gap:12px;padding:14px 10px}
+#ov-regions .ov-head-cell-lbl{font-size:18px}
+#ov-regions .ov-head-cell-val{font-size:clamp(24px,2.7vw,28px)}
+#ov-regions .ov-us-cap-split{font-size:22px}
+#ov-regions .ov-us-cap-split .ov-cap-val{font-size:26px}
+#ov-regions .ov-col-pnl-row .ov-pnl-item{font-size:26px}
+#ov-regions .ov-col-pnl-row .ov-pnl-pct{font-size:22px}
 .ov-donut-wrap{height:152px;position:relative;max-width:100%;margin-top:2px}
 .ov-liq-bars{margin-top:var(--s-1)}
 .ov-liq-row{margin-bottom:var(--s-3)}
@@ -2714,9 +2734,9 @@ function renderOverviewDashboard(){
   }
   elI.innerHTML=chips.length?chips.map(x=>`<span class="ov-insight-chip ${x.c}">${x.t}</span>`).join(''):`<span class="ov-insight-chip">添加资产后将显示配置分析与提示</span>`;
   if(cny<=0){
-    elL.innerHTML='<div style="color:var(--text3);font-size:13px">暂无资产数据</div>';
-    elU.innerHTML='<div style="color:var(--text3);font-size:13px">—</div>';
-    elM.innerHTML='<div style="color:var(--text3);font-size:13px">—</div>';
+    elL.innerHTML='<div class="ov-dash-empty" style="color:var(--text3)">暂无资产数据</div>';
+    elU.innerHTML='<div class="ov-dash-empty" style="color:var(--text3)">—</div>';
+    elM.innerHTML='<div class="ov-dash-empty" style="color:var(--text3)">—</div>';
     return;
   }
   const bd=typeBreakdownForCharts();
@@ -2733,7 +2753,7 @@ function renderOverviewDashboard(){
     .filter(x=>x.dl!=null&&x.dl>=0&&x.dl<=90)
     .sort((a,b)=>a.dl-b.dl);
   if(!soon.length)
-    elU.innerHTML='<div style="color:var(--text3);font-size:13px">90 天内无定期到期</div>';
+    elU.innerHTML='<div class="ov-dash-empty" style="color:var(--text3)">90 天内无定期到期</div>';
   else
     elU.innerHTML=`<div class="ov-up-list">${soon.slice(0,12).map(x=>{
       const p=x.p,cur=p.tdCur||'AUD';
@@ -2749,7 +2769,7 @@ function renderOverviewDashboard(){
     mileHtml+=`<div class="ov-mile-stat"><div class="lbl">约 30 天前参考 (${s30.date})</div><div class="val">${fc(s30.cny,'CNY',0)}</div></div>`;
     mileHtml+=`<div class="ov-mile-stat"><div class="lbl">相对该日变动</div><div class="val ${cl}">${d>=0?'+':''}${fc(d,'CNY',0)}</div></div>`;
   }else
-    mileHtml+=`<div class="ov-mile-stat"><div class="lbl">约 30 天前</div><div class="val" style="font-size:11px;font-weight:500;color:var(--text3)">尚无该时点前快照</div></div>`;
+    mileHtml+=`<div class="ov-mile-stat"><div class="lbl">约 30 天前</div><div class="val" style="font-size:22px;font-weight:500;color:var(--text3)">尚无该时点前快照</div></div>`;
   if(oldest&&oldest.date&&(cny>0)){
     const d=cny-oldest.cny;
     const cl=d>=0?'pos':'neg';
@@ -2776,7 +2796,7 @@ function renderOverviewDashboard(){
         layout:{padding:{top:2,bottom:0,left:0,right:0}},
         cutout:'50%',
         plugins:{
-          legend:{position:'bottom',labels:{color:textColor,boxWidth:6,padding:2,font:{size:9}}},
+          legend:{position:'bottom',labels:{color:textColor,boxWidth:12,padding:4,font:{size:18}}},
           tooltip:{callbacks:{label:c=>{
             const v=c.raw,pct=cny>0?(v/cny*100):0;
             return c.label+': '+fc(v,'CNY',0)+'（'+pct.toFixed(1)+'%）';
@@ -2803,7 +2823,7 @@ function renderOverviewDashboard(){
           layout:{padding:{top:2,bottom:0,left:0,right:0}},
           cutout:'50%',
           plugins:{
-            legend:{position:'bottom',labels:{color:textColor,boxWidth:6,padding:2,font:{size:9}}},
+            legend:{position:'bottom',labels:{color:textColor,boxWidth:12,padding:4,font:{size:18}}},
             tooltip:{callbacks:{label:c=>{
               const v=c.raw,pct=cny>0?(v/cny*100):0;
               return c.label+': '+fc(v,'CNY',0)+'（'+pct.toFixed(1)+'%）';
