@@ -1479,7 +1479,8 @@ function scheduleFinnhubReconnect(){
   finnhubReconnectTimer=setTimeout(()=>connectFinnhubWs(),5000);
 }
 async function pollYahooV7QuoteBatchOnce(syms){
-  if(!syms||!syms.length)return;
+  const got=new Set();
+  if(!syms||!syms.length)return got;
   const chunk=40;
   for(let i=0;i<syms.length;i+=chunk){
     const part=syms.slice(i,i+chunk);
@@ -1487,16 +1488,32 @@ async function pollYahooV7QuoteBatchOnce(syms){
     try{
       const raw=await fetchTextCrossOrigin(url);
       const map=parseYahooV7QuoteBatchMap(raw);
-      for(const [sym,price] of map)patchUsStockLiveRow(sym,price);
+      for(const [sym,price] of map){
+        patchUsStockLiveRow(sym,price);
+        got.add(sym);
+      }
     }catch(e){}
   }
+  return got;
 }
 async function pollFinnhubQuotesOnce(){
-  if(document.hidden)return;
+  /* 不在此用 document.hidden 直接 return：手机切后台/系统省电会导致长时间不轮询，页面上像「股价死了」。 */
   const syms=[...finnhubDesiredSymbols()];
   if(!syms.length)return;
-  /* 轮询只用 Yahoo v7（含盘前/盘后/闭市后的 post 价）。Finnhub REST 的 c 与免费 WS 易与延长时段不同源，不再写入以免覆盖。 */
-  await pollYahooV7QuoteBatchOnce(syms);
+  const got=await pollYahooV7QuoteBatchOnce(syms);
+  /* Yahoo 经同源 /proxy 拉取；若失败或缺标的，用 Finnhub 经同一代理补价（浏览器直连 finnhub 常被 CORS 拦）。仅补「本轮 Yahoo 没给到价」的代码，避免覆盖已对齐的盘前/盘后价。 */
+  if(!FINNHUB_API_TOKEN)return;
+  const tok=encodeURIComponent(FINNHUB_API_TOKEN);
+  for(const sym of syms){
+    if(got.has(sym))continue;
+    try{
+      const u='https://finnhub.io/api/v1/quote?symbol='+encodeURIComponent(sym)+'&token='+tok;
+      const raw=await fetchProxiedText(u);
+      if(!raw||raw.startsWith('Proxy error'))continue;
+      const j=JSON.parse(raw);
+      if(j&&typeof j.c==='number'&&j.c>0)patchUsStockLiveRow(sym,j.c);
+    }catch(e){}
+  }
 }
 function startFinnhubQuotePolling(){
   if(finnhubQuotePollTimer)clearInterval(finnhubQuotePollTimer);
