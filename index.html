@@ -1857,18 +1857,23 @@ function buildAuTdBanners(ps){
   }
   return parts.join('');
 }
+/** 美国区：手填账户闲置 USD 替换该账户内美元现金条时的 CNY 调整量（须与分账户合计逻辑一致，否则总览顶部 ≠ 三区之和） */
+function usManualIdleAdjustmentCny(usPs){
+  let d=0;
+  const accs=[...new Set(usPs.map(p=>p.account||'未分类'))];
+  for(const acc of accs){
+    const m=usManualIdleUsd(acc);
+    if(m==null)continue;
+    d+=toCNY(m,'USD');
+    d-=sumUsdCashCNY(usPs.filter(p=>p.account===acc));
+  }
+  return d;
+}
 function totalCNY(region){
   const ps=region?D.products.filter(p=>p.region===region):D.products;
   let s=ps.reduce((a,p)=>a+pCNY(p),0);
-  if(region==='us'){
-    const accs=[...new Set(ps.map(p=>p.account||'未分类'))];
-    for(const acc of accs){
-      const m=usManualIdleUsd(acc);
-      if(m==null)continue;
-      s+=toCNY(m,'USD');
-      s-=sumUsdCashCNY(ps.filter(p=>p.account===acc));
-    }
-  }
+  if(region==='us')s+=usManualIdleAdjustmentCny(ps);
+  else if(!region)s+=usManualIdleAdjustmentCny(D.products.filter(p=>p.region==='us'));
   return s;
 }
 
