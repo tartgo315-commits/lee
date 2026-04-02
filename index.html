@@ -2821,7 +2821,6 @@ function destroyOvDashCharts(){
   if(ovDashChartType){try{ovDashChartType.destroy();}catch(e){}ovDashChartType=null;}
 }
 function renderOverviewDashboard(){
-  destroyOvDashCharts();
   const elI=document.getElementById('ov-insights');
   const elL=document.getElementById('ov-liq-body');
   const elU=document.getElementById('ov-up-body');
@@ -2858,6 +2857,7 @@ function renderOverviewDashboard(){
   }
   elI.innerHTML=chips.length?chips.map(x=>`<span class="ov-insight-chip ${x.c}">${x.t}</span>`).join(''):`<span class="ov-insight-chip">添加资产后将显示配置分析与提示</span>`;
   if(cny<=0){
+    destroyOvDashCharts();
     elL.innerHTML='<div class="ov-dash-empty" style="color:var(--text3)">暂无资产数据</div>';
     elU.innerHTML='<div class="ov-dash-empty" style="color:var(--text3)">—</div>';
     elM.innerHTML='<div class="ov-dash-empty" style="color:var(--text3)">—</div>';
@@ -2903,46 +2903,27 @@ function renderOverviewDashboard(){
   elM.innerHTML=`<div class="ov-mile-grid">${mileHtml}</div><div class="ov-mile-foot">变动含行情、汇率、申赎与新增资产，不单是盈亏。</div>`;
   const textColor=document.body.classList.contains('night')?'#b4c0db':'#57534e';
   const rCn=totalCNY('cn'),rUs=totalCNY('us'),rAu=totalCNY('au');
-  if(ctxR&&rCn+rUs+rAu>0){
-    ovDashChartRegion=new Chart(ctxR.getContext('2d'),{
-      type:'doughnut',
-      data:{
-        labels:['中国','美国','澳洲'],
-        datasets:[{
-          data:[rCn,rUs,rAu],
-          backgroundColor:['rgba(239,68,68,.72)','rgba(59,130,246,.72)','rgba(245,158,11,.72)'],
-          borderColor:['rgba(252,165,165,.9)','rgba(147,197,253,.9)','rgba(253,224,71,.9)'],
-          borderWidth:1
-        }]
-      },
-      options:{
-        responsive:true,maintainAspectRatio:false,
-        layout:{padding:{top:2,bottom:0,left:0,right:0}},
-        cutout:'50%',
-        plugins:{
-          legend:{position:'bottom',labels:{color:textColor,boxWidth:8,padding:3,font:{size:11}}},
-          tooltip:{callbacks:{label:c=>{
-            const v=c.raw,pct=cny>0?(v/cny*100):0;
-            return c.label+': '+fc(v,'CNY',0)+'（'+pct.toFixed(1)+'%）';
-          }}}
-        }
-      }
-    });
-  }
-  if(ctxT){
-    const order=['cash','fund_cn','gold','stock_us','term_deposit','other'];
-    const labels=order.map(k=>SNAP_TYPE_LBL[k]);
-    const vals=order.map(k=>bd[k]);
-    const colors=['#64748b','#6366f1','#ca8a04','#2563eb','#0d9488','#7c3aed'];
-    const filt=vals.map((v,i)=>({v,l:labels[i],c:colors[i]})).filter(x=>x.v>1);
-    if(filt.length)
-      ovDashChartType=new Chart(ctxT.getContext('2d'),{
+  const regionSum=rCn+rUs+rAu;
+  if(ctxR&&regionSum>0){
+    if(ovDashChartRegion&&ovDashChartRegion.canvas===ctxR){
+      ovDashChartRegion.data.datasets[0].data=[rCn,rUs,rAu];
+      ovDashChartRegion.options.plugins.legend.labels.color=textColor;
+      ovDashChartRegion.update('none');
+    }else{
+      if(ovDashChartRegion){try{ovDashChartRegion.destroy();}catch(e){}ovDashChartRegion=null;}
+      ovDashChartRegion=new Chart(ctxR.getContext('2d'),{
         type:'doughnut',
         data:{
-          labels:filt.map(x=>x.l),
-          datasets:[{data:filt.map(x=>x.v),backgroundColor:filt.map(x=>x.c+'b3'),borderColor:filt.map(x=>x.c),borderWidth:1}]
+          labels:['中国','美国','澳洲'],
+          datasets:[{
+            data:[rCn,rUs,rAu],
+            backgroundColor:['rgba(239,68,68,.72)','rgba(59,130,246,.72)','rgba(245,158,11,.72)'],
+            borderColor:['rgba(252,165,165,.9)','rgba(147,197,253,.9)','rgba(253,224,71,.9)'],
+            borderWidth:1
+          }]
         },
         options:{
+          animation:false,
           responsive:true,maintainAspectRatio:false,
           layout:{padding:{top:2,bottom:0,left:0,right:0}},
           cutout:'50%',
@@ -2955,6 +2936,46 @@ function renderOverviewDashboard(){
           }
         }
       });
+    }
+  }else if(ovDashChartRegion){try{ovDashChartRegion.destroy();}catch(e){}ovDashChartRegion=null;}
+  if(ctxT){
+    const order=['cash','fund_cn','gold','stock_us','term_deposit','other'];
+    const labels=order.map(k=>SNAP_TYPE_LBL[k]);
+    const vals=order.map(k=>bd[k]);
+    const colors=['#64748b','#6366f1','#ca8a04','#2563eb','#0d9488','#7c3aed'];
+    const filt=vals.map((v,i)=>({v,l:labels[i],c:colors[i]})).filter(x=>x.v>1);
+    if(!filt.length){
+      if(ovDashChartType){try{ovDashChartType.destroy();}catch(e){}ovDashChartType=null;}
+    }else if(ovDashChartType&&ovDashChartType.canvas===ctxT){
+      ovDashChartType.data.labels=filt.map(x=>x.l);
+      ovDashChartType.data.datasets[0].data=filt.map(x=>x.v);
+      ovDashChartType.data.datasets[0].backgroundColor=filt.map(x=>x.c+'b3');
+      ovDashChartType.data.datasets[0].borderColor=filt.map(x=>x.c);
+      ovDashChartType.options.plugins.legend.labels.color=textColor;
+      ovDashChartType.update('none');
+    }else{
+      if(ovDashChartType){try{ovDashChartType.destroy();}catch(e){}ovDashChartType=null;}
+      ovDashChartType=new Chart(ctxT.getContext('2d'),{
+        type:'doughnut',
+        data:{
+          labels:filt.map(x=>x.l),
+          datasets:[{data:filt.map(x=>x.v),backgroundColor:filt.map(x=>x.c+'b3'),borderColor:filt.map(x=>x.c),borderWidth:1}]
+        },
+        options:{
+          animation:false,
+          responsive:true,maintainAspectRatio:false,
+          layout:{padding:{top:2,bottom:0,left:0,right:0}},
+          cutout:'50%',
+          plugins:{
+            legend:{position:'bottom',labels:{color:textColor,boxWidth:8,padding:3,font:{size:11}}},
+            tooltip:{callbacks:{label:c=>{
+              const v=c.raw,pct=cny>0?(v/cny*100):0;
+              return c.label+': '+fc(v,'CNY',0)+'（'+pct.toFixed(1)+'%）';
+            }}}
+          }
+        }
+      });
+    }
   }
 }
 function snapFmtDelta(v){
