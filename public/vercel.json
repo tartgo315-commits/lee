@@ -9,6 +9,9 @@
     },
     "api/finnhub-quote.js": {
       "maxDuration": 15
+    },
+    "api/stock-price.js": {
+      "maxDuration": 15
     }
   }
 }

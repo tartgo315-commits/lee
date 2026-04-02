@@ -1368,12 +1368,27 @@ async function fetchProxiedText(targetUrl){
   return '';
 }
 async function fetchTextCrossOrigin(url){return fetchProxiedText(url);}
+/** 同源 Twelve Data（api/stock-price）；失败再用 Yahoo / Stooq */
+async function fetchTwelveDataStockPrice(sym){
+  if(location.protocol!=='http:'&&location.protocol!=='https:')return null;
+  try{
+    const r=await fetch(location.origin+'/api/stock-price?symbol='+encodeURIComponent(sym),{cache:'no-store'});
+    if(!r.ok)return null;
+    const j=await r.json();
+    if(j&&j.error)return null;
+    const n=typeof j.price==='number'?j.price:parseFloat(String(j.price??'').replace(/,/g,''));
+    if(n>0&&isFinite(n))return n;
+  }catch(e){}
+  return null;
+}
 /**
- * 美股现价：v7 Quote 优先（marketState + pickYahooDisplayPrice）；Chart 作备用（meta 已按 state 解析）；Stooq 最后。
+ * 美股现价：优先 Twelve Data（/api/stock-price 的 price）；Yahoo Chart/v7 与 Stooq 备用。
  */
 async function fetchYahooStockPrice(ticker){
   const sym=String(ticker||'').trim().toUpperCase();
   if(!sym)return null;
+  const td=await fetchTwelveDataStockPrice(sym);
+  if(td!=null)return td;
   const yChart='https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(sym)+'?interval=5m&range=5d&includePrePost=true';
   const yQuote='https://query1.finance.yahoo.com/v7/finance/quote?symbols='+encodeURIComponent(sym);
   const stooqUrl='https://stooq.com/q/l/?s='+encodeURIComponent(sym.toLowerCase())+'.us&f=sd2t2ohlcv&h&e=csv';
