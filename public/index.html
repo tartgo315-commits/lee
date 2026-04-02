@@ -1403,8 +1403,8 @@ async function fetchYahooStockPrice(ticker){
 
 // ══ Finnhub：REST 经同源 /api/finnhub-quote（密钥在 Vercel 环境变量 FINNHUB_TOKEN）；浏览器不再持有 token，故不使用 wss ══
 const FINNHUB_WATCH_SYMBOLS=['NVDA','TSLA','PLTR','VOO','CRCL'];
-/** 轮询：Yahoo 批量 + 延长时段 Finnhub；间隔略长以降低 Finnhub 免费档 429 */
-const FINNHUB_QUOTE_POLL_MS=6000;
+/** 轮询：Yahoo 批量 + 延长时段 Finnhub；间隔约 110s 使 Finnhub 日调用 &lt; 800 次（免费档） */
+const FINNHUB_QUOTE_POLL_MS=110000;
 const FH_QUOTE_STAGGER_MS=700;
 let finnhubWs=null,finnhubReconnectTimer=null,finnhubCloseIntent=false,finnhubSaveTimer=null,finnhubAggTimer=null,finnhubQuotePollTimer=null;
 const finnhubSubscribed=new Set();
@@ -1518,12 +1518,19 @@ function connectFinnhubWs(){
   /* FINNHUB_TOKEN 仅服务端 /api/finnhub-quote；浏览器无 token，不连 wss://ws.finnhub.io */
 }
 /** Yahoo v7 批量 → Map（不写屏；parse 内会 recordYahooQuoteMeta）；同源 /api/stock-price 优先 */
-async function fetchYahooV7QuotePriceMap(syms){
+async function fetchYahooV7QuotePriceMap(syms,opts){
+  opts=opts||{};
   const out=new Map();
+  if(opts.seedMap instanceof Map){
+    for(const [k,v] of opts.seedMap){
+      const T=String(k||'').trim().toUpperCase();
+      if(T&&typeof v==='number'&&v>0&&isFinite(v))out.set(T,v);
+    }
+  }
   if(!syms||!syms.length)return out;
   const uniq=[...new Set(syms.map(s=>String(s||'').trim().toUpperCase()).filter(Boolean))];
   const canApi=location.protocol==='http:'||location.protocol==='https:';
-  if(canApi){
+  if(canApi&&!opts.skipTwelve){
     const apiBatch=12;
     for(let i=0;i<uniq.length;i+=apiBatch){
       const slice=uniq.slice(i,i+apiBatch);
@@ -1589,7 +1596,26 @@ async function pollFinnhubQuotesOnce(){
   /* 不在此用 document.hidden 直接 return：手机切后台/系统省电会导致长时间不轮询，页面上像「股价死了」。 */
   const syms=[...finnhubDesiredSymbols()];
   if(!syms.length)return;
-  const yahooMap=await fetchYahooV7QuotePriceMap(syms);
+  const tdMap=new Map();
+  if(location.protocol==='http:'||location.protocol==='https:'){
+    try{
+      const list=[...syms].sort().join(',');
+      const r=await fetch(location.origin+'/api/stock-price?symbols='+encodeURIComponent(list),{cache:'no-store'});
+      let j=null;
+      try{j=await r.json();}catch(e){}
+      if(j&&!j.error&&!(typeof j.code==='number'&&j.code>=400)&&Array.isArray(j.quotes)){
+        for(const row of j.quotes){
+          const sym=String(row.symbol||'').trim().toUpperCase();
+          if(!sym)continue;
+          const ext=parseFloat(row.extended_price||row.prepost_price||0);
+          const reg=parseFloat(row.close||0);
+          const p=ext>0?ext:reg;
+          if(p>0)tdMap.set(sym,p);
+        }
+      }
+    }catch(e){}
+  }
+  const yahooMap=await fetchYahooV7QuotePriceMap(syms,{skipTwelve:true,seedMap:tdMap});
   for(const [sym,px] of yahooMap)patchUsStockLiveRow(sym,px);
   if(location.protocol!=='http:'&&location.protocol!=='https:')return;
   let lastFh=0;
