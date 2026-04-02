@@ -21,7 +21,7 @@
   --gold:#ca8a04;--gold-bg:rgba(202,138,4,.14);
   --teal:#0f766e;--teal-bg:rgba(15,118,110,.1);
   --cn:#dc2626;--us:#1d4ed8;--au:#d97706;
-  --r:14px;--r-sm:10px;--r-lg:24px;
+  --r:16px;--r-sm:12px;--r-lg:28px;
   --shadow-sm:0 2px 14px rgba(28,25,23,.07),0 1px 0 rgba(255,255,255,.75) inset;
   --shadow-md:0 10px 32px rgba(28,25,23,.1),0 1px 0 rgba(255,255,255,.5) inset;
   --shadow-float:0 24px 56px rgba(28,25,23,.14);
@@ -630,7 +630,7 @@ body.night .ov-liq-fill.inv{background:linear-gradient(90deg,#4f46e5,#818cf8)}
     <div class="fx-strip" id="fx-strip"></div>
     <div class="topbar-right">
       <button type="button" class="btn btn-ghost btn-sm" id="snap-btn" onclick="takeSnapshot()" title="写入今日 NAV 历史快照">📸 记录今日快照</button>
-      <button type="button" class="btn btn-ghost btn-sm" id="theme-btn" onclick="toggleNight()" title="切换日间暖色 / 夜间深底">🌙 夜间模式</button>
+      <button type="button" class="btn btn-ghost btn-sm" id="theme-btn" onclick="toggleNight()" title="默认暖色参考风；若整页深蓝则为夜间模式，点此切回日间">🌙 夜间模式</button>
       <button type="button" class="btn btn-ghost btn-sm" id="refresh-all-btn" onclick="refreshAllQuotes()" title="刷新汇率与各类行情 → 写入今日快照 → 拉取并翻译资讯">🔄 全部刷新并快照</button>
       <button type="button" class="btn btn-primary btn-sm" onclick="openModal()">＋ 添加资产</button>
     </div>
@@ -3216,12 +3216,14 @@ function toggleNight(){
   try{renderNavMiniChart(ovRange);}catch(e){}
   try{renderHistory();}catch(e){}
 }
-(function migrateThemeFromLegacyLight(){
-  const n=localStorage.getItem('wo_night');
-  if(n==='0'||n==='1')return;
-  const L=localStorage.getItem('wo_light');
-  if(L==='1')localStorage.setItem('wo_night','0');
-  else if(L==='0'){localStorage.setItem('wo_night','1');document.body.classList.add('night');}
+(function themeDefaultWarmOnce(){
+  /* 升级后首次打开：清掉旧版「夜间/浅色」记忆，默认展示暖色参考主题（避免一直卡在深蓝夜间） */
+  const k='wo_theme_v',VER='3';
+  if(localStorage.getItem(k)===VER)return;
+  localStorage.removeItem('wo_night');
+  localStorage.removeItem('wo_light');
+  document.body.classList.remove('night');
+  localStorage.setItem(k,VER);
 })();
 if(localStorage.getItem('wo_night')==='1')document.body.classList.add('night');
 (function syncThemeBtn(){
