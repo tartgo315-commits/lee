@@ -1,20 +1,20 @@
 ---
-description: After substantive code changes, commit and push so Vercel/GitHub can deploy
+description: After substantive code changes, commit locally; user pushes to deploy (agent does not git push)
 alwaysApply: true
 ---
 
-# 完成后推送到远程（上线）
+# 完成后本地提交；推送由用户在本机执行
 
 当在 **本仓库（LEE Wealth）** 完成**一批有意义的修改**（功能/修复/文案等，而非仅临时试验）时：
 
 1. 用 `git status` 确认要纳入的变更；不要提交密钥、`.env`、`functions/node_modules`、仅本地的垃圾文件。
 2. `git add` 相关文件后 `git commit -m "…"`，说明用简短中文或英文完整句。
-3. **推送到默认分支**（与 Vercel 绑定的分支，一般为 `main`）：
-   - 若本地分支无上游、远程默认名为 `main`：`git push -u origin HEAD:main` 或 `git push origin HEAD:main`
-   - 若已设置上游为 `origin/main`：`git push` 即可。
-4. 若 `git push` 因认证失败，向用户说明需在终端完成登录或配置凭据，不要反复无意义重试。
-5. **推送成功后在本对话中简要告知用户**（例如：已 push、commit 摘要、是否触发了 GitHub Actions 通知）。
+3. **不要在本环境执行 `git push`**（代理/无交互终端常失败）。在对话末尾**简要提醒用户在本机终端自行推送**，例如：
+   - 已设置上游：`git push`
+   - 或：`git push -u origin main`
+   - 并注明本次 **commit 摘要**（hash 或 message），方便对方核对。
+4. 若本目录**尚未** `git init` 或未配置 `origin`，请用户创建 GitHub 仓库并执行 `git remote add origin …` 后再 push。
 
-不要为极小的、用户明确表示「先别提交」的改动自动 push。
+不要为极小的、用户明确表示「先别提交」的改动自动 commit。
 
-若本目录**尚未** `git init` 或未配置 `origin`，应先请用户创建 GitHub 仓库并执行 `git remote add origin …`，再执行 push。
+用户若表示「我自己 push」，仍按上述：只做 commit（若适用），不尝试 push。
