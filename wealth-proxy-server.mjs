@@ -31,13 +31,21 @@ function ctype(p) {
 }
 
 async function proxyFetch(targetUrl) {
+  const headers = {
+    'User-Agent':
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+    Accept: '*/*',
+    'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+  };
+  try {
+    const h = new URL(targetUrl).hostname;
+    if (/yahoo\.com$/i.test(h) || h.endsWith('.yahoo.com') || /yimg\.com$/i.test(h)) {
+      headers['Referer'] = 'https://finance.yahoo.com/';
+      headers['Origin'] = 'https://finance.yahoo.com';
+    }
+  } catch (_) {}
   const r = await fetch(targetUrl, {
-    headers: {
-      'User-Agent':
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-      Accept: '*/*',
-      'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
-    },
+    headers,
     redirect: 'follow',
   });
   const text = await r.text();

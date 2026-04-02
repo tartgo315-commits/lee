@@ -37,16 +37,24 @@ export default async function handler(req, res) {
   try {
     const ac = new AbortController();
     const t = setTimeout(() => ac.abort(), 25000);
+    const headers = {
+      'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+      Accept: '*/*',
+      'Accept-Language': 'en-US,en;q=0.9',
+    };
+    try {
+      const h = new URL(target).hostname;
+      if (/yahoo\.com$/i.test(h) || h.endsWith('.yahoo.com') || /yimg\.com$/i.test(h)) {
+        headers['Referer'] = 'https://finance.yahoo.com/';
+        headers['Origin'] = 'https://finance.yahoo.com';
+      }
+    } catch (_) {}
     const r = await fetch(target, {
       method: req.method === 'HEAD' ? 'HEAD' : 'GET',
       signal: ac.signal,
       redirect: 'follow',
-      headers: {
-        'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-        Accept: '*/*',
-        'Accept-Language': 'en-US,en;q=0.9',
-      },
+      headers,
     });
     clearTimeout(t);
 
