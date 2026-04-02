@@ -16,9 +16,17 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'missing symbol' });
   }
 
-  const key = process.env.TWELVE_DATA_KEY;
+  const key =
+    process.env.TWELVE_DATA_KEY ||
+    process.env.TWELVE_DATA_API_KEY ||
+    process.env.TWELVEDATA_API_KEY;
   if (!key || !String(key).trim()) {
-    return res.status(500).json({ error: 'no api key' });
+    return res.status(500).json({
+      error: 'no api key',
+      hint:
+        '在 Vercel → 本项目 → Settings → Environment Variables 添加 TWELVE_DATA_KEY（值=Twelve Data 控制台里的 API Key），务必勾选 Production，保存后 Deployments → Redeploy。',
+      expectedNames: ['TWELVE_DATA_KEY', 'TWELVE_DATA_API_KEY', 'TWELVEDATA_API_KEY'],
+    });
   }
 
   try {
