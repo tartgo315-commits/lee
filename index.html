@@ -1106,13 +1106,12 @@ maybeShowHttpDataTip();
   if(sessionStorage.getItem('wo_proxy_skip')==='1')return;
   try{
     const r=await fetch(location.origin+'/api/stock-price?symbol=AAPL',{cache:'no-store'});
-    if(r.ok){
-      const d=await r.json();
-      if(d&&!d.error&&!d.code){
-        const ext=parseFloat(d.extended_price||d.prepost_price||0);
-        const reg=parseFloat(d.close||0);
-        if((ext>0?ext:reg)>0){sessionStorage.setItem('wo_proxy_ok','1');return;}
-      }
+    let d=null;
+    try{d=await r.json();}catch(e){}
+    if(d&&!d.error&&!(typeof d.code==='number'&&d.code>=400)){
+      const ext=parseFloat(d.extended_price||d.prepost_price||0);
+      const reg=parseFloat(d.close||0);
+      if((ext>0?ext:reg)>0){sessionStorage.setItem('wo_proxy_ok','1');return;}
     }
   }catch(e){}
   const probeUrl='https://query1.finance.yahoo.com/v8/finance/chart/AAPL?interval=1d&range=1d';
@@ -1367,15 +1366,14 @@ async function fetchTwelveDataStockPrice(ticker){
     const r=await fetch(
       location.origin+'/api/stock-price?symbol='+
       encodeURIComponent(sym),{cache:'no-store'});
-    if(!r.ok)return null;
-    const d=await r.json();
-    if(d&&!d.error&&!d.code){
-      const ext=parseFloat(
-        d.extended_price||d.prepost_price||0);
-      const reg=parseFloat(d.close||0);
-      const p=ext>0?ext:reg;
-      if(p>0)return p;
-    }
+    let d=null;
+    try{d=await r.json();}catch(e){return null;}
+    if(!d||d.error||(typeof d.code==='number'&&d.code>=400))return null;
+    const ext=parseFloat(
+      d.extended_price||d.prepost_price||0);
+    const reg=parseFloat(d.close||0);
+    const p=ext>0?ext:reg;
+    if(p>0)return p;
   }catch(e){}
   return null;
 }

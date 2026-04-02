@@ -66,12 +66,28 @@ export default async function handler(req, res) {
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
 
     const code = r.status >= 100 && r.status < 600 ? r.status : 502;
-    return res.status(code).send(body);
+    let outCode = code;
+    let outBody = body;
+    /* Yahoo 常对机房 IP 返回 401/403/429；把状态改成 200 + 空正文，避免浏览器控制台刷红字（前端解析不到数据即放弃）。 */
+    try {
+      const host = new URL(target).hostname;
+      const yh =
+        /yahoo\.com$/i.test(host) ||
+        host.endsWith('.yahoo.com') ||
+        /yimg\.com$/i.test(host);
+      if (yh && (code === 401 || code === 403 || code === 429)) {
+        outCode = 200;
+        outBody = '';
+      }
+    } catch (_) {}
+
+    return res.status(outCode).send(outBody);
   } catch (e) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-store');
     return res
-      .status(502)
+      .status(200)
       .send('Proxy error: ' + (e && e.message ? e.message : String(e)));
   }
 }

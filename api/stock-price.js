@@ -13,7 +13,8 @@ export default async function handler(req, res) {
   const { symbol } = req.query;
   const sym = Array.isArray(symbol) ? symbol[0] : symbol;
   if (!sym || !String(sym).trim()) {
-    return res.status(400).json({ error: 'missing symbol' });
+    /* 200：避免浏览器对「报价失败」刷控制台 Failed to load resource */
+    return res.status(200).json({ error: 'missing symbol' });
   }
 
   const key =
@@ -21,7 +22,7 @@ export default async function handler(req, res) {
     process.env.TWELVE_DATA_API_KEY ||
     process.env.TWELVEDATA_API_KEY;
   if (!key || !String(key).trim()) {
-    return res.status(500).json({
+    return res.status(200).json({
       error: 'no api key',
       hint:
         '在 Vercel → 本项目 → Settings → Environment Variables 添加 TWELVE_DATA_KEY（值=Twelve Data 控制台里的 API Key），务必勾选 Production，保存后 Deployments → Redeploy。',
@@ -38,7 +39,7 @@ export default async function handler(req, res) {
       data &&
       (data.status === 'error' || (typeof data.code === 'number' && data.code >= 400))
     ) {
-      return res.status(502).json({
+      return res.status(200).json({
         error: data.message || 'twelve data error',
         code: data.code,
       });
@@ -46,6 +47,6 @@ export default async function handler(req, res) {
 
     return res.status(200).json(data);
   } catch (e) {
-    return res.status(502).json({ error: e && e.message ? e.message : String(e) });
+    return res.status(200).json({ error: e && e.message ? e.message : String(e) });
   }
 }
