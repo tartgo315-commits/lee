@@ -48,7 +48,9 @@ export default async function middleware(request) {
     path === '/proxy' ||
     path === '/_proxy' ||
     path === '/api/proxy' ||
-    path.startsWith('/api/proxy/')
+    path.startsWith('/api/proxy/') ||
+    path === '/api/finnhub-quote' ||
+    path.startsWith('/api/finnhub-quote/')
   ) {
     return fetch(request);
   }

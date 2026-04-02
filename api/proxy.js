@@ -1,5 +1,6 @@
 /**
- * 同源代理：?url=https%3A%2F%2F... → 服务端 fetch 后原样返回（绕 CORS）。
+ * Vercel Serverless Function：GET/HEAD `?url=` 服务端 fetch 目标 URL，原样返回正文，CORS `Access-Control-Allow-Origin: *`。
+ * 路由：`/api/proxy`（vercel.json 将 `/proxy` rewrite 到此）。
  * 勿对非 2xx 抛错：Yahoo 等常返回 401/403/429，抛错会被 catch 成 502，前端误以为代理坏了。
  */
 export default async function handler(req, res) {

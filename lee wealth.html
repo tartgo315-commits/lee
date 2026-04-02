@@ -1173,16 +1173,20 @@ function parseYahooChartPrice(raw){
     const order=[m.currentPrice,m.postMarketPrice,m.preMarketPrice,m.regularMarketPrice];
     for(const x of order){const p=pick(x);if(p)return p;}
   }
+  /* 非 REGULAR 且 state 已知时：K 线 close 多为常规交易柱，易与盘前/盘后 meta 错位，跳过 q.close/open/adj，用昨收兜底 */
+  const skipKlineArrays=Boolean(state&&state!=='REGULAR');
   const q=res.indicators?.quote?.[0];
-  if(q&&Array.isArray(q.close)){
-    for(let i=q.close.length-1;i>=0;i--){const p=pick(q.close[i]);if(p)return p;}
-  }
-  if(q&&Array.isArray(q.open)){
-    for(let i=q.open.length-1;i>=0;i--){const p=pick(q.open[i]);if(p)return p;}
-  }
-  const adj=res.indicators?.adjclose?.[0]?.adjclose;
-  if(Array.isArray(adj)){
-    for(let i=adj.length-1;i>=0;i--){const p=pick(adj[i]);if(p)return p;}
+  if(!skipKlineArrays){
+    if(q&&Array.isArray(q.close)){
+      for(let i=q.close.length-1;i>=0;i--){const p=pick(q.close[i]);if(p)return p;}
+    }
+    if(q&&Array.isArray(q.open)){
+      for(let i=q.open.length-1;i>=0;i--){const p=pick(q.open[i]);if(p)return p;}
+    }
+    const adj=res.indicators?.adjclose?.[0]?.adjclose;
+    if(Array.isArray(adj)){
+      for(let i=adj.length-1;i>=0;i--){const p=pick(adj[i]);if(p)return p;}
+    }
   }
   return pick(m.chartPreviousClose)||pick(m.previousClose)||null;
 }
@@ -1386,9 +1390,7 @@ async function fetchYahooStockPrice(ticker){
   return p3;
 }
 
-// ══ Finnhub：WebSocket 仅补充常规交易时段逐笔；全时段现价以 Yahoo（盘前/盘后/闭市 post）轮询为准 ══
-const FINNHUB_API_TOKEN='d76evlpr01qm4b7u19jgd76evlpr01qm4b7u19k0';
-const FINNHUB_WS_URL='wss://ws.finnhub.io?token='+encodeURIComponent(FINNHUB_API_TOKEN);
+// ══ Finnhub：REST 经同源 /api/finnhub-quote（密钥在 Vercel 环境变量 FINNHUB_TOKEN）；浏览器不再持有 token，故不使用 wss ══
 const FINNHUB_WATCH_SYMBOLS=['NVDA','TSLA','PLTR','VOO','CRCL'];
 /** 轮询：Yahoo 批量 + 延长时段 Finnhub；间隔略长以降低 Finnhub 免费档 429 */
 const FINNHUB_QUOTE_POLL_MS=6000;
@@ -1502,38 +1504,7 @@ function patchUsStockLiveRow(sym,price){
   scheduleUsLiveAggregates();
 }
 function connectFinnhubWs(){
-  if(finnhubCloseIntent)return;
-  try{finnhubWs=new WebSocket(FINNHUB_WS_URL);}catch(e){scheduleFinnhubReconnect();return;}
-  finnhubWs.onopen=()=>{
-    finnhubSubscribed.clear();
-    finnhubSyncSubscriptions();
-  };
-  finnhubWs.onmessage=ev=>{
-    let msg=null;
-    try{msg=JSON.parse(ev.data);}catch(e){return;}
-    if(msg.type==='ping'){
-      try{finnhubWs.send(JSON.stringify({type:'pong'}));}catch(e){}
-      return;
-    }
-    if(msg.type==='trade'&&Array.isArray(msg.data)){
-      for(const t of msg.data){
-        if(!t||!t.s||!(t.p>0))continue;
-        const T=String(t.s).trim().toUpperCase();
-        patchUsStockLiveRow(T,t.p);
-      }
-    }
-  };
-  finnhubWs.onerror=()=>{};
-  finnhubWs.onclose=()=>{
-    finnhubWs=null;
-    finnhubSubscribed.clear();
-    scheduleFinnhubReconnect();
-  };
-}
-function scheduleFinnhubReconnect(){
-  if(finnhubCloseIntent)return;
-  clearTimeout(finnhubReconnectTimer);
-  finnhubReconnectTimer=setTimeout(()=>connectFinnhubWs(),5000);
+  /* FINNHUB_TOKEN 仅服务端 /api/finnhub-quote；浏览器无 token，不连 wss://ws.finnhub.io */
 }
 /** Yahoo v7 批量 → Map（不写屏；parse 内会 recordYahooQuoteMeta） */
 async function fetchYahooV7QuotePriceMap(syms){
@@ -1556,13 +1527,15 @@ function yahooUsSessionWantsFinnhubParallel(sym){
   const st=String(yahooQuoteMetaBySym.get(sym)?.state||'').toUpperCase();
   return st==='PRE'||st==='PREPRE'||st==='PREOPEN'||st==='POST'||st==='POSTPOST'||st==='EXTENDED'||st==='OVERNIGHT';
 }
-/** 返回 {c,t}；t 为 Finnhub 行情 Unix 秒，用于与 Yahoo 分歧时判断哪边更新鲜 */
-async function fetchFinnhubQuote(sym,tokEnc){
+/** 同源 /api/finnhub-quote（服务端读 FINNHUB_TOKEN）；返回 {c,t} */
+async function fetchFinnhubQuote(sym){
   try{
-    const u='https://finnhub.io/api/v1/quote?symbol='+encodeURIComponent(sym)+'&token='+tokEnc;
-    const raw=await fetchProxiedText(u);
-    if(!raw||raw.startsWith('Proxy error'))return null;
-    const j=JSON.parse(raw);
+    if(location.protocol!=='http:'&&location.protocol!=='https:')return null;
+    const T=String(sym||'').trim().toUpperCase();
+    if(!T)return null;
+    const r=await fetch(location.origin+'/api/finnhub-quote?symbol='+encodeURIComponent(T),{cache:'no-store'});
+    if(!r.ok)return null;
+    const j=await r.json();
     if(j&&j.error)return null;
     if(typeof j.c!=='number'||!(j.c>0)||!isFinite(j.c))return null;
     let t=typeof j.t==='number'?j.t:0;
@@ -1593,8 +1566,7 @@ async function pollFinnhubQuotesOnce(){
   if(!syms.length)return;
   const yahooMap=await fetchYahooV7QuotePriceMap(syms);
   for(const [sym,px] of yahooMap)patchUsStockLiveRow(sym,px);
-  if(!FINNHUB_API_TOKEN)return;
-  const tok=encodeURIComponent(FINNHUB_API_TOKEN);
+  if(location.protocol!=='http:'&&location.protocol!=='https:')return;
   let lastFh=0;
   const throttle=async()=>{
     const wait=FH_QUOTE_STAGGER_MS-(Date.now()-lastFh);
@@ -1606,7 +1578,7 @@ async function pollFinnhubQuotesOnce(){
     const need=!yahooMap.has(sym)||yahooUsSessionWantsFinnhubParallel(sym);
     if(!need)continue;
     await throttle();
-    const fhRow=await fetchFinnhubQuote(sym,tok);
+    const fhRow=await fetchFinnhubQuote(sym);
     if(!fhRow)continue;
     const m=mergeYahooFinnhubPrice(yPx,fhRow,sym);
     if(m)patchUsStockLiveRow(sym,m);

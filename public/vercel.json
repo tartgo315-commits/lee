@@ -6,6 +6,9 @@
   "functions": {
     "api/proxy.js": {
       "maxDuration": 30
+    },
+    "api/finnhub-quote.js": {
+      "maxDuration": 15
     }
   }
 }
