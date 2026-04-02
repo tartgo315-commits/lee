@@ -2,5 +2,10 @@
   "rewrites": [
     { "source": "/_proxy", "destination": "/api/proxy" },
     { "source": "/proxy",  "destination": "/api/proxy" }
-  ]
+  ],
+  "functions": {
+    "api/proxy.js": {
+      "maxDuration": 30
+    }
+  }
 }
