@@ -1063,7 +1063,7 @@ function toCNY(v,c){
 }
 function fromCNY(v,c){if(c==='CNY')return v;return v/(D.fx[c]||1);}
 
-/** Yahoo v8 chart JSON → 单股现价（regularMarketPrice 常为空时用盘后/盘前或 K 线收盘价） */
+/** Yahoo v8 chart JSON → 最近价（含盘前/盘后：meta 优先 current/post/pre，再用 5m K 末根） */
 function parseYahooChartPrice(raw){
   let root=raw;
   if(typeof raw==='string'){
@@ -1073,7 +1073,7 @@ function parseYahooChartPrice(raw){
   if(!res)return null;
   const m=res.meta||{};
   const pick=x=>{const n=typeof x==='number'?x:parseFloat(String(x).replace(/,/g,''));return n>0&&isFinite(n)?n:null};
-  const order=[m.regularMarketPrice,m.postMarketPrice,m.preMarketPrice,m.currentPrice];
+  const order=[m.currentPrice,m.postMarketPrice,m.preMarketPrice,m.regularMarketPrice];
   for(const x of order){const p=pick(x);if(p)return p;}
   const q=res.indicators?.quote?.[0];
   if(q&&Array.isArray(q.close)){
@@ -1088,7 +1088,23 @@ function parseYahooChartPrice(raw){
   }
   return pick(m.chartPreviousClose)||pick(m.previousClose)||null;
 }
-/** Yahoo v7 quote 接口 → 现价（与 chart 数据源不同路径，可交叉验证） */
+function pickYahooQuoteNum(x){
+  const n=typeof x==='number'?x:parseFloat(String(x).replace(/,/g,''));
+  return n>0&&isFinite(n)?n:null;
+}
+function pickYahooQuoteLivePrice(r){
+  if(!r)return null;
+  const pick=pickYahooQuoteNum;
+  const state=String(r.marketState||'').toUpperCase();
+  if(state==='POST'||state==='POSTPOST')
+    return pick(r.postMarketPrice)||pick(r.regularMarketPrice)||pick(r.ask)||pick(r.bid);
+  if(state==='PRE'||state==='PREPRE'||state==='PREOPEN')
+    return pick(r.preMarketPrice)||pick(r.regularMarketPrice)||pick(r.ask)||pick(r.bid);
+  if(state==='REGULAR')
+    return pick(r.regularMarketPrice)||pick(r.currentPrice)||pick(r.ask)||pick(r.bid);
+  return pick(r.currentPrice)||pick(r.postMarketPrice)||pick(r.preMarketPrice)||pick(r.regularMarketPrice)||pick(r.ask)||pick(r.bid);
+}
+/** Yahoo v7 quote 接口 → 现价（含延长交易时段） */
 function parseYahooV7Quote(raw){
   let root=raw;
   if(typeof raw==='string'){
@@ -1096,8 +1112,7 @@ function parseYahooV7Quote(raw){
   }
   const r=root?.quoteResponse?.result?.[0];
   if(!r)return null;
-  const pick=x=>{const n=typeof x==='number'?x:parseFloat(String(x).replace(/,/g,''));return n>0&&isFinite(n)?n:null};
-  return pick(r.regularMarketPrice)||pick(r.postMarketPrice)||pick(r.preMarketPrice)||pick(r.ask)||pick(r.bid)||null;
+  return pickYahooQuoteLivePrice(r);
 }
 /** Stooq CSV（独立数据源；部分标的为延迟行情，参与综合时可拉平单一渠道的偏差） */
 function parseStooqCsv(text){
@@ -1180,13 +1195,12 @@ async function fetchProxiedText(targetUrl){
 }
 async function fetchTextCrossOrigin(url){return fetchProxiedText(url);}
 /**
- * 美股现价：并行拉取 Yahoo Chart、Yahoo Quote v7、Stooq，综合后返回。
- * 不保证与某一券商完全一致，但比单一免费接口更稳、更少单点异常。
+ * 美股现价：Yahoo Chart(5m,含盘前盘后)+Yahoo v7 合并为主；Stooq 仅后备。
  */
 async function fetchYahooStockPrice(ticker){
   const sym=String(ticker||'').trim().toUpperCase();
   if(!sym)return null;
-  const yChart='https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(sym)+'?interval=1d&range=5d&includePrePost=true';
+  const yChart='https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(sym)+'?interval=5m&range=5d&includePrePost=true';
   const yQuote='https://query1.finance.yahoo.com/v7/finance/quote?symbols='+encodeURIComponent(sym);
   const stooqUrl='https://stooq.com/q/l/?s='+encodeURIComponent(sym.toLowerCase())+'.us&f=sd2t2ohlcv&h&e=csv';
   const [t1,t2,t3]=await Promise.all([
@@ -1197,7 +1211,9 @@ async function fetchYahooStockPrice(ticker){
   const p1=parseYahooChartPrice(t1);
   const p2=parseYahooV7Quote(t2);
   const p3=parseStooqCsv(t3);
-  return mergeStockQuotes([p1,p2,p3]);
+  const yb=mergeStockQuotes([p1,p2].filter(v=>v!=null&&v>0&&isFinite(v)));
+  if(yb!=null)return yb;
+  return p3;
 }
 // ══ NEWS (RSS + 持仓关键词) ══
 const NEWS_RSS_FEEDS=[
