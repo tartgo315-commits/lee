@@ -301,15 +301,21 @@ input::placeholder{color:var(--text3)}
 #ov-regions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s-5);margin-bottom:var(--section-y);min-width:0;width:100%;max-width:100%}
 .ov-col{background:linear-gradient(180deg,rgba(20,26,40,.92) 0%,rgba(15,20,31,.98) 100%);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;display:flex;flex-direction:column;min-width:0;box-shadow:var(--shadow-sm);transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease}
 .ov-col:hover{transform:translateY(-2px);box-shadow:var(--shadow-md);border-color:rgba(80,110,160,.35)}
-.ov-col-header{padding:var(--s-5) var(--card-pad);border-bottom:1px solid var(--border);background:linear-gradient(180deg,rgba(28,36,56,.95) 0%,rgba(22,29,46,.88) 100%);display:flex;flex-direction:column;gap:var(--s-1)}
+.ov-col-header{padding:var(--s-5) var(--card-pad);border-bottom:1px solid var(--border);background:linear-gradient(180deg,rgba(28,36,56,.95) 0%,rgba(22,29,46,.88) 100%);display:flex;flex-direction:column;gap:var(--s-3)}
 .ov-us-totals-line{display:flex;flex-direction:row;align-items:baseline;flex-wrap:wrap;gap:var(--s-2) var(--s-4);margin-top:var(--s-2);width:100%}
 .ov-us-totals-line .ov-col-total{margin-bottom:0;flex-shrink:0}
 .ov-us-aud-inline{margin-left:auto;font-size:var(--text-lg);font-weight:500;color:#93c5fd;line-height:var(--lh-tight);text-align:right;flex-shrink:0;font-variant-numeric:tabular-nums}
-.ov-tri-sub{display:flex;flex-wrap:wrap;align-items:baseline;gap:var(--s-2) var(--s-3);font-size:var(--text-sm);font-weight:500;color:var(--text2);font-family:var(--mono);line-height:var(--lh-snug);margin-top:4px;font-variant-numeric:tabular-nums}
-.ov-tri-sep{opacity:.42;font-weight:400}
-.ov-head-fx{font-size:var(--text-sm);font-weight:500;color:var(--text2);font-family:var(--mono);font-variant-numeric:tabular-nums;line-height:var(--lh-snug)}
-.ov-us-totals-line>.ov-head-fx{color:#fca5a5}
-.ov-us-totals-line>.ov-head-fx:last-of-type{color:#fcd34d}
+.ov-col-name-row{display:flex;align-items:center;justify-content:space-between;gap:var(--s-3);margin-bottom:var(--s-3);flex-wrap:wrap}
+.ov-col-name-row .ov-col-name{margin-bottom:0;flex:1;min-width:0}
+.ov-col-meta{font-size:10px;font-weight:600;color:var(--text3);font-family:var(--mono);letter-spacing:.04em;padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid rgba(55,78,120,.45);white-space:nowrap}
+.ov-head-triple{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;width:100%;border:1px solid rgba(55,78,120,.55);border-radius:var(--r-sm);overflow:hidden;background:rgba(0,0,0,.22);box-shadow:0 1px 0 rgba(255,255,255,.04) inset}
+.ov-head-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:10px 6px;border-right:1px solid rgba(55,78,120,.4);min-width:0}
+.ov-head-cell:last-child{border-right:none}
+.ov-head-cell-lbl{font-size:9px;font-weight:700;color:var(--text3);font-family:var(--mono);letter-spacing:.1em;text-transform:uppercase;line-height:1}
+.ov-head-cell-val{font-size:clamp(12px,1.35vw,14px);font-weight:600;color:var(--text);font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:center;line-height:1.25;word-break:break-all}
+.ov-col.cn .ov-head-cell:nth-child(1) .ov-head-cell-val{color:#fc8181}
+.ov-col.us .ov-head-cell:nth-child(2) .ov-head-cell-val{color:#93c5fd}
+.ov-col.au .ov-head-cell:nth-child(3) .ov-head-cell-val{color:#fcd34d}
 .ov-col-pnl-row{display:grid;grid-template-columns:1fr 1fr 1fr;align-items:baseline;gap:var(--s-2) var(--s-3);margin-top:var(--s-4);padding-top:var(--s-4);border-top:1px solid var(--border);font-variant-numeric:tabular-nums;width:100%;box-sizing:border-box}
 .ov-col-pnl-row .ov-pnl-item{font-size:var(--text-sm);font-weight:500;white-space:nowrap;line-height:var(--lh-snug);min-width:0}
 .ov-col-pnl-row .ov-pnl-item:nth-child(1){text-align:left;justify-self:start}
@@ -547,6 +553,11 @@ body.light .us-acc-hint{background:rgba(59,130,246,.08)}
 body.light .ov-add-btn{background:rgba(15,23,42,.03)}
 body.light .tc-val.cn{color:#dc2626}body.light .tc-val.us{color:#2563eb}body.light .tc-val.au{color:#d97706}
 body.light .ov-col-total.cn{color:#dc2626}body.light .ov-col-total.us{color:#2563eb}body.light .ov-col-total.au{color:#d97706}
+body.light .ov-col.cn .ov-head-cell:nth-child(1) .ov-head-cell-val{color:#dc2626}
+body.light .ov-col.us .ov-head-cell:nth-child(2) .ov-head-cell-val{color:#2563eb}
+body.light .ov-col.au .ov-head-cell:nth-child(3) .ov-head-cell-val{color:#d97706}
+body.light .ov-head-triple{background:rgba(255,255,255,.04);border-color:var(--border)}
+body.light .ov-head-cell{border-right-color:rgba(55,78,120,.35)}
 body.light .au-td-alert{color:#991b1b;border-color:rgba(220,38,38,.45);background:linear-gradient(90deg,rgba(254,226,226,.95),rgba(254,243,199,.7))}
 body.light .au-td-weekly{background:rgba(239,246,255,.9);border-color:rgba(59,130,246,.25);color:#1e293b}
 body.light .hist-break td{background:rgba(248,250,252,.95);color:#334155}
@@ -1854,19 +1865,20 @@ function renderOverview(){
       extraStats = 'us';
     }
 
+    const vCNY = fc(rcny,'CNY',0);
+    const vUSD = fc(fromCNY(rcny,'USD'),'USD',0);
+    const vAUD = fc(fromCNY(rcny,'AUD'),'AUD',0);
+    const ovHeadTriple = `<div class="ov-head-triple">
+          <div class="ov-head-cell"><span class="ov-head-cell-lbl">CNY</span><span class="ov-head-cell-val">${vCNY}</span></div>
+          <div class="ov-head-cell"><span class="ov-head-cell-lbl">USD</span><span class="ov-head-cell-val">${vUSD}</span></div>
+          <div class="ov-head-cell"><span class="ov-head-cell-lbl">AUD</span><span class="ov-head-cell-val">${vAUD}</span></div>
+        </div>`;
+    const ovNameRow = `<div class="ov-col-name-row"><span class="ov-col-name">${r.name}</span><span class="ov-col-meta">${ps.length} 项</span></div>`;
+
     let headerHTML;
     if(r.id === 'us' && extraStats) {
-      headerHTML = `
-        <div class="ov-col-name">${r.name}</div>
-        <div class="ov-us-totals-line">
-          <div class="ov-col-total us">${fc(fromCNY(rcny,'USD'),'USD',0)}</div>
-          <span class="ov-tri-sep">·</span>
-          <span class="ov-head-fx">${fc(rcny,'CNY',0)}</span>
-          <span class="ov-tri-sep">·</span>
-          <span class="ov-head-fx">${fc(totalAUD_us,'AUD',0)}</span>
-        </div>
+      headerHTML = `${ovNameRow}${ovHeadTriple}
         <div class="ov-us-sub-row">
-          <div class="ov-col-sub">${ps.length}个产品</div>
           <div class="ov-us-cap-split" title="证券市值仅含美股持仓；闲置资金为手填 Tiger 闲置或 USD 现金条，与顶部合计一致">
             <span>证券市值 <strong class="ov-cap-val">${fc(fromCNY(usStockCny,'USD'),'USD',2)}</strong></span>
             <span class="ov-cap-sep">·</span>
@@ -1878,31 +1890,12 @@ function renderOverview(){
           <span class="ov-pnl-item" style="color:${col}">${sign}${fc(pnlUSD,'USD',0)}</span>
           <span class="ov-pnl-item" style="color:${col}">${sign}${fc(pnlCNY,'CNY',0)}</span>
         </div>`;
-    } else if(r.id==='cn'){
-      headerHTML = `
-        <div class="ov-col-name">${r.name}</div>
-        <div class="ov-col-total cn">${fc(rlocal,r.cur,0)}</div>
-        <div class="ov-tri-sub">
-          <span>${fc(fromCNY(rcny,'USD'),'USD',0)}</span><span class="ov-tri-sep">·</span><span>${fc(fromCNY(rcny,'AUD'),'AUD',0)}</span>
-        </div>
-        <div class="ov-col-sub">${ps.length}个产品</div>`;
-    } else if(r.id==='au'){
-      headerHTML = `
-        <div class="ov-col-name">${r.name}</div>
-        <div class="ov-col-total au">${fc(rlocal,r.cur,0)}</div>
-        <div class="ov-tri-sub">
-          <span>${fc(fromCNY(rcny,'USD'),'USD',0)}</span><span class="ov-tri-sep">·</span><span>${fc(rcny,'CNY',0)}</span>
-        </div>
-        <div class="ov-col-sub">${ps.length}个产品</div>`;
     } else {
-      headerHTML = `
-        <div class="ov-col-name">${r.name}</div>
-        <div class="ov-col-total ${r.id}">${fc(rlocal,r.cur,0)}</div>
-        <div class="ov-col-sub">${fc(rcny,'CNY',0)} &nbsp;·&nbsp; ${ps.length}个产品</div>`;
+      headerHTML = `${ovNameRow}${ovHeadTriple}`;
     }
 
     const auOvBanner=r.id==='au'?buildAuTdBanners(ps):'';
-    return `<div class="ov-col">
+    return `<div class="ov-col ${r.id}">
       <div class="ov-col-header">${headerHTML}</div>
       <div class="ov-col-body">${auOvBanner}${accBlocks}</div>
       <div class="ov-add-btn">
