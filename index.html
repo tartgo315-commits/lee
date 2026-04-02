@@ -1390,8 +1390,7 @@ async function fetchYahooStockPrice(ticker){
 const FINNHUB_API_TOKEN='d76evlpr01qm4b7u19jgd76evlpr01qm4b7u19k0';
 const FINNHUB_WS_URL='wss://ws.finnhub.io?token='+encodeURIComponent(FINNHUB_API_TOKEN);
 const FINNHUB_WATCH_SYMBOLS=['NVDA','TSLA','PLTR','VOO','CRCL'];
-/** 美股轮询间隔（ms）：以 Yahoo 批量为主覆盖盘前/盘后；略缩短以便接近券商终端 */
-/** 轮询间隔：内含 Yahoo 批量 + 延长时段 Finnhub 补价（带节流），略拉长以降低 Finnhub 免费档 429 */
+/** 轮询：Yahoo 批量 + 延长时段 Finnhub；间隔略长以降低 Finnhub 免费档 429 */
 const FINNHUB_QUOTE_POLL_MS=6000;
 const FH_QUOTE_STAGGER_MS=700;
 let finnhubWs=null,finnhubReconnectTimer=null,finnhubCloseIntent=false,finnhubSaveTimer=null,finnhubAggTimer=null,finnhubQuotePollTimer=null;
@@ -1557,16 +1556,36 @@ function yahooUsSessionWantsFinnhubParallel(sym){
   const st=String(yahooQuoteMetaBySym.get(sym)?.state||'').toUpperCase();
   return st==='PRE'||st==='PREPRE'||st==='PREOPEN'||st==='POST'||st==='POSTPOST'||st==='EXTENDED'||st==='OVERNIGHT';
 }
-async function fetchFinnhubQuotePrice(sym,tokEnc){
+/** 返回 {c,t}；t 为 Finnhub 行情 Unix 秒，用于与 Yahoo 分歧时判断哪边更新鲜 */
+async function fetchFinnhubQuote(sym,tokEnc){
   try{
     const u='https://finnhub.io/api/v1/quote?symbol='+encodeURIComponent(sym)+'&token='+tokEnc;
     const raw=await fetchProxiedText(u);
     if(!raw||raw.startsWith('Proxy error'))return null;
     const j=JSON.parse(raw);
     if(j&&j.error)return null;
-    if(typeof j.c==='number'&&j.c>0&&isFinite(j.c))return j.c;
+    if(typeof j.c!=='number'||!(j.c>0)||!isFinite(j.c))return null;
+    let t=typeof j.t==='number'?j.t:0;
+    if(t>1e12)t=Math.floor(t/1000);
+    return{c:j.c,t};
   }catch(e){}
   return null;
+}
+/**
+ * Yahoo 与 Finnhub 两价合一：绝不能用 mergeStockQuotes 双值中位数（价差大时会得到荒唐的中间价）。
+ * 价差小则算术平均；价差大则优先「Finnhub 带近期时间戳」否则保留 Yahoo（与盘前盘后字段一致）。
+ */
+function mergeYahooFinnhubPrice(yPx,fhRow,sym){
+  const fh=fhRow&&fhRow.c;
+  if(!(fh>0))return yPx??null;
+  if(!(yPx>0))return fh;
+  const rel=Math.abs(yPx-fh)/Math.max(yPx,fh);
+  if(rel<=0.012)return Math.round(((yPx+fh)/2)*1e4)/1e4;
+  const now=Date.now()/1000;
+  const ts=fhRow.t||0;
+  const fhFresh=ts>1e8&&Math.abs(now-ts)<900;
+  if(fhFresh)return fh;
+  return yPx;
 }
 async function pollFinnhubQuotesOnce(){
   /* 不在此用 document.hidden 直接 return：手机切后台/系统省电会导致长时间不轮询，页面上像「股价死了」。 */
@@ -1587,12 +1606,10 @@ async function pollFinnhubQuotesOnce(){
     const need=!yahooMap.has(sym)||yahooUsSessionWantsFinnhubParallel(sym);
     if(!need)continue;
     await throttle();
-    const fh=await fetchFinnhubQuotePrice(sym,tok);
-    if(fh==null)continue;
-    if(yPx!=null&&yPx>0){
-      const m=mergeStockQuotes([yPx,fh]);
-      if(m)patchUsStockLiveRow(sym,m);
-    }else patchUsStockLiveRow(sym,fh);
+    const fhRow=await fetchFinnhubQuote(sym,tok);
+    if(!fhRow)continue;
+    const m=mergeYahooFinnhubPrice(yPx,fhRow,sym);
+    if(m)patchUsStockLiveRow(sym,m);
   }
 }
 function startFinnhubQuotePolling(){
