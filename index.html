@@ -302,9 +302,14 @@ input::placeholder{color:var(--text3)}
 .ov-col{background:linear-gradient(180deg,rgba(20,26,40,.92) 0%,rgba(15,20,31,.98) 100%);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;display:flex;flex-direction:column;min-width:0;box-shadow:var(--shadow-sm);transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease}
 .ov-col:hover{transform:translateY(-2px);box-shadow:var(--shadow-md);border-color:rgba(80,110,160,.35)}
 .ov-col-header{padding:var(--s-5) var(--card-pad);border-bottom:1px solid var(--border);background:linear-gradient(180deg,rgba(28,36,56,.95) 0%,rgba(22,29,46,.88) 100%);display:flex;flex-direction:column;gap:var(--s-1)}
-.ov-us-totals-line{display:flex;flex-direction:row;align-items:baseline;flex-wrap:wrap;gap:var(--s-3);margin-top:var(--s-2);width:100%}
+.ov-us-totals-line{display:flex;flex-direction:row;align-items:baseline;flex-wrap:wrap;gap:var(--s-2) var(--s-4);margin-top:var(--s-2);width:100%}
 .ov-us-totals-line .ov-col-total{margin-bottom:0;flex-shrink:0}
 .ov-us-aud-inline{margin-left:auto;font-size:var(--text-lg);font-weight:500;color:#93c5fd;line-height:var(--lh-tight);text-align:right;flex-shrink:0;font-variant-numeric:tabular-nums}
+.ov-tri-sub{display:flex;flex-wrap:wrap;align-items:baseline;gap:var(--s-2) var(--s-3);font-size:var(--text-sm);font-weight:500;color:var(--text2);font-family:var(--mono);line-height:var(--lh-snug);margin-top:4px;font-variant-numeric:tabular-nums}
+.ov-tri-sep{opacity:.42;font-weight:400}
+.ov-head-fx{font-size:var(--text-sm);font-weight:500;color:var(--text2);font-family:var(--mono);font-variant-numeric:tabular-nums;line-height:var(--lh-snug)}
+.ov-us-totals-line>.ov-head-fx{color:#fca5a5}
+.ov-us-totals-line>.ov-head-fx:last-of-type{color:#fcd34d}
 .ov-col-pnl-row{display:grid;grid-template-columns:1fr 1fr 1fr;align-items:baseline;gap:var(--s-2) var(--s-3);margin-top:var(--s-4);padding-top:var(--s-4);border-top:1px solid var(--border);font-variant-numeric:tabular-nums;width:100%;box-sizing:border-box}
 .ov-col-pnl-row .ov-pnl-item{font-size:var(--text-sm);font-weight:500;white-space:nowrap;line-height:var(--lh-snug);min-width:0}
 .ov-col-pnl-row .ov-pnl-item:nth-child(1){text-align:left;justify-self:start}
@@ -1855,10 +1860,13 @@ function renderOverview(){
         <div class="ov-col-name">${r.name}</div>
         <div class="ov-us-totals-line">
           <div class="ov-col-total us">${fc(fromCNY(rcny,'USD'),'USD',0)}</div>
-          <div class="ov-us-aud-inline">${fc(totalAUD_us,'AUD',0)}</div>
+          <span class="ov-tri-sep">·</span>
+          <span class="ov-head-fx">${fc(rcny,'CNY',0)}</span>
+          <span class="ov-tri-sep">·</span>
+          <span class="ov-head-fx">${fc(totalAUD_us,'AUD',0)}</span>
         </div>
         <div class="ov-us-sub-row">
-          <div class="ov-col-sub">${fc(rcny,'CNY',0)} · ${ps.length}个产品</div>
+          <div class="ov-col-sub">${ps.length}个产品</div>
           <div class="ov-us-cap-split" title="证券市值仅含美股持仓；闲置资金为手填 Tiger 闲置或 USD 现金条，与顶部合计一致">
             <span>证券市值 <strong class="ov-cap-val">${fc(fromCNY(usStockCny,'USD'),'USD',2)}</strong></span>
             <span class="ov-cap-sep">·</span>
@@ -1870,6 +1878,22 @@ function renderOverview(){
           <span class="ov-pnl-item" style="color:${col}">${sign}${fc(pnlUSD,'USD',0)}</span>
           <span class="ov-pnl-item" style="color:${col}">${sign}${fc(pnlCNY,'CNY',0)}</span>
         </div>`;
+    } else if(r.id==='cn'){
+      headerHTML = `
+        <div class="ov-col-name">${r.name}</div>
+        <div class="ov-col-total cn">${fc(rlocal,r.cur,0)}</div>
+        <div class="ov-tri-sub">
+          <span>${fc(fromCNY(rcny,'USD'),'USD',0)}</span><span class="ov-tri-sep">·</span><span>${fc(fromCNY(rcny,'AUD'),'AUD',0)}</span>
+        </div>
+        <div class="ov-col-sub">${ps.length}个产品</div>`;
+    } else if(r.id==='au'){
+      headerHTML = `
+        <div class="ov-col-name">${r.name}</div>
+        <div class="ov-col-total au">${fc(rlocal,r.cur,0)}</div>
+        <div class="ov-tri-sub">
+          <span>${fc(fromCNY(rcny,'USD'),'USD',0)}</span><span class="ov-tri-sep">·</span><span>${fc(rcny,'CNY',0)}</span>
+        </div>
+        <div class="ov-col-sub">${ps.length}个产品</div>`;
     } else {
       headerHTML = `
         <div class="ov-col-name">${r.name}</div>
