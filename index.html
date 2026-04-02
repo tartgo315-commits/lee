@@ -1594,6 +1594,9 @@ function mergeYahooFinnhubPrice(yPx,fhRow,sym){
 }
 async function pollFinnhubQuotesOnce(){
   /* 不在此用 document.hidden 直接 return：手机切后台/系统省电会导致长时间不轮询，页面上像「股价死了」。 */
+  fetchCNYRates().then(fx=>{
+    if(fx){Object.assign(D.fx,fx);save();renderSidebar();}
+  }).catch(()=>{});
   const syms=[...finnhubDesiredSymbols()];
   if(!syms.length)return;
   const tdMap=new Map();
