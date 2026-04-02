@@ -2237,11 +2237,18 @@ async function refreshAllQuotes(){
   const show=msg=>{if(strip) strip.innerHTML='<div class="alert alert-info" style="margin:0">'+msg+'</div>';};
 
   try{
+    maybeRollAuWeeklyCompound();
     show('🔄 正在刷新汇率…');
     try{
       const fx=await fetchCNYRates();
-      if(fx){Object.assign(D.fx,fx);lines.push('汇率');}
-      else lines.push('汇率失败');
+      if(fx){
+        Object.assign(D.fx,fx);
+        lines.push('汇率');
+        const nCn=D.products.filter(p=>p.region==='cn').length;
+        const nAu=D.products.filter(p=>p.region==='au').length;
+        if(nCn||nAu)lines.push('中'+nCn+'·澳'+nAu+'条已折算');
+        save();renderSidebar();try{renderOverview();}catch(e){}refreshCurrentView();
+      }else lines.push('汇率失败');
     }catch(e){lines.push('汇率失败');}
 
     const golds=D.products.filter(p=>p.type==='gold');
@@ -2255,6 +2262,7 @@ async function refreshAllQuotes(){
         if(price>0){
           golds.forEach(g=>{g.goldPrice=price;g.goldUpdated=today();});
           lines.push('黄金×'+golds.length);
+          save();renderSidebar();try{renderOverview();}catch(e){}refreshCurrentView();
         }else lines.push('黄金失败');
       }catch(e){lines.push('黄金失败');}
     }
@@ -2270,23 +2278,30 @@ async function refreshAllQuotes(){
         }catch(e){}
       }
       lines.push('美股'+ok+'/'+stocks.length);
+      save();renderSidebar();try{renderOverview();}catch(e){}refreshCurrentView();
     }
 
-    const funds=D.products.filter(p=>p.type==='fund_cn'&&p.fundCode&&(p.fundCurrency||'CNY')==='CNY');
+    const funds=D.products.filter(p=>p.type==='fund_cn'&&p.fundCode&&String(p.fundCode).trim()&&(p.fundCurrency||'CNY')==='CNY');
+    const fundsNonCny=D.products.filter(p=>p.type==='fund_cn'&&p.fundCode&&String(p.fundCode).trim()&&(p.fundCurrency||'CNY')!=='CNY');
+    if(fundsNonCny.length)lines.push('非CNY基金×'+fundsNonCny.length+'（未接批量刷新）');
     if(funds.length){
       show('🔄 正在刷新基金净值…');
-      let ok=0;
-      for(const f of funds){
+      const okFd=await Promise.all(funds.map(async f=>{
         try{
           const res=await fetchFundPrice(f.fundCode);
-          if(res.price>0){f.fundPrice=res.price;f.name=f.name||res.name;f.updatedAt=res.date||today();ok++;}
+          if(res.price>0){f.fundPrice=res.price;f.name=f.name||res.name;f.updatedAt=res.date||today();return {ok:1};}
         }catch(e){}
-      }
-      lines.push('基金'+ok+'/'+funds.length);
+        return {ok:0,code:String(f.fundCode)};
+      }));
+      const okn=okFd.filter(x=>x.ok).length;
+      const bad=okFd.filter(x=>!x.ok).map(x=>x.code);
+      lines.push('基金'+okn+'/'+funds.length+(okn<funds.length?' 失败:'+bad.join(','):''));
+      save();renderSidebar();try{renderOverview();}catch(e){}refreshCurrentView();
     }
 
     save();
     renderSidebar();
+    try{renderOverview();}catch(e){}
     refreshCurrentView();
 
     show('📝 正在写入今日快照（按当前行情与汇率）…');
@@ -2300,7 +2315,9 @@ async function refreshAllQuotes(){
     refreshCurrentView();
 
     const summary=lines.length?lines.join(' · '):'完成';
-    if(strip) strip.innerHTML='<div class="alert alert-ok" style="margin:0">✅ 全部完成：'+summary+'</div>';
+    const n=D.products.length;
+    const note='中/澳在汇率成功后会立刻按新 USD/AUD 重算人民币市值；基金失败多为 JSONP 被墙或代码错。';
+    if(strip) strip.innerHTML='<div class="alert alert-ok" style="margin:0">✅ 全部完成（'+n+' 条）：'+summary+'</div><div class="alert alert-info" style="margin:8px 0 0;font-size:12px;line-height:1.5">'+note+'</div>';
     setTimeout(()=>{if(strip) strip.innerHTML='';},12000);
   }catch(e){
     if(strip) strip.innerHTML='<div class="alert alert-warn" style="margin:0">⚠️ 刷新中断：'+(e.message||e)+'</div>';
