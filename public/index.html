@@ -249,7 +249,7 @@ body.night .ov-dash-toprow #ov-mile-body .ov-mile-stat{background:var(--bg3)}
 .fh-px.fh-up{color:var(--green)}
 .fh-px.fh-down{color:var(--red)}
 .fh-px.fh-flat{color:var(--text2)}
-.fh-mkt-badge{font-size:9px;font-family:var(--mono);padding:1px 4px;border-radius:3px;margin-left:4px;vertical-align:middle;letter-spacing:.03em;line-height:1.2;font-weight:600}
+.fh-mkt-badge{font-size:9px;font-family:var(--mono);padding:1px 5px;border-radius:3px;margin-left:4px;vertical-align:middle;letter-spacing:.03em;line-height:1.2;font-weight:500}
 .fh-mkt-badge.fh-mkt-reg{display:none}
 .fh-mkt-badge.fh-mkt-pre{color:#b45309;background:rgba(180,83,9,.12)}
 .fh-mkt-badge.fh-mkt-post{color:#7c3aed;background:rgba(124,58,237,.12)}
@@ -1145,7 +1145,7 @@ function toCNY(v,c){
 }
 function fromCNY(v,c){if(c==='CNY')return v;return v/(D.fx[c]||1);}
 
-/** Yahoo v8 chart JSON → 最近价（含盘前/盘后：meta 优先 current/post/pre，再用 5m K 末根） */
+/** Yahoo v8 chart JSON → 最近价；meta 按 marketState 选价（与 pickYahooDisplayPrice 一致），避免盘前误用昨收作 currentPrice */
 function parseYahooChartPrice(raw){
   let root=raw;
   if(typeof raw==='string'){
@@ -1155,8 +1155,24 @@ function parseYahooChartPrice(raw){
   if(!res)return null;
   const m=res.meta||{};
   const pick=x=>{const n=typeof x==='number'?x:parseFloat(String(x).replace(/,/g,''));return n>0&&isFinite(n)?n:null};
-  const order=[m.currentPrice,m.postMarketPrice,m.preMarketPrice,m.regularMarketPrice];
-  for(const x of order){const p=pick(x);if(p)return p;}
+  const state=String(m.marketState||'').toUpperCase();
+  if(state){
+    let mp=null;
+    if(state==='POST'||state==='POSTPOST')
+      mp=pick(m.postMarketPrice)||pick(m.currentPrice)||pick(m.regularMarketPrice);
+    else if(state==='PRE'||state==='PREPRE'||state==='PREOPEN')
+      mp=pick(m.preMarketPrice)||pick(m.currentPrice)||pick(m.regularMarketPrice);
+    else if(state==='REGULAR')
+      mp=pick(m.regularMarketPrice)||pick(m.currentPrice);
+    else if(state==='CLOSED')
+      mp=pick(m.postMarketPrice)||pick(m.preMarketPrice)||pick(m.currentPrice)||pick(m.regularMarketPrice);
+    else if(state==='EXTENDED'||state==='OVERNIGHT')
+      mp=pick(m.currentPrice)||pick(m.postMarketPrice)||pick(m.preMarketPrice)||pick(m.regularMarketPrice);
+    if(mp)return mp;
+  }else{
+    const order=[m.currentPrice,m.postMarketPrice,m.preMarketPrice,m.regularMarketPrice];
+    for(const x of order){const p=pick(x);if(p)return p;}
+  }
   const q=res.indicators?.quote?.[0];
   if(q&&Array.isArray(q.close)){
     for(let i=q.close.length-1;i>=0;i--){const p=pick(q.close[i]);if(p)return p;}
@@ -1349,8 +1365,7 @@ async function fetchProxiedText(targetUrl){
 }
 async function fetchTextCrossOrigin(url){return fetchProxiedText(url);}
 /**
- * 美股现价：Yahoo Chart(5m/5d,includePrePost) 与 v7 quote 均含盘前/盘后；优先 Chart 末价避免与常规收盘做中位数「折中」偏离 Tiger。
- * Stooq 仅作后备（其日线常不含盘后）。
+ * 美股现价：v7 Quote 优先（marketState + pickYahooDisplayPrice）；Chart 作备用（meta 已按 state 解析）；Stooq 最后。
  */
 async function fetchYahooStockPrice(ticker){
   const sym=String(ticker||'').trim().toUpperCase();
@@ -1366,8 +1381,8 @@ async function fetchYahooStockPrice(ticker){
   const p1=parseYahooChartPrice(t1);
   const p2=parseYahooV7Quote(t2);
   const p3=parseStooqCsv(t3);
-  if(p1!=null&&p1>0&&isFinite(p1))return p1;
   if(p2!=null&&p2>0&&isFinite(p2))return p2;
+  if(p1!=null&&p1>0&&isFinite(p1))return p1;
   return p3;
 }
 
