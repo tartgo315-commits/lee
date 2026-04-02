@@ -1375,14 +1375,21 @@ async function fetchYahooStockPrice(ticker){
   const sym=String(ticker||'').trim().toUpperCase();
   if(!sym)return null;
   try{
-    const r=await fetch(
-      location.origin+'/api/stock-price?symbol='+
-      encodeURIComponent(sym),{cache:'no-store'});
-    if(r.ok){
-      const d=await r.json();
-      const raw=d.prepost_price??d.extended_price??d.close??d.open??d.price;
-      const p=parseFloat(String(raw??'').replace(/,/g,''));
-      if(p>0&&isFinite(p))return p;
+    if(location.protocol==='https:'||
+       location.protocol==='http:'){
+      const r=await fetch(
+        location.origin+'/api/stock-price?symbol='+
+        encodeURIComponent(sym),{cache:'no-store'});
+      if(r.ok){
+        const d=await r.json();
+        if(d&&!d.error&&!d.code){
+          const ext=parseFloat(
+            d.extended_price||d.prepost_price||0);
+          const reg=parseFloat(d.close||0);
+          const p=ext>0?ext:reg;
+          if(p>0)return p;
+        }
+      }
     }
   }catch(e){}
   const yChart='https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(sym)+'?interval=5m&range=5d&includePrePost=true';
