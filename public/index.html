@@ -1380,9 +1380,9 @@ async function fetchYahooStockPrice(ticker){
       encodeURIComponent(sym),{cache:'no-store'});
     if(r.ok){
       const d=await r.json();
-      const p=parseFloat(
-        d.prepost_price||d.close||d.price||0);
-      if(p>0)return p;
+      const raw=d.prepost_price??d.extended_price??d.close??d.open??d.price;
+      const p=parseFloat(String(raw??'').replace(/,/g,''));
+      if(p>0&&isFinite(p))return p;
     }
   }catch(e){}
   const yChart='https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(sym)+'?interval=5m&range=5d&includePrePost=true';

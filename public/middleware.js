@@ -43,21 +43,7 @@ export default async function middleware(request) {
   const url = new URL(request.url);
   const path = url.pathname;
 
-  /* 行情同源代理：必须绕过站点密码，否则未带 Cookie 的 fetch 会 401，整页脚本拉行情失败 */
-  if (
-    path === '/proxy' ||
-    path === '/_proxy' ||
-    path === '/api/proxy' ||
-    path.startsWith('/api/proxy/') ||
-    path === '/api/finnhub-quote' ||
-    path.startsWith('/api/finnhub-quote/') ||
-    path === '/api/stock-price' ||
-    path.startsWith('/api/stock-price/')
-  ) {
-    return fetch(request);
-  }
-
-  if (path === '/api/auth' || path.startsWith('/api/auth/') || path === '/api/logout' || path.startsWith('/api/logout/')) {
+  if (path.startsWith('/api/') || path === '/proxy' || path === '/_proxy') {
     return fetch(request);
   }
 
