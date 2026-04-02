@@ -2417,7 +2417,15 @@ function refreshCurrentView(){
   if(id==='fx'){renderFXPage();return;}
 }
 
-/** 顶栏一键：汇率 → 黄金 → 美股 → 基金 → 写入今日快照 → 拉取/翻译资讯 */
+/** 全部刷新后：重算澳洲定存周滚存 + 三区列表 + 总览三栏 + 侧栏（不依赖当前在哪一页） */
+function redrawAllAfterFullQuoteRefresh(){
+  maybeRollAuWeeklyCompound();
+  ['cn','us','au'].forEach(r=>{try{renderRegion(r);}catch(e){}});
+  renderOverview();
+  refreshCurrentView();
+}
+
+/** 顶栏一键：汇率 → 黄金 → 美股（并行）→ 基金（并行）→ 写入今日快照 → 拉取/翻译资讯 */
 async function refreshAllQuotes(){
   const strip=document.getElementById('global-refresh-status');
   const btn=document.getElementById('refresh-all-btn');
@@ -2431,6 +2439,7 @@ async function refreshAllQuotes(){
   const show=msg=>{if(strip) strip.innerHTML='<div class="alert alert-info" style="margin:0">'+msg+'</div>';};
 
   try{
+    maybeRollAuWeeklyCompound();
     show('🔄 正在刷新汇率…');
     try{
       const fx=await fetchCNYRates();
@@ -2455,33 +2464,32 @@ async function refreshAllQuotes(){
 
     const stocks=D.products.filter(p=>p.type==='stock_us'&&p.ticker);
     if(stocks.length){
-      show('🔄 正在刷新美股…');
-      let ok=0;
-      for(const s of stocks){
+      show('🔄 正在并行刷新美股…');
+      const okSt=await Promise.all(stocks.map(async s=>{
         try{
           const price=await fetchYahooStockPrice(s.ticker);
-          if(price){s.currentPrice=price;s.updatedAt=today();ok++;}
+          if(price){s.currentPrice=price;s.updatedAt=today();return 1;}
         }catch(e){}
-      }
-      lines.push('美股'+ok+'/'+stocks.length);
+        return 0;
+      }));
+      lines.push('美股'+okSt.reduce((a,b)=>a+b,0)+'/'+stocks.length);
     }
 
-    const funds=D.products.filter(p=>p.type==='fund_cn'&&p.fundCode&&(p.fundCurrency||'CNY')==='CNY');
+    const funds=D.products.filter(p=>p.type==='fund_cn'&&p.fundCode&&String(p.fundCode).trim());
     if(funds.length){
-      show('🔄 正在刷新基金净值…');
-      let ok=0;
-      for(const f of funds){
+      show('🔄 正在并行刷新基金净值…');
+      const okFd=await Promise.all(funds.map(async f=>{
         try{
           const res=await fetchFundPrice(f.fundCode);
-          if(res.price>0){f.fundPrice=res.price;f.name=f.name||res.name;f.updatedAt=res.date||today();ok++;}
+          if(res.price>0){f.fundPrice=res.price;f.name=f.name||res.name;f.updatedAt=res.date||today();return 1;}
         }catch(e){}
-      }
-      lines.push('基金'+ok+'/'+funds.length);
+        return 0;
+      }));
+      lines.push('基金'+okFd.reduce((a,b)=>a+b,0)+'/'+funds.length);
     }
 
     save();
-    renderSidebar();
-    refreshCurrentView();
+    redrawAllAfterFullQuoteRefresh();
 
     show('📝 正在写入今日快照（按当前行情与汇率）…');
     takeSnapshot();
@@ -2494,7 +2502,9 @@ async function refreshAllQuotes(){
     refreshCurrentView();
 
     const summary=lines.length?lines.join(' · '):'完成';
-    if(strip) strip.innerHTML='<div class="alert alert-ok" style="margin:0">✅ 全部完成：'+summary+'</div>';
+    const n=D.products.length;
+    const note='总览与三区列表已按最新汇率与行情重算。现金/活期、定存等无外部行情，按账面或应计利息；澳洲定存周复利已自动滚存。';
+    if(strip) strip.innerHTML='<div class="alert alert-ok" style="margin:0">✅ 全部完成（'+n+' 条资产）：'+summary+'</div><div class="alert alert-info" style="margin:8px 0 0;font-size:12px;line-height:1.5">'+note+'</div>';
     setTimeout(()=>{if(strip) strip.innerHTML='';},12000);
   }catch(e){
     if(strip) strip.innerHTML='<div class="alert alert-warn" style="margin:0">⚠️ 刷新中断：'+(e.message||e)+'</div>';
