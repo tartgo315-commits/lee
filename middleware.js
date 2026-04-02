@@ -122,6 +122,10 @@ button{margin-top:16px;width:100%;padding:12px;border:none;border-radius:8px;fon
 export const config = {
   matcher: [
     '/',
-    '/((?!api/auth|api/logout|_next/static|_next/image|favicon.ico).*)',
+    /*
+     * 整段 /api/* 不跑门禁：避免只排除了 auth/logout 时，/api/proxy、/api/finnhub-quote 仍进 matcher 被误拦成 401。
+     * /proxy、/_proxy 仍进 middleware，由上方白名单直接 fetch 放行。
+     */
+    '/((?!api/|_next/static|_next/image|favicon.ico).*)',
   ],
 };
