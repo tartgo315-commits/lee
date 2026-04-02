@@ -1387,7 +1387,7 @@ async function fetchYahooStockPrice(ticker){
 }
 
 // ══ Finnhub：WebSocket 仅补充常规交易时段逐笔；全时段现价以 Yahoo（盘前/盘后/闭市 post）轮询为准 ══
-const FINNHUB_API_TOKEN='cv67m61r01qj8itpq7mgcv67m61r01qj8itpq7n0';
+const FINNHUB_API_TOKEN='d76evlpr01qm4b7u19jgd76evlpr01qm4b7u19k0';
 const FINNHUB_WS_URL='wss://ws.finnhub.io?token='+encodeURIComponent(FINNHUB_API_TOKEN);
 const FINNHUB_WATCH_SYMBOLS=['NVDA','TSLA','PLTR','VOO','CRCL'];
 /** 美股轮询间隔（ms）：以 Yahoo 批量为主覆盖盘前/盘后；略缩短以便接近券商终端 */
