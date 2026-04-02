@@ -1710,7 +1710,11 @@ function renderSidebar(){
   ['cn','us','au'].forEach(r=>{const el=document.getElementById('nc-'+r);if(el)el.textContent=D.products.filter(p=>p.region===r).length;});
   // FX strip
   const flags={USD:'🇺🇸',AUD:'🇦🇺'};
-  document.getElementById('fx-strip').innerHTML=['USD','AUD'].filter(c=>D.fx[c]!=null).map(c=>`<div class="fx-chip"><span>${flags[c]||''}</span><span class="fx-chip-pair">${c}/CNY</span><span class="fx-chip-rate">${D.fx[c]}</span></div>`).join('');
+  const fxParts=['USD','AUD'].filter(c=>D.fx[c]!=null).map(c=>`<div class="fx-chip"><span>${flags[c]||''}</span><span class="fx-chip-pair">${c}/CNY</span><span class="fx-chip-rate">${D.fx[c]}</span></div>`);
+  const usdaud=D.fx.USDAUD||(D.fx.USD&&D.fx.AUD&&D.fx.USD>0&&D.fx.AUD>0?D.fx.USD/D.fx.AUD:null);
+  const audUsd=usdaud!=null&&usdaud>0?(1/usdaud).toFixed(5):null;
+  if(audUsd!=null)fxParts.push(`<div class="fx-chip" title="1 澳元 = ${audUsd} 美元"><span>🇦🇺🇺🇸</span><span class="fx-chip-pair">AUD/USD</span><span class="fx-chip-rate">${audUsd}</span></div>`);
+  document.getElementById('fx-strip').innerHTML=fxParts.join('');
 }
 
 // ══ OVERVIEW ══
