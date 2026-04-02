@@ -40,8 +40,9 @@ async function proxyFetch(targetUrl) {
     },
     redirect: 'follow',
   });
-  if (!r.ok) throw new Error('HTTP ' + r.status);
-  return await r.text();
+  const text = await r.text();
+  const code = r.status >= 100 && r.status < 600 ? r.status : 502;
+  return { status: code, text };
 }
 
 function safeFileForUrl(pathname) {
@@ -69,12 +70,12 @@ const server = http.createServer((req, res) => {
         return;
       }
       try {
-        const body = await proxyFetch(target);
-        res.writeHead(200, {
+        const { status, text } = await proxyFetch(target);
+        res.writeHead(status, {
           'Content-Type': 'text/plain; charset=utf-8',
           'Cache-Control': 'no-store',
         });
-        res.end(body);
+        res.end(text);
       } catch (e) {
         res.writeHead(502, { 'Content-Type': 'text/plain; charset=utf-8' });
         res.end('Proxy error: ' + (e && e.message ? e.message : String(e)));

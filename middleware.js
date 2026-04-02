@@ -43,6 +43,16 @@ export default async function middleware(request) {
   const url = new URL(request.url);
   const path = url.pathname;
 
+  /* 行情同源代理：必须绕过站点密码，否则未带 Cookie 的 fetch 会 401，整页脚本拉行情失败 */
+  if (
+    path === '/proxy' ||
+    path === '/_proxy' ||
+    path === '/api/proxy' ||
+    path.startsWith('/api/proxy/')
+  ) {
+    return fetch(request);
+  }
+
   if (path === '/api/auth' || path.startsWith('/api/auth/') || path === '/api/logout' || path.startsWith('/api/logout/')) {
     return fetch(request);
   }
