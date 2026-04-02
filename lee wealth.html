@@ -1315,7 +1315,7 @@ function mergeStockQuotes(prices){
   const out=use.length%2?use[m2]:(use[m2-1]+use[m2])/2;
   return Math.round(out*1e4)/1e4;
 }
-/** 拉取跨域文本：Firebase / 同源 /proxy → 远程 WO_REMOTE_PROXY_ORIGIN/_proxy → 本机 /_proxy → 公共代理。 */
+/** 拉取跨域文本：Firebase / 同源 /proxy → 远程 WO_REMOTE_PROXY_ORIGIN/_proxy → 本机 /_proxy（不再使用公共 CORS 代理，避免 Vercel 下浏览器报错）。 */
 async function fetchProxiedText(targetUrl){
   const qs='?url='+encodeURIComponent(targetUrl);
   async function tryOne(full){
@@ -1344,27 +1344,6 @@ async function fetchProxiedText(targetUrl){
     add(location.origin+'/proxy'+qs);
   }
   for(const u of urls){const t=await tryOne(u);if(t)return t;}
-  const enc=encodeURIComponent(targetUrl);
-  const tries=[
-    'https://api.allorigins.win/raw?url='+enc,
-    'https://api.allorigins.win/get?url='+enc,
-    'https://corsproxy.io/?'+enc,
-    'https://api.codetabs.com/v1/proxy?quest='+enc,
-  ];
-  for(const u of tries){
-    try{
-      const r=await fetch(u,{cache:'no-store',mode:'cors'});
-      if(!r.ok)continue;
-      if(u.indexOf('allorigins.win/get')>=0){
-        const j=await r.json();
-        const c=j&&j.contents;
-        if(typeof c==='string'&&c.length)return c;
-      }else{
-        const t=await r.text();
-        if(t&&t.length)return t;
-      }
-    }catch(e){}
-  }
   return '';
 }
 async function fetchTextCrossOrigin(url){return fetchProxiedText(url);}
