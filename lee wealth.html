@@ -1391,9 +1391,7 @@ const FINNHUB_API_TOKEN='d76evlpr01qm4b7u19jgd76evlpr01qm4b7u19k0';
 const FINNHUB_WS_URL='wss://ws.finnhub.io?token='+encodeURIComponent(FINNHUB_API_TOKEN);
 const FINNHUB_WATCH_SYMBOLS=['NVDA','TSLA','PLTR','VOO','CRCL'];
 /** 美股轮询间隔（ms）：以 Yahoo 批量为主覆盖盘前/盘后；略缩短以便接近券商终端 */
-/** 轮询间隔：内含 Yahoo 批量 + 延长时段 Finnhub 补价（带节流），略拉长以降低 Finnhub 免费档 429 */
-const FINNHUB_QUOTE_POLL_MS=6000;
-const FH_QUOTE_STAGGER_MS=700;
+const FINNHUB_QUOTE_POLL_MS=5000;
 let finnhubWs=null,finnhubReconnectTimer=null,finnhubCloseIntent=false,finnhubSaveTimer=null,finnhubAggTimer=null,finnhubQuotePollTimer=null;
 const finnhubSubscribed=new Set();
 function finnhubDesiredSymbols(){
@@ -1536,10 +1534,9 @@ function scheduleFinnhubReconnect(){
   clearTimeout(finnhubReconnectTimer);
   finnhubReconnectTimer=setTimeout(()=>connectFinnhubWs(),5000);
 }
-/** Yahoo v7 批量 → Map（不写屏；parse 内会 recordYahooQuoteMeta） */
-async function fetchYahooV7QuotePriceMap(syms){
-  const out=new Map();
-  if(!syms||!syms.length)return out;
+async function pollYahooV7QuoteBatchOnce(syms){
+  const got=new Set();
+  if(!syms||!syms.length)return got;
   const chunk=40;
   for(let i=0;i<syms.length;i+=chunk){
     const part=syms.slice(i,i+chunk);
@@ -1547,52 +1544,31 @@ async function fetchYahooV7QuotePriceMap(syms){
     try{
       const raw=await fetchTextCrossOrigin(url);
       const map=parseYahooV7QuoteBatchMap(raw);
-      for(const [sym,price] of map)out.set(sym,price);
+      for(const [sym,price] of map){
+        patchUsStockLiveRow(sym,price);
+        got.add(sym);
+      }
     }catch(e){}
   }
-  return out;
-}
-/** 盘前/盘后/夜盘等：Yahoo 与 Finnhub 并行融合，减少单源在延长时段断档 */
-function yahooUsSessionWantsFinnhubParallel(sym){
-  const st=String(yahooQuoteMetaBySym.get(sym)?.state||'').toUpperCase();
-  return st==='PRE'||st==='PREPRE'||st==='PREOPEN'||st==='POST'||st==='POSTPOST'||st==='EXTENDED'||st==='OVERNIGHT';
-}
-async function fetchFinnhubQuotePrice(sym,tokEnc){
-  try{
-    const u='https://finnhub.io/api/v1/quote?symbol='+encodeURIComponent(sym)+'&token='+tokEnc;
-    const raw=await fetchProxiedText(u);
-    if(!raw||raw.startsWith('Proxy error'))return null;
-    const j=JSON.parse(raw);
-    if(j&&j.error)return null;
-    if(typeof j.c==='number'&&j.c>0&&isFinite(j.c))return j.c;
-  }catch(e){}
-  return null;
+  return got;
 }
 async function pollFinnhubQuotesOnce(){
   /* 不在此用 document.hidden 直接 return：手机切后台/系统省电会导致长时间不轮询，页面上像「股价死了」。 */
   const syms=[...finnhubDesiredSymbols()];
   if(!syms.length)return;
-  const yahooMap=await fetchYahooV7QuotePriceMap(syms);
-  for(const [sym,px] of yahooMap)patchUsStockLiveRow(sym,px);
+  const got=await pollYahooV7QuoteBatchOnce(syms);
+  /* Yahoo 经同源 /proxy 拉取；若失败或缺标的，用 Finnhub 经同一代理补价（浏览器直连 finnhub 常被 CORS 拦）。仅补「本轮 Yahoo 没给到价」的代码，避免覆盖已对齐的盘前/盘后价。 */
   if(!FINNHUB_API_TOKEN)return;
   const tok=encodeURIComponent(FINNHUB_API_TOKEN);
-  let lastFh=0;
-  const throttle=async()=>{
-    const wait=FH_QUOTE_STAGGER_MS-(Date.now()-lastFh);
-    if(wait>0)await new Promise(r=>setTimeout(r,wait));
-    lastFh=Date.now();
-  };
   for(const sym of syms){
-    const yPx=yahooMap.get(sym);
-    const need=!yahooMap.has(sym)||yahooUsSessionWantsFinnhubParallel(sym);
-    if(!need)continue;
-    await throttle();
-    const fh=await fetchFinnhubQuotePrice(sym,tok);
-    if(fh==null)continue;
-    if(yPx!=null&&yPx>0){
-      const m=mergeStockQuotes([yPx,fh]);
-      if(m)patchUsStockLiveRow(sym,m);
-    }else patchUsStockLiveRow(sym,fh);
+    if(got.has(sym))continue;
+    try{
+      const u='https://finnhub.io/api/v1/quote?symbol='+encodeURIComponent(sym)+'&token='+tok;
+      const raw=await fetchProxiedText(u);
+      if(!raw||raw.startsWith('Proxy error'))continue;
+      const j=JSON.parse(raw);
+      if(j&&typeof j.c==='number'&&j.c>0)patchUsStockLiveRow(sym,j.c);
+    }catch(e){}
   }
 }
 function startFinnhubQuotePolling(){
