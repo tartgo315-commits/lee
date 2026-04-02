@@ -1164,17 +1164,28 @@ function pickYahooQuoteNum(x){
   const n=typeof x==='number'?x:parseFloat(String(x).replace(/,/g,''));
   return n>0&&isFinite(n)?n:null;
 }
-/** Yahoo v7 单条 quote → 与网页一致的展示价（按 marketState 盘前/盘后/常规） */
+/** 最近一次 Yahoo v7 的 marketState，用于避免 Finnhub 免费逐笔在盘前/盘后覆盖延长价 */
+const yahooQuoteMetaBySym=new Map();
+function recordYahooQuoteMeta(r){
+  const sym=String(r?.symbol||'').trim().toUpperCase();
+  if(!sym)return;
+  yahooQuoteMetaBySym.set(sym,{state:String(r.marketState||'').toUpperCase(),t:Date.now()});
+}
+/** Yahoo v7 单条 quote → 展示价（盘前/盘后/夜盘延长与 Tiger 等终端对齐，优先延长价字段） */
 function pickYahooQuoteLivePrice(r){
   if(!r)return null;
   const pick=pickYahooQuoteNum;
   const state=String(r.marketState||'').toUpperCase();
   if(state==='POST'||state==='POSTPOST')
-    return pick(r.postMarketPrice)||pick(r.regularMarketPrice)||pick(r.ask)||pick(r.bid);
+    return pick(r.postMarketPrice)||pick(r.currentPrice)||pick(r.regularMarketPrice)||pick(r.ask)||pick(r.bid);
   if(state==='PRE'||state==='PREPRE'||state==='PREOPEN')
-    return pick(r.preMarketPrice)||pick(r.regularMarketPrice)||pick(r.ask)||pick(r.bid);
+    return pick(r.preMarketPrice)||pick(r.currentPrice)||pick(r.regularMarketPrice)||pick(r.ask)||pick(r.bid);
   if(state==='REGULAR')
     return pick(r.regularMarketPrice)||pick(r.currentPrice)||pick(r.ask)||pick(r.bid);
+  if(state==='CLOSED')
+    return pick(r.postMarketPrice)||pick(r.preMarketPrice)||pick(r.currentPrice)||pick(r.regularMarketPrice)||pick(r.ask)||pick(r.bid);
+  if(state==='EXTENDED'||state==='OVERNIGHT')
+    return pick(r.currentPrice)||pick(r.postMarketPrice)||pick(r.preMarketPrice)||pick(r.regularMarketPrice)||pick(r.ask)||pick(r.bid);
   return pick(r.currentPrice)||pick(r.postMarketPrice)||pick(r.preMarketPrice)||pick(r.regularMarketPrice)||pick(r.ask)||pick(r.bid);
 }
 /** Yahoo v7 quote 接口 → 现价（与 chart 交叉验证；含延长交易时段） */
@@ -1185,6 +1196,7 @@ function parseYahooV7Quote(raw){
   }
   const r=root?.quoteResponse?.result?.[0];
   if(!r)return null;
+  recordYahooQuoteMeta(r);
   return pickYahooQuoteLivePrice(r);
 }
 /** v7 批量 quote → Map(大写代码 → 价) */
@@ -1199,6 +1211,7 @@ function parseYahooV7QuoteBatchMap(raw){
   for(const r of arr){
     const sym=String(r.symbol||'').trim().toUpperCase();
     if(!sym)continue;
+    recordYahooQuoteMeta(r);
     const p=pickYahooQuoteLivePrice(r);
     if(p)m.set(sym,p);
   }
@@ -1292,7 +1305,8 @@ async function fetchProxiedText(targetUrl){
 }
 async function fetchTextCrossOrigin(url){return fetchProxiedText(url);}
 /**
- * 美股现价：Yahoo Chart(5m,含盘前盘后)+Yahoo v7 合并为主；Stooq 仅作后备（其日线常拉低盘后价）。
+ * 美股现价：Yahoo Chart(5m/5d,includePrePost) 与 v7 quote 均含盘前/盘后；优先 Chart 末价避免与常规收盘做中位数「折中」偏离 Tiger。
+ * Stooq 仅作后备（其日线常不含盘后）。
  */
 async function fetchYahooStockPrice(ticker){
   const sym=String(ticker||'').trim().toUpperCase();
@@ -1308,17 +1322,17 @@ async function fetchYahooStockPrice(ticker){
   const p1=parseYahooChartPrice(t1);
   const p2=parseYahooV7Quote(t2);
   const p3=parseStooqCsv(t3);
-  const yb=mergeStockQuotes([p1,p2].filter(v=>v!=null&&v>0&&isFinite(v)));
-  if(yb!=null)return yb;
+  if(p1!=null&&p1>0&&isFinite(p1))return p1;
+  if(p2!=null&&p2>0&&isFinite(p2))return p2;
   return p3;
 }
 
-// ══ FINNHUB：与 Dashboard 里 API key 保持一致，改这一处即可同步 WS + REST ══
+// ══ Finnhub：WebSocket 仅补充常规交易时段逐笔；全时段现价以 Yahoo（盘前/盘后/闭市 post）轮询为准 ══
 const FINNHUB_API_TOKEN='cv67m61r01qj8itpq7mgcv67m61r01qj8itpq7n0';
 const FINNHUB_WS_URL='wss://ws.finnhub.io?token='+encodeURIComponent(FINNHUB_API_TOKEN);
 const FINNHUB_WATCH_SYMBOLS=['NVDA','TSLA','PLTR','VOO','CRCL'];
-/** REST 轮询间隔（ms）：成交 WS 在「无撮合」时不会推价，用 quote 补刷新；免费档注意别低于约 1s×标的数 以免撞限流 */
-const FINNHUB_QUOTE_POLL_MS=8000;
+/** 美股轮询间隔（ms）：以 Yahoo 批量为主覆盖盘前/盘后；略缩短以便接近券商终端 */
+const FINNHUB_QUOTE_POLL_MS=5000;
 let finnhubWs=null,finnhubReconnectTimer=null,finnhubCloseIntent=false,finnhubSaveTimer=null,finnhubAggTimer=null,finnhubQuotePollTimer=null;
 const finnhubSubscribed=new Set();
 function finnhubDesiredSymbols(){
@@ -1442,7 +1456,13 @@ function connectFinnhubWs(){
     }
     if(msg.type==='trade'&&Array.isArray(msg.data)){
       for(const t of msg.data){
-        if(t&&t.s&&t.p>0)patchUsStockLiveRow(t.s,t.p);
+        if(!t||!t.s||!(t.p>0))continue;
+        const T=String(t.s).trim().toUpperCase();
+        const meta=yahooQuoteMetaBySym.get(T);
+        const st=meta&&meta.state;
+        /* Finnhub 免费档逐笔多为常规时段成交；盘前/盘后/休市若覆盖会偏离 Yahoo 延长价（与 Tiger「盘后」不一致） */
+        if(st&&st!=='REGULAR')continue;
+        patchUsStockLiveRow(T,t.p);
       }
     }
   };
@@ -1475,17 +1495,7 @@ async function pollFinnhubQuotesOnce(){
   if(document.hidden)return;
   const syms=[...finnhubDesiredSymbols()];
   if(!syms.length)return;
-  if(FINNHUB_API_TOKEN){
-    const tok=encodeURIComponent(FINNHUB_API_TOKEN);
-    await Promise.all(syms.map(async sym=>{
-      try{
-        const r=await fetch('https://finnhub.io/api/v1/quote?symbol='+encodeURIComponent(sym)+'&token='+tok,{cache:'no-store'});
-        if(!r.ok)return;
-        const j=await r.json();
-        if(j&&typeof j.c==='number'&&j.c>0)patchUsStockLiveRow(sym,j.c);
-      }catch(e){}
-    }));
-  }
+  /* 轮询只用 Yahoo v7（含盘前/盘后/闭市后的 post 价）。Finnhub REST 的 c 与免费 WS 易与延长时段不同源，不再写入以免覆盖。 */
   await pollYahooV7QuoteBatchOnce(syms);
 }
 function startFinnhubQuotePolling(){
@@ -2479,7 +2489,7 @@ async function refreshStocks(){
   const stocks=D.products.filter(p=>p.type==='stock_us'&&p.ticker);
   if(!stocks.length){alert('没有美股持仓');return;}
   const el=document.getElementById('us-refresh-status');
-  el.innerHTML='<div class="alert alert-info">🔄 正在全量校准美股（Yahoo 含盘前/盘后；轮询为 Finnhub + Yahoo 批量，休市亦跟盘后价）...</div>';
+  el.innerHTML='<div class="alert alert-info">🔄 正在全量校准美股（Yahoo 盘前·盘后·延长时段；与券商「盘后」口径对齐；盘中 Finnhub 逐笔仅常规时段生效）...</div>';
   let ok=0,fail=[];
   for(const s of stocks){
     try{
@@ -2492,7 +2502,7 @@ async function refreshStocks(){
   refreshOVTotals();
   el.innerHTML=fail.length
     ?`<div class="alert alert-warn">✅ 更新 ${ok} 个 ⚠️ 失败: ${fail.join(', ')}（多源综合：Yahoo Chart / Yahoo Quote / Stooq；失败多为网络或代码无效）</div>`
-    :`<div class="alert alert-ok">✅ 已更新 ${ok} 只股票（多源综合报价；已持仓标的另享 WS 实时）</div>`;
+    :`<div class="alert alert-ok">✅ 已更新 ${ok} 只股票（Yahoo 延长时段为主；盘中常规交易时段另有 Finnhub 逐笔）</div>`;
   setTimeout(()=>el.innerHTML='',8000);
 }
 
