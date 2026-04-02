@@ -843,6 +843,11 @@ body.light .ov-mile-stat{background:#f8fafc;border-color:#e2e8f0}
           <input type="file" id="fi-import" accept=".json" style="display:none" onchange="importData(this)">
         </div>
       </div>
+      <div class="card">
+        <div class="card-title">访问控制</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.55;margin-bottom:10px">若部署时在 Vercel 配置了 <code style="font-size:11px;color:var(--accent2)">SITE_PASSWORD</code>，进入站点需先登录。退出将清除登录状态。</div>
+        <a class="btn btn-ghost" href="/api/logout">退出登录</a>
+      </div>
       <div class="card" style="border-color:rgba(239,68,68,.3)">
         <div class="card-title" style="color:var(--red)">危险操作</div>
         <button class="btn btn-danger" onclick="clearAll()">🗑 清空全部数据</button>
@@ -1902,9 +1907,13 @@ function renderSidebar(){
   document.getElementById('sb-usd').textContent=fc(fromCNY(cny,'USD'),'USD');
   document.getElementById('sb-aud').textContent=fc(fromCNY(cny,'AUD'),'AUD');
   ['cn','us','au'].forEach(r=>{const el=document.getElementById('nc-'+r);if(el)el.textContent=D.products.filter(p=>p.region===r).length;});
-  // FX strip
+  // FX strip（AUD/USD 与汇率页「1 澳元 = … 美元」同逻辑：优先 D.fx.USDAUD，否则由 USD/CNY、AUD/CNY 交叉算出）
   const flags={USD:'🇺🇸',AUD:'🇦🇺'};
-  document.getElementById('fx-strip').innerHTML=['USD','AUD'].filter(c=>D.fx[c]!=null).map(c=>`<div class="fx-chip"><span>${flags[c]||''}</span><span class="fx-chip-pair">${c}/CNY</span><span class="fx-chip-rate">${D.fx[c]}</span></div>`).join('');
+  const fxParts=['USD','AUD'].filter(c=>D.fx[c]!=null).map(c=>`<div class="fx-chip"><span>${flags[c]||''}</span><span class="fx-chip-pair">${c}/CNY</span><span class="fx-chip-rate">${D.fx[c]}</span></div>`);
+  const usdaud=D.fx.USDAUD||(D.fx.USD&&D.fx.AUD&&D.fx.USD>0&&D.fx.AUD>0?D.fx.USD/D.fx.AUD:null);
+  const audUsd=usdaud!=null&&usdaud>0?(1/usdaud).toFixed(5):null;
+  if(audUsd!=null)fxParts.push(`<div class="fx-chip" title="1 澳元 = ${audUsd} 美元"><span>🇦🇺🇺🇸</span><span class="fx-chip-pair">AUD/USD</span><span class="fx-chip-rate">${audUsd}</span></div>`);
+  document.getElementById('fx-strip').innerHTML=fxParts.join('');
 }
 
 // ══ OVERVIEW ══
