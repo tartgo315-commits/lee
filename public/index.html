@@ -865,6 +865,7 @@ body.light .fh-mkt-badge.fh-mkt-night{color:#0f766e;background:rgba(15,118,110,.
           <button class="btn btn-primary btn-sm" onclick="openModal('us')">＋ 添加</button>
         </div>
       </div>
+      <div id="us-stock-panel" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:20px"></div>
       <div id="us-blocks"></div>
       <div id="us-refresh-status"></div>
     </div>
@@ -1139,6 +1140,8 @@ body.light .fh-mkt-badge.fh-mkt-night{color:#0f766e;background:rgba(15,118,110,.
         <div class="fg"><label>成本价 (USD)</label><input type="number" id="m-cost" placeholder="150.00" step="any"></div>
         <div class="fg"><label>当前价 (USD)</label><input type="number" id="m-sprice" placeholder="自动刷新" step="any"></div>
       </div>
+      <div class="fg"><label>止损价 USD（可选，用于盈亏面板预警）</label>
+        <input type="number" id="m-stoploss" placeholder="如 82.50" step="0.01"></div>
     </div>
 
     <!-- Term Deposit -->
@@ -2705,6 +2708,47 @@ function renderNavMiniChart(days){
 }
 
 // ══ REGION PAGE ══
+function renderUsStockPanel(){
+  const el=document.getElementById('us-stock-panel');
+  if(!el)return;
+  const stocks=D.products.filter(p=>p.type==='stock_us'&&p.ticker);
+  if(!stocks.length){el.innerHTML='';return;}
+  el.innerHTML=stocks.map(p=>{
+    const price=p.currentPrice||0;
+    const cost=p.costPrice||0;
+    const shares=p.shares||0;
+    const pnl=(price-cost)*shares;
+    const pct=cost>0?(price-cost)/cost*100:0;
+    const isPos=pnl>=0;
+    const stop=p.stopLoss!=null&&isFinite(Number(p.stopLoss))?Number(p.stopLoss):null;
+    const distStop=stop!=null&&price>0?((price-stop)/price*100):null;
+    const pnlColor=isPos?'var(--green)':'var(--red)';
+    const pnlBg=isPos?'var(--green-bg)':'var(--red-bg)';
+    const barPct=cost>0?Math.min(100,Math.max(0,(price/cost-0.7)/0.6*100)):50;
+    const tick=escOvHtml(String(p.ticker||'').trim().toUpperCase());
+    const stopBlock=stop!=null&&distStop!=null&&!isNaN(distStop)
+      ?`<div style="font-size:11px;color:${distStop<5?'var(--red)':'var(--text3)'};font-family:var(--mono);margin-top:4px;padding-top:4px;border-top:1px dashed var(--border)">
+        🛡 止损 $${stop.toFixed(2)} · 距止损 ${distStop.toFixed(1)}%
+      </div>`
+      :'';
+    return`<div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);padding:14px 16px;box-shadow:var(--shadow-sm)">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">
+        <span style="font-weight:700;font-size:15px;font-family:var(--mono)">${tick}</span>
+        <span style="font-size:13px;font-weight:600;font-family:var(--mono);color:${pnlColor};background:${pnlBg};padding:2px 7px;border-radius:6px">${isPos?'+':''}${pct.toFixed(1)}%</span>
+      </div>
+      <div style="font-size:22px;font-weight:700;font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.02em;margin-bottom:6px">$${price.toFixed(2)}</div>
+      <div style="height:5px;background:var(--bg4);border-radius:999px;overflow:hidden;margin-bottom:8px">
+        <div style="height:100%;width:${barPct}%;background:${isPos?'linear-gradient(90deg,var(--gold),#22c55e)':'linear-gradient(90deg,#ef4444,#f97316)'};border-radius:999px;transition:width .5s ease"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:4px">
+        <span>成本 $${cost.toFixed(2)}</span>
+        <span style="color:${pnlColor};font-weight:600">${isPos?'+':''}$${pnl.toFixed(0)}</span>
+      </div>
+      ${stopBlock}
+    </div>`;
+  }).join('');
+}
+
 function renderRegion(region){
   const ps=D.products.filter(p=>p.region===region);
   const rcny=totalCNY(region);
@@ -2720,6 +2764,7 @@ function renderRegion(region){
     document.getElementById('us-sub').textContent=fc(rcny,'CNY')+' | '+fc(fromCNY(rcny,'AUD'),'AUD');
     document.getElementById('us-blocks').innerHTML=buildAccountBlocks(ps,region);
     finnhubSyncSubscriptions();
+    renderUsStockPanel();
   } else if(region==='au'){
     maybeRollAuWeeklyCompound();
     document.getElementById('au-total').textContent=fc(primaryVal,'AUD');
@@ -3688,7 +3733,7 @@ function openModal(region,account){
   document.getElementById('m-editid').value='';
   document.getElementById('m-status').innerHTML='';
   ['m-account','m-name','m-note','m-ticker','m-fcode'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  ['m-amount','m-shares','m-cost','m-sprice','m-fshares','m-fcost','m-fprice','m-principal','m-rate','m-grams','m-gcost','m-gprice'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['m-amount','m-shares','m-cost','m-sprice','m-stoploss','m-fshares','m-fcost','m-fprice','m-principal','m-rate','m-grams','m-gcost','m-gprice'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('m-fcurrency').value='CNY';
   document.getElementById('m-fdate').value=today();;
   document.getElementById('m-date').value=today();
@@ -3760,7 +3805,9 @@ function saveProduct(){
     const cost=parseFloat(document.getElementById('m-cost').value);
     const price=parseFloat(document.getElementById('m-sprice').value)||0;
     if(!ticker||isNaN(shares)||isNaN(cost)){status.innerHTML='<div class="alert alert-warn">请填写股票代码、持股数和成本价</div>';return;}
-    p={...p,ticker,shares,costPrice:cost,currentPrice:price};
+    const slRaw=parseFloat(document.getElementById('m-stoploss').value);
+    const stopLoss=isFinite(slRaw)&&slRaw>0?slRaw:null;
+    p={...p,ticker,shares,costPrice:cost,currentPrice:price,stopLoss};
   } else if(type==='fund_cn'){
     const code=document.getElementById('m-fcode').value.trim();
     const shares=parseFloat(document.getElementById('m-fshares').value);
@@ -3817,6 +3864,7 @@ function editProduct(id){
     document.getElementById('m-shares').value=p.shares||'';
     document.getElementById('m-cost').value=p.costPrice||'';
     document.getElementById('m-sprice').value=p.currentPrice||'';
+    document.getElementById('m-stoploss').value=p.stopLoss!=null&&p.stopLoss!==''?p.stopLoss:'';
   } else if(p.type==='fund_cn'){
     document.getElementById('m-fcode').value=p.fundCode||'';
     document.getElementById('m-fshares').value=p.fundShares||'';
@@ -3920,7 +3968,7 @@ if(localStorage.getItem('wo_sb_rail')==='1')document.body.classList.add('sidebar
 const TIGER_PRESET = [
   {ticker:'NVDA', name:'英伟达',    shares:40,   cost:105.36, price:168.19},
   {ticker:'PLTR', name:'Palantir', shares:5,    cost:158.38, price:143.33},
-  {ticker:'CRCL', name:'Circle',   shares:10,   cost:90.95,  price:90.26},
+  {ticker:'CRCL', name:'Circle',   shares:10,   cost:90.95,  price:90.26, stopLoss:82.5},
   {ticker:'TSLA', name:'特斯拉',   shares:31,   cost:269.08, price:363.46},
   {ticker:'VOO',  name:'Vanguard', shares:39.5, cost:619.20, price:584.98},
 ];
@@ -3940,6 +3988,7 @@ function addBatchRow(data={}){
   const div=document.createElement('div');
   div.className='batch-row';
   div.id='brow-'+id;
+  if(data.stopLoss!=null&&isFinite(Number(data.stopLoss)))div.dataset.stoploss=String(data.stopLoss);
   div.innerHTML=`
     <input type="text" placeholder="NVDA" value="${data.ticker||''}" id="bt-${id}" style="text-transform:uppercase">
     <input type="text" placeholder="名称（可选）" value="${data.name||''}" id="bn-${id}">
@@ -3965,7 +4014,10 @@ async function saveBatch(){
     if(!ticker||isNaN(shares)||isNaN(cost))return;
     // Replace existing same ticker in Tiger account, or add new
     const existing=D.products.findIndex(p=>p.type==='stock_us'&&p.ticker===ticker&&p.account==='Tiger');
-    const p={id:existing>=0?D.products[existing].id:D.nextId++,region:'us',type:'stock_us',account:'Tiger',name:name||ticker,ticker,shares,costPrice:cost,currentPrice:price,note:'',createdAt:today(),updatedAt:today()};
+    const ds=row.dataset.stoploss;
+    let stopLoss=null;
+    if(ds!==undefined&&ds!==''){const x=parseFloat(ds);if(isFinite(x)&&x>0)stopLoss=x;}
+    const p={id:existing>=0?D.products[existing].id:D.nextId++,region:'us',type:'stock_us',account:'Tiger',name:name||ticker,ticker,shares,costPrice:cost,currentPrice:price,note:'',createdAt:today(),updatedAt:today(),...(stopLoss!=null?{stopLoss}:{})};
     if(existing>=0)D.products[existing]=p;else D.products.push(p);
     imported++;
   });
