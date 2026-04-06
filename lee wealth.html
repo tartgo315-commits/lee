@@ -169,7 +169,7 @@ body:not(.light) .news-item:hover{background:rgba(255,255,255,.04)}
 .ov-insight-chip.warn{border-color:rgba(245,158,11,.45);color:var(--gold);background:var(--gold-bg)}
 .ov-insight-chip.info{border-color:rgba(202,138,4,.4);color:var(--accent2);background:var(--accent-soft)}
 .ov-insight-chip.ok{border-color:rgba(16,185,129,.35);color:var(--green);background:var(--green-bg)}
-/* 总览四卡：等高 stretch；大屏 1fr 1fr 1.3fr 0.85fr */
+/* 总览四卡：等高 stretch；大屏 区域·类别·流动性(1.4)·快照 */
 .ov-dash-toprow.ov-dash-bento{display:grid;gap:var(--s-3);align-items:stretch;min-width:0;grid-template-columns:1fr}
 @media(min-width:640px){
   #page-overview .ov-dash-bento{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -178,7 +178,7 @@ body:not(.light) .news-item:hover{background:rgba(255,255,255,.04)}
   #page-overview .ov-dash-bento{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
 @media(min-width:1280px){
-  #page-overview .ov-dash-bento{grid-template-columns:1fr 1fr 1.3fr 0.85fr}
+  #page-overview .ov-dash-bento{grid-template-columns:1fr 1fr 1.4fr 1fr}
 }
 .ov-dash-toprow>.card{margin-bottom:0!important;min-width:0;min-height:220px;padding:18px 18px 16px;display:flex;flex-direction:column}
 .ov-dash-toprow>.card .card-title{font-size:12px;margin-bottom:var(--s-2);line-height:var(--lh-snug);flex-shrink:0}
