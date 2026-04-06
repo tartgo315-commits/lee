@@ -2601,7 +2601,7 @@ function attachToggleEvents(){
   });
 }
 
-// ══ REFRESH GOLD (Au99.99 hq.sinajs.cn) ══
+// ══ REFRESH GOLD（新浪 Au9999 JSONP → 代理文本 → 东方财富 118.AU9999）══
 /** 解析新浪 hq_str_Au9999 逗号串：第 2 段多为中文名非价格；优先常见下标的「最新价」，再反向扫合理区间。 */
 function parseSinaAu9999HqStr(raw){
   if(raw==null)return 0;
@@ -2621,11 +2621,36 @@ function parseSinaAu9999FromHttpText(body){
   if(m&&m[1])return parseSinaAu9999HqStr(m[1]);
   return 0;
 }
-/** 浏览器插入 script 直连新浪（用户侧网络）；勿仅依赖 Vercel 代理拉新浪（机房 IP 常被拒）。 */
-function fetchGoldPrice(){
-  return new Promise((resolve,reject)=>{
+/** 东方财富 上海金 AU9999：push2 返回 data.f43 为「元/克 ×100」（与行情页一致）。 */
+function parseEastmoneyAu9999Json(text){
+  try{
+    const o=JSON.parse(text);
+    if(!o||o.rc!==0||!o.data)return 0;
+    const f43=o.data.f43;
+    const n=typeof f43==='number'?f43:parseFloat(f43);
+    if(!isFinite(n)||n<=0)return 0;
+    const ypg=n/100;
+    if(ypg>=80&&ypg<=8000)return Math.round(ypg*100)/100;
+    return 0;
+  }catch(e){return 0;}
+}
+const EASTMONEY_AU9999_URL='https://push2.eastmoney.com/api/qt/stock/get?secid=118.AU9999&fields=f43,f57,f58';
+async function fetchGoldPriceEastmoney(){
+  try{
+    const r=await fetch(EASTMONEY_AU9999_URL,{cache:'no-store',mode:'cors',referrerPolicy:'no-referrer'});
+    if(r.ok){
+      const p=parseEastmoneyAu9999Json(await r.text());
+      if(p>0)return p;
+    }
+  }catch(e){}
+  const t=await fetchProxiedText(EASTMONEY_AU9999_URL);
+  return parseEastmoneyAu9999Json(t)||0;
+}
+/** 新浪 JSONP（用户侧直连）；空串或失败时走代理新浪文本，再东方财富（新浪 legacy 接口近年常返回空）。 */
+function fetchGoldPriceSinaJsonp(){
+  return new Promise(resolve=>{
     const sc=document.createElement('script');
-    const t=setTimeout(()=>{try{sc.remove();}catch(e){}reject(new Error('超时'));},8000);
+    const t=setTimeout(()=>{try{sc.remove();}catch(e){}resolve(0);},5000);
     sc.src=`https://hq.sinajs.cn/list=Au9999&_=${Date.now()}`;
     sc.onload=()=>{
       clearTimeout(t);
@@ -2635,29 +2660,33 @@ function fetchGoldPrice(){
         resolve(parseSinaAu9999HqStr(v)||0);
       }catch(e){resolve(0);}
     };
-    sc.onerror=()=>{clearTimeout(t);try{sc.remove();}catch(e){}reject(new Error('请求失败'));};
+    sc.onerror=()=>{clearTimeout(t);try{sc.remove();}catch(e){}resolve(0);};
     document.head.appendChild(sc);
   });
+}
+async function fetchGoldPrice(){
+  let price=await fetchGoldPriceSinaJsonp();
+  if(price>0)return price;
+  try{
+    const body=await fetchProxiedText('https://hq.sinajs.cn/list=Au9999');
+    price=parseSinaAu9999FromHttpText(body);
+  }catch(e){}
+  if(price>0)return price;
+  return await fetchGoldPriceEastmoney();
 }
 async function refreshGold(){
   const golds=D.products.filter(p=>p.type==='gold');
   if(!golds.length){alert('没有黄金积存产品');return;}
   const el=document.getElementById('cn-refresh-status');
-  el.innerHTML='<div class="alert alert-info">🔄 正在获取 Au99.99 现货金价…</div>';
+  el.innerHTML='<div class="alert alert-info">🔄 正在获取国内现货金价（Au99.99）…</div>';
   let price=0;
   try{price=await fetchGoldPrice();}catch(e){}
-  if(!(price>0)){
-    try{
-      const body=await fetchProxiedText('https://hq.sinajs.cn/list=Au9999');
-      price=parseSinaAu9999FromHttpText(body);
-    }catch(e){}
-  }
   if(price>0){
     golds.forEach(g=>{g.goldPrice=price;g.goldUpdated=today();});
     save();renderRegion('cn');renderSidebar();renderOverview();
-    el.innerHTML=`<div class="alert alert-ok">✅ Au99.99 金价：¥${price}/克，已更新 ${golds.length} 个黄金持仓（建行积存金报价与此接近）</div>`;
+    el.innerHTML=`<div class="alert alert-ok">✅ 金价 ¥${price}/克（上海金 AU9999 口径），已更新 ${golds.length} 个黄金积存（建行积存金报价与此接近）</div>`;
   }else{
-    el.innerHTML='<div class="alert alert-warn">⚠️ 获取失败。可打开「编辑」<strong>手动填当前金价（元/克）</strong>；若在国外网络，新浪行情常不可用，请换国内网络或使用 VPN 回国后再点刷新。</div>';
+    el.innerHTML='<div class="alert alert-warn">⚠️ 自动获取失败。请在「编辑」中<strong>手动填写当前金价（元/克）</strong>；若浏览器拦截跨域，可部署带 /proxy 的环境或换网络后再试。</div>';
   }
   setTimeout(()=>{if(el)el.innerHTML='';},12000);
 }
@@ -2769,12 +2798,7 @@ async function refreshAllQuotes(){
     if(golds.length){
       show('🔄 正在刷新金价（Au99.99）…');
       try{
-        let price=0;
-        try{price=await fetchGoldPrice();}catch(e){}
-        if(!(price>0)){
-          const body=await fetchProxiedText('https://hq.sinajs.cn/list=Au9999');
-          price=parseSinaAu9999FromHttpText(body);
-        }
+        const price=await fetchGoldPrice();
         if(price>0){
           golds.forEach(g=>{g.goldPrice=price;g.goldUpdated=today();});
           lines.push('黄金×'+golds.length);
