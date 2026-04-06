@@ -2211,6 +2211,7 @@ function renderOverview(){
     {id:'us',flag:'🇺🇸',name:'美国',cur:'USD'},
     {id:'au',flag:'🇦🇺',name:'澳洲',cur:'AUD'}
   ];
+  try{
   document.getElementById('ov-regions').innerHTML=regions.map(r=>{
     const ps=D.products.filter(p=>p.region===r.id);
     const rcny=totalCNY(r.id);
@@ -2296,7 +2297,7 @@ function renderOverview(){
           <span>${acc}</span>
           <div style="display:flex;align-items:center;gap:8px">
             <span class="ov-acc-total">${fc(alocal,r.cur,0)}</span>
-            <button class="ov-acc-add-btn" onclick="openModal('${r.id}','${acc}')" title="添加到${acc}">＋</button>
+            <button class="ov-acc-add-btn" onclick="openModal(${JSON.stringify(r.id)},${JSON.stringify(acc)})" title="添加到${escAttr(acc)}">＋</button>
           </div>
         </div>
         ${prodRows}
@@ -2364,10 +2365,14 @@ function renderOverview(){
       </div>
     </div>`;
   }).join('');
-
-  renderOverviewDashboard();
-  renderNavMiniChart(ovRange);
-  renderSidebar();
+  }catch(err){
+    console.error('renderOverview ov-regions',err);
+    const elRg=document.getElementById('ov-regions');
+    if(elRg)elRg.innerHTML='<div class="alert alert-warn" style="margin:12px 0">分区列表渲染失败（常见原因：账户名含引号等特殊字符，或某条资产数据异常）。请按 F12 打开控制台查看报错；可先<strong>导出 JSON</strong>备份，再逐条编辑资产。</div>';
+  }
+  try{renderOverviewDashboard();}catch(e){console.error('renderOverviewDashboard',e);}
+  try{renderNavMiniChart(ovRange);}catch(e){console.error('renderNavMiniChart',e);}
+  try{renderSidebar();}catch(e){console.error('renderSidebar',e);}
 }
 
 function setRange(days,btn){
@@ -2917,6 +2922,10 @@ function renderOverviewDashboard(){
     const fxExp=(rUs+rAu)/cny;
     if(fxExp>=0.35)
       chips.push({t:`美+澳区域合计约 ${(fxExp*100).toFixed(0)}% — 汇率会影响人民币净值`,c:'info'});
+    const assignedNav=rCn+rUs+rAu;
+    const miscNav=Math.max(0,cny-assignedNav);
+    if(miscNav>1)
+      chips.push({t:`约有 ${fc(miscNav,'CNY',0)} 未归入中/美/澳（饼图为「未标地区」）— 请编辑资产，将地区选为 中国境内 / 美国 / 澳洲。`,c:'warn'});
   }
   elI.innerHTML=chips.length?chips.map(x=>`<span class="ov-insight-chip ${x.c}">${x.t}</span>`).join(''):`<span class="ov-insight-chip">添加资产后将显示配置分析与提示</span>`;
   if(cny<=0){
@@ -2966,40 +2975,41 @@ function renderOverviewDashboard(){
   elM.innerHTML=`<div class="ov-mile-grid">${mileHtml}</div><div class="ov-mile-foot">变动含行情、汇率、申赎与新增资产，不单是盈亏。</div>`;
   const textColor=document.body.classList.contains('night')?'#b4c0db':'#57534e';
   const rCn=totalCNY('cn'),rUs=totalCNY('us'),rAu=totalCNY('au');
-  const regionSum=rCn+rUs+rAu;
+  const assigned=rCn+rUs+rAu;
+  const misc=Math.max(0,cny-assigned);
+  const regParts=[];
+  if(rCn>0.01)regParts.push({l:'中国',d:rCn,bg:'rgba(239,68,68,.72)',bd:'rgba(252,165,165,.9)'});
+  if(rUs>0.01)regParts.push({l:'美国',d:rUs,bg:'rgba(59,130,246,.72)',bd:'rgba(147,197,253,.9)'});
+  if(rAu>0.01)regParts.push({l:'澳洲',d:rAu,bg:'rgba(245,158,11,.72)',bd:'rgba(253,224,71,.9)'});
+  if(misc>0.01)regParts.push({l:'未标地区',d:misc,bg:'rgba(148,163,184,.72)',bd:'rgba(203,213,225,.9)'});
+  const regionSum=regParts.reduce((s,x)=>s+x.d,0);
   if(ctxR&&regionSum>0){
-    if(ovDashChartRegion&&ovDashChartRegion.canvas===ctxR){
-      ovDashChartRegion.data.datasets[0].data=[rCn,rUs,rAu];
-      ovDashChartRegion.options.plugins.legend.labels.color=textColor;
-      ovDashChartRegion.update('none');
-    }else{
-      if(ovDashChartRegion){try{ovDashChartRegion.destroy();}catch(e){}ovDashChartRegion=null;}
-      ovDashChartRegion=new Chart(ctxR.getContext('2d'),{
-        type:'doughnut',
-        data:{
-          labels:['中国','美国','澳洲'],
-          datasets:[{
-            data:[rCn,rUs,rAu],
-            backgroundColor:['rgba(239,68,68,.72)','rgba(59,130,246,.72)','rgba(245,158,11,.72)'],
-            borderColor:['rgba(252,165,165,.9)','rgba(147,197,253,.9)','rgba(253,224,71,.9)'],
-            borderWidth:1
-          }]
-        },
-        options:{
-          animation:false,
-          responsive:true,maintainAspectRatio:false,
-          layout:{padding:{top:2,bottom:0,left:0,right:0}},
-          cutout:'50%',
-          plugins:{
-            legend:{position:'bottom',labels:{color:textColor,boxWidth:8,padding:3,font:{size:11}}},
-            tooltip:{callbacks:{label:c=>{
-              const v=c.raw,pct=cny>0?(v/cny*100):0;
-              return c.label+': '+fc(v,'CNY',0)+'（'+pct.toFixed(1)+'%）';
-            }}}
-          }
+    if(ovDashChartRegion){try{ovDashChartRegion.destroy();}catch(e){}ovDashChartRegion=null;}
+    ovDashChartRegion=new Chart(ctxR.getContext('2d'),{
+      type:'doughnut',
+      data:{
+        labels:regParts.map(x=>x.l),
+        datasets:[{
+          data:regParts.map(x=>x.d),
+          backgroundColor:regParts.map(x=>x.bg),
+          borderColor:regParts.map(x=>x.bd),
+          borderWidth:1
+        }]
+      },
+      options:{
+        animation:false,
+        responsive:true,maintainAspectRatio:false,
+        layout:{padding:{top:2,bottom:0,left:0,right:0}},
+        cutout:'50%',
+        plugins:{
+          legend:{position:'bottom',labels:{color:textColor,boxWidth:8,padding:3,font:{size:11}}},
+          tooltip:{callbacks:{label:c=>{
+            const v=c.raw,pct=cny>0?(v/cny*100):0;
+            return c.label+': '+fc(v,'CNY',0)+'（'+pct.toFixed(1)+'%）';
+          }}}
         }
-      });
-    }
+      }
+    });
   }else if(ovDashChartRegion){try{ovDashChartRegion.destroy();}catch(e){}ovDashChartRegion=null;}
   if(ctxT){
     const order=['cash','fund_cn','gold','stock_us','term_deposit','other'];
