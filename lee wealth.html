@@ -147,8 +147,8 @@ body:not(.light) .news-item:hover{background:rgba(255,255,255,.04)}
 .btn-green{background:linear-gradient(180deg,#34d399 0%,#059669 100%);color:#fff;box-shadow:0 2px 12px rgba(16,185,129,.3)}.btn-green:hover{filter:brightness(1.06)}
 .btn-sm{height:34px;padding:0 var(--s-4);font-size:var(--text-sm)}
 
-/* Total bar */
-.total-bar{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s-5);margin-bottom:var(--section-y);min-width:0;width:100%}
+/* Total bar（列数由 Tailwind grid 控制，见 #page-overview .total-bar） */
+.total-bar{display:grid;gap:var(--s-5);margin-bottom:var(--section-y);min-width:0;width:100%}
 .total-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:var(--card-pad) var(--s-6);position:relative;overflow:hidden;box-shadow:none;transition:background .2s ease,border-color .2s ease}
 .total-card:hover{background:var(--surface-muted);border-color:var(--border2)}
 .total-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;opacity:.95}
@@ -168,10 +168,8 @@ body:not(.light) .news-item:hover{background:rgba(255,255,255,.04)}
 .ov-insight-chip.warn{border-color:rgba(245,158,11,.45);color:var(--gold);background:var(--gold-bg)}
 .ov-insight-chip.info{border-color:rgba(202,138,4,.4);color:var(--accent2);background:var(--accent-soft)}
 .ov-insight-chip.ok{border-color:rgba(16,185,129,.35);color:var(--green);background:var(--green-bg)}
-.ov-dash-toprow{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:var(--s-3);align-items:stretch;min-width:0}
-@media(max-width:1400px){.ov-dash-toprow{grid-template-columns:repeat(3,minmax(0,1fr))}}
-@media(max-width:900px){.ov-dash-toprow{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:520px){.ov-dash-toprow{grid-template-columns:1fr}}
+/* Bento：列与跨列由 .ov-dash-toprow 上 Tailwind 类控制 */
+.ov-dash-toprow{display:grid;gap:var(--s-3);align-items:stretch;min-width:0}
 .ov-dash-toprow>.card{margin-bottom:0!important;min-width:0;padding:var(--s-3) var(--s-4);display:flex;flex-direction:column}
 .ov-dash-toprow>.card .card-title{font-size:12px;margin-bottom:var(--s-2);line-height:var(--lh-snug)}
 .ov-dash-toprow .ov-donut-wrap{height:110px;margin-top:0;flex-shrink:0}
@@ -252,7 +250,7 @@ body:not(.light) .ov-dash-toprow #ov-mile-body .ov-mile-stat{background:var(--bg
 .or-acc-sub{font-size:13px;color:var(--text3);font-family:var(--mono);margin-left:10px}
 
 /* Account blocks on region pages */
-.account-block{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);margin-bottom:var(--s-6);overflow:hidden;box-shadow:none;transition:background .2s ease,border-color .2s ease}
+.account-block{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);margin-bottom:var(--s-6);overflow-x:hidden;overflow-y:visible;box-shadow:none;transition:background .2s ease,border-color .2s ease}
 .account-block:hover{background:var(--surface-muted);border-color:var(--border2)}
 .account-header{display:flex;align-items:center;gap:var(--s-4);padding:var(--s-5) var(--card-pad);cursor:pointer;transition:background .18s ease;user-select:none}
 .account-header:hover{background:rgba(255,255,255,.03)}
@@ -272,11 +270,12 @@ body:not(.light) .ov-dash-toprow #ov-mile-body .ov-mile-stat{background:var(--bg
 /* Products */
 .products-wrap{display:none;border-top:1px solid var(--border);min-width:0;overflow-x:hidden;-webkit-overflow-scrolling:touch}
 .products-wrap.open{display:block}
-.product-row{display:grid;grid-template-columns:minmax(120px,1fr) minmax(112px,148px) minmax(88px,108px) minmax(40px,52px) minmax(72px,96px) 76px;align-items:center;padding:var(--list-y) var(--card-pad);border-bottom:1px solid var(--border);gap:var(--s-3) var(--s-4);transition:background .15s}
+.product-row{display:grid;grid-template-columns:minmax(120px,1fr) minmax(112px,148px) minmax(88px,108px) minmax(40px,52px) minmax(72px,96px) 76px;align-items:center;padding:8px var(--card-pad);border-bottom:1px solid var(--border);gap:var(--s-2) var(--s-4);transition:background .15s ease}
 .product-row .pr-amt,.product-row .pr-pnl{font-variant-numeric:tabular-nums}
 .product-row:last-child{border-bottom:none}
-.product-row:hover{background:var(--bg3)}
-.product-row.hdr{background:var(--bg3);border-bottom:1px solid var(--border2);padding:var(--s-3) var(--card-pad)}
+.product-row:not(.hdr):hover{background:var(--bg3)}
+.product-row.hdr{position:sticky;top:0;z-index:5;background:var(--bg3);border-bottom:1px solid var(--border2);padding:8px var(--card-pad);backdrop-filter:saturate(1.2) blur(8px);-webkit-backdrop-filter:saturate(1.2) blur(8px)}
+body.light .product-row.hdr{background:var(--surface-muted)}
 /* Finnhub 实时现价：仅数字变色，避免整卡重绘 */
 .fh-px{font-variant-numeric:tabular-nums;font-weight:600;transition:color .18s ease}
 .fh-px.fh-up{color:var(--green)}
@@ -461,6 +460,40 @@ th{text-align:left;padding:var(--s-3) var(--s-5);color:var(--text3);font-weight:
 td{padding:var(--s-4) var(--s-5);border-bottom:1px solid var(--border);vertical-align:middle}
 tr:last-child td{border-bottom:none}
 tr:hover td{background:var(--bg3)}
+.hist-wrap{overflow:auto;-webkit-overflow-scrolling:touch;max-height:min(60vh,560px);border-radius:var(--r-sm);border-bottom:1px solid var(--border)}
+.hist-table th{position:sticky;top:0;z-index:3;padding:8px 12px;font-size:var(--text-xs);background:var(--surface);box-shadow:inset 0 -1px 0 var(--border);vertical-align:middle}
+.hist-table td{padding:8px 12px;font-size:var(--text-sm);line-height:var(--lh-snug)}
+.hist-table tbody tr{transition:background .12s ease}
+.hist-table tbody tr:hover td{background:var(--bg3)}
+body.light .hist-table th{background:var(--surface-muted)}
+#toast-root{pointer-events:none;position:fixed;inset:auto 16px 16px auto;z-index:280;display:flex;flex-direction:column;gap:8px;max-width:min(380px,calc(100vw - 32px))}
+@media(min-width:640px){#toast-root{bottom:24px;right:24px}}
+#toast-root .wo-toast{pointer-events:auto;display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-radius:var(--r-lg);border:1px solid var(--border);background:var(--surface);box-shadow:var(--shadow-md);font-size:var(--text-sm);line-height:var(--lh-snug);color:var(--text);animation:woToastIn .22s ease}
+#toast-root .wo-toast.wo-toast-out{opacity:0;transform:translateY(6px);transition:opacity .2s ease,transform .2s ease}
+#toast-root .wo-toast--success{border-color:rgba(34,197,94,.35);background:var(--green-bg)}
+#toast-root .wo-toast--info{border-color:rgba(99,102,241,.35);background:var(--accent-soft)}
+#toast-root .wo-toast--warn{border-color:rgba(245,158,11,.45);background:var(--gold-bg)}
+#toast-root .wo-toast--loading{border-color:rgba(99,102,241,.3)}
+#toast-root .wo-toast-ico{flex-shrink:0;font-size:16px;line-height:1.2;margin-top:1px}
+@keyframes woToastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes woSpin{to{transform:rotate(360deg)}}
+#toast-root .wo-toast--loading .wo-toast-ico{display:inline-block;animation:woSpin .75s linear infinite}
+#cmdk-root{position:fixed;inset:0;z-index:260;pointer-events:none}
+#cmdk-root.open{pointer-events:auto}
+#cmdk-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);opacity:0;visibility:hidden;transition:opacity .18s ease,visibility .18s}
+#cmdk-root.open #cmdk-backdrop{opacity:1;visibility:visible}
+#cmdk-panel{position:absolute;left:50%;top:min(18vh,140px);transform:translate(-50%,-8px) scale(.98);z-index:1;width:min(520px,calc(100vw - 24px));max-height:min(72vh,560px);display:flex;flex-direction:column;border-radius:var(--r-lg);border:1px solid var(--border2);background:var(--surface);box-shadow:var(--shadow-float);opacity:0;visibility:hidden;transition:opacity .18s ease,transform .18s ease,visibility .18s}
+#cmdk-root.open #cmdk-panel{opacity:1;visibility:visible;transform:translate(-50%,0) scale(1)}
+#cmdk-panel .cmdk-hd{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+#cmdk-search{flex:1;min-width:0;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 12px;font-size:var(--text-base);color:var(--text);font-family:var(--font)}
+#cmdk-search:focus{outline:none;box-shadow:var(--ring);border-color:transparent}
+#cmdk-panel .cmdk-hint{font-size:11px;color:var(--text3);font-family:var(--mono);white-space:nowrap}
+#cmdk-list{overflow-y:auto;max-height:min(56vh,480px);padding:6px}
+.cmdk-item{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:10px 12px;border:none;border-radius:var(--r-sm);background:transparent;color:var(--text2);font-size:var(--text-base);font-family:var(--font);cursor:pointer;transition:background .12s,color .12s}
+.cmdk-item:hover,.cmdk-item.cmdk-item-active{background:var(--bg3);color:var(--text)}
+.cmdk-item-ico{width:28px;text-align:center;flex-shrink:0;font-size:18px}
+.cmdk-item-meta{margin-left:auto;font-size:11px;color:var(--text3);font-family:var(--mono)}
+.cmdk-empty{padding:24px 16px;text-align:center;color:var(--text3);font-size:var(--text-sm)}
 .mono{font-family:var(--mono)}
 .tr{text-align:right}
 .page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--section-y);gap:var(--s-5);flex-wrap:wrap}
@@ -473,7 +506,6 @@ tr:hover td{background:var(--bg3)}
 @media(max-width:1000px) and (min-width:769px){
   :root{--sidebar-w:64px}
   .logo-name,.logo-sub,.sidebar-total,.nav-group,.nav-btn span:not(.nav-ico),.nav-cnt{display:none}
-  .total-bar{grid-template-columns:1fr}
   .product-row,.product-row.hdr{grid-template-columns:1fr;gap:8px}
   .product-row.hdr .pl.r{text-align:left}
   .product-row .pr-acts{justify-content:flex-start}
@@ -553,7 +585,6 @@ body.mobile-nav-open{overflow:hidden;touch-action:none}
   }
   .page-header{flex-direction:column;align-items:stretch;gap:var(--s-3)}
   .page-header .ph-actions{width:100%;justify-content:flex-start;flex-wrap:wrap}
-  .total-bar{grid-template-columns:1fr;gap:var(--s-4)}
   .fg-row.c2,.fg-row.c3,.fg-row.c4{grid-template-columns:1fr!important}
   #ov-regions{grid-template-columns:1fr!important}
   .ov-prod-row{grid-template-columns:minmax(0,1fr) min-content;grid-template-rows:auto auto;gap:8px 10px}
@@ -709,8 +740,8 @@ body.light .fh-mkt-badge.fh-mkt-night{color:#0f766e;background:rgba(15,118,110,.
     <div id="http-data-migrate-banner" class="alert alert-info" role="status" style="display:none;margin-bottom:var(--s-5);padding:var(--s-4) var(--gutter-x);border-radius:var(--r);line-height:1.55;font-size:var(--text-sm)"></div>
 
     <!-- OVERVIEW -->
-    <div class="page active" id="page-overview">
-      <div class="total-bar">
+    <div class="page active space-y-4 md:space-y-6" id="page-overview">
+      <div class="total-bar grid w-full min-w-0 grid-cols-1 gap-3 md:grid-cols-3 md:gap-5">
         <div class="total-card cn">
           <div class="tc-label">总资产 · 人民币</div>
           <div class="tc-val cn" id="ov-cny">¥ —</div>
@@ -729,31 +760,31 @@ body.light .fh-mkt-badge.fh-mkt-night{color:#0f766e;background:rgba(15,118,110,.
       </div>
       <div id="ov-dash" class="ov-dash">
         <div id="ov-insights" class="ov-insights"></div>
-        <div class="ov-dash-toprow">
-          <div class="card ov-dash-card">
+        <div class="ov-dash-toprow grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 md:gap-4 xl:grid-cols-4">
+          <div class="card ov-dash-card mb-0 md:mb-0">
             <div class="card-title">区域配置（占净值）</div>
             <div class="ov-donut-wrap"><canvas id="chart-alloc-region"></canvas></div>
           </div>
-          <div class="card ov-dash-card">
+          <div class="card ov-dash-card mb-0 md:mb-0">
             <div class="card-title">资产类别（折合人民币）</div>
             <div class="ov-donut-wrap"><canvas id="chart-alloc-type"></canvas></div>
           </div>
-          <div class="card" id="ov-liq-card">
+          <div class="card mb-0 sm:col-span-2 md:col-span-1 xl:col-span-2 xl:row-span-2 xl:min-h-[200px]" id="ov-liq-card">
             <div class="card-title">流动性结构</div>
             <div class="ov-liq-bars" id="ov-liq-body"></div>
           </div>
-          <div class="card" id="ov-up-card">
+          <div class="card mb-0 sm:col-span-2 md:col-span-2 xl:col-span-2" id="ov-up-card">
             <div class="card-title">近期到期（定期 · 90 天内）</div>
             <div id="ov-up-body"></div>
           </div>
-          <div class="card" id="ov-mile-card">
+          <div class="card mb-0 sm:col-span-2 md:col-span-3 xl:col-span-4" id="ov-mile-card">
             <div class="card-title">快照对比</div>
             <div id="ov-mile-body"></div>
           </div>
         </div>
       </div>
       <div id="ov-regions"></div>
-      <div class="card">
+      <div class="card mb-0 md:mb-6">
         <div class="card-title">NAV 净值曲线
           <div style="display:flex;align-items:center;gap:8px">
             <span style="font-size:10px;color:var(--text3);font-family:var(--mono)" id="ov-nav-lbl">—</span>
@@ -833,9 +864,11 @@ body.light .fh-mkt-badge.fh-mkt-night{color:#0f766e;background:rgba(15,118,110,.
       <div class="card" style="margin-bottom:14px">
         <div style="height:260px"><canvas id="chart-hist"></canvas></div>
       </div>
-      <div class="card" style="padding:0;overflow:hidden">
-        <table><thead><tr><th>日期</th><th class="tr">CNY</th><th class="tr">USD</th><th class="tr">AUD</th><th class="tr">变化 CNY</th><th class="tr">变化%</th><th>操作</th></tr></thead>
+      <div class="card mb-0 overflow-hidden p-0">
+        <div class="hist-wrap">
+        <table class="hist-table w-full min-w-[640px] text-left"><thead><tr><th>日期</th><th class="tr">CNY</th><th class="tr">USD</th><th class="tr">AUD</th><th class="tr">变化 CNY</th><th class="tr">变化%</th><th>操作</th></tr></thead>
         <tbody id="hist-tbody"></tbody></table>
+        </div>
       </div>
     </div>
 
@@ -1114,8 +1147,50 @@ const WO_REMOTE_PROXY_ORIGIN='https://lee-lime.vercel.app';
 const SK='wo_v2';
 const blank=()=>({products:[],navHistory:[],fx:{USD:7.25,AUD:4.65},nextId:1,settings:{usPrincipalAUD:72640},usAccountMeta:{}});
 let D=blank();
+let __woSaveToastT=null,__woToastSeq=0,__woSyncToastId=null;
+function showToast(opts){
+  const o=typeof opts==='string'?{message:opts,type:'info'}:(opts||{});
+  const msg=o.message||'',type=o.type||'info';
+  const duration=o.duration;
+  const root=document.getElementById('toast-root');
+  const id='wo-toast-'+(__woToastSeq++);
+  if(!root)return id;
+  const el=document.createElement('div');
+  el.id=id;
+  el.className='wo-toast wo-toast--'+type;
+  el.setAttribute('role','status');
+  const ico=document.createElement('span');
+  ico.className='wo-toast-ico';
+  ico.textContent=type==='success'?'✓':type==='warn'?'⚠':type==='loading'?'◔':'ℹ';
+  const tx=document.createElement('span');
+  tx.textContent=msg;
+  el.appendChild(ico);
+  el.appendChild(tx);
+  root.appendChild(el);
+  let t=null;
+  if(duration!==0&&duration!==false){
+    t=setTimeout(function(){dismissToast(id);},duration==null?3200:duration);
+  }
+  el._woT=t;
+  return id;
+}
+function dismissToast(id){
+  if(id==null||id==='')return;
+  const el=typeof id==='string'?document.getElementById(id):null;
+  if(!el)return;
+  if(el._woT){clearTimeout(el._woT);el._woT=null;}
+  el.classList.add('wo-toast-out');
+  setTimeout(function(){el.remove();},220);
+}
 function load(){try{const s=localStorage.getItem(SK);if(s)D=Object.assign(blank(),JSON.parse(s));}catch(e){}}
-function save(){localStorage.setItem(SK,JSON.stringify(D));}
+function save(){
+  localStorage.setItem(SK,JSON.stringify(D));
+  clearTimeout(__woSaveToastT);
+  __woSaveToastT=setTimeout(function(){
+    __woSaveToastT=null;
+    showToast({message:'已保存到本机',type:'success',duration:2200});
+  },420);
+}
 const today=()=>new Date().toISOString().slice(0,10);
 load();
 maybeRollAuWeeklyCompound();
@@ -2172,6 +2247,81 @@ function totalCNY(region){
 
 // ══ PAGE NAV ══
 const titles={overview:'总览',cn:'🇨🇳 中国境内',us:'🇺🇸 美国',au:'🇦🇺 澳洲',history:'NAV 历史',news:'📰 资讯',fx:'汇率设置',settings:'系统设置'};
+const CMDK_ITEMS=[
+  {id:'overview',label:'总览',kw:'home 首页 nav',ico:'📊',run:function(){showPage('overview');}},
+  {id:'cn',label:'中国境内',kw:'cn china 中国',ico:'🇨🇳',run:function(){showPage('cn');}},
+  {id:'us',label:'美国',kw:'us america 美股',ico:'🇺🇸',run:function(){showPage('us');}},
+  {id:'au',label:'澳洲',kw:'au australia 澳元',ico:'🇦🇺',run:function(){showPage('au');}},
+  {id:'history',label:'NAV 历史',kw:'历史 快照 chart',ico:'📈',run:function(){showPage('history');}},
+  {id:'news',label:'资讯',kw:'rss 新闻',ico:'📰',run:function(){showPage('news');}},
+  {id:'fx',label:'汇率设置',kw:'fx 汇率',ico:'💱',run:function(){showPage('fx');}},
+  {id:'settings',label:'设置',kw:'设置 导入 导出',ico:'⚙️',run:function(){showPage('settings');}},
+  {id:'add',label:'添加资产',kw:'新建 添加',ico:'＋',run:function(){openModal();}},
+  {id:'snapshot',label:'记录今日快照',kw:'快照 拍照',ico:'📸',run:function(){takeSnapshot();}},
+  {id:'refresh',label:'全部刷新并快照',kw:'同步 刷新 行情',ico:'🔄',run:function(){refreshAllQuotes();}}
+];
+let __cmdkFiltered=[],__cmdkActive=0;
+function filterCmdkItems(q){
+  const s=String(q||'').trim().toLowerCase();
+  if(!s)return CMDK_ITEMS.slice();
+  return CMDK_ITEMS.filter(function(it){
+    if(it.label.toLowerCase().indexOf(s)>=0)return true;
+    if(it.kw&&it.kw.toLowerCase().indexOf(s)>=0)return true;
+    return it.id.indexOf(s)>=0;
+  });
+}
+function renderCmdkList(q){
+  const list=document.getElementById('cmdk-list');
+  if(!list)return;
+  __cmdkFiltered=filterCmdkItems(q);
+  __cmdkActive=0;
+  if(!__cmdkFiltered.length){list.innerHTML='<div class="cmdk-empty" role="status">无匹配项，试试「设置」「历史」</div>';return;}
+  list.innerHTML=__cmdkFiltered.map(function(it,i){
+    return '<button type="button" role="option" class="cmdk-item'+(i===0?' cmdk-item-active':'')+'" data-cmdk-i="'+i+'"><span class="cmdk-item-ico" aria-hidden="true">'+it.ico+'</span><span>'+it.label+'</span><span class="cmdk-item-meta">跳转</span></button>';
+  }).join('');
+  list.querySelectorAll('.cmdk-item').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      const i=parseInt(btn.getAttribute('data-cmdk-i'),10);
+      execCmdkIndex(i);
+    });
+  });
+}
+function setCmdkActive(next){
+  if(!__cmdkFiltered.length)return;
+  __cmdkActive=(next+__cmdkFiltered.length)%__cmdkFiltered.length;
+  const list=document.getElementById('cmdk-list');
+  if(!list)return;
+  list.querySelectorAll('.cmdk-item').forEach(function(el,idx){
+    el.classList.toggle('cmdk-item-active',idx===__cmdkActive);
+  });
+  const cur=list.querySelector('.cmdk-item.cmdk-item-active');
+  if(cur&&cur.scrollIntoView)cur.scrollIntoView({block:'nearest'});
+}
+function execCmdkIndex(i){
+  const it=__cmdkFiltered[i];
+  if(!it)return;
+  closeCmdk();
+  try{it.run();}catch(e){console.error(e);}
+}
+function openCmdk(){
+  const root=document.getElementById('cmdk-root');
+  if(!root)return;
+  root.classList.add('open');
+  root.setAttribute('aria-hidden','false');
+  const inp=document.getElementById('cmdk-search');
+  if(inp){inp.value='';renderCmdkList('');setTimeout(function(){inp.focus();},20);}
+}
+function closeCmdk(){
+  const root=document.getElementById('cmdk-root');
+  if(!root)return;
+  root.classList.remove('open');
+  root.setAttribute('aria-hidden','true');
+}
+function toggleCmdk(){
+  const root=document.getElementById('cmdk-root');
+  if(root&&root.classList.contains('open'))closeCmdk();
+  else openCmdk();
+}
 function isMobileNav(){return typeof window.matchMedia==='function'&&window.matchMedia('(max-width:768px)').matches;}
 function closeMobileSidebar(){
   const sb=document.querySelector('.sidebar');
@@ -2199,6 +2349,7 @@ function toggleMobileSidebar(){
   else openMobileSidebar();
 }
 function showPage(id){
+  closeCmdk();
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
@@ -2885,6 +3036,7 @@ async function refreshAllQuotes(){
     if(snapBtn){snapBtn.disabled=!!on;snapBtn.style.opacity=on?'.55':'1';}
   };
   busy(true);
+  __woSyncToastId=showToast({message:'正在同步行情与快照…',type:'loading',duration:0});
   const lines=[];
   const show=msg=>{if(strip) strip.innerHTML='<div class="alert alert-info" style="margin:0">'+msg+'</div>';};
 
@@ -2971,9 +3123,13 @@ async function refreshAllQuotes(){
     const note='中/澳条目在「汇率」成功后即已用新 USD、AUD 价重算人民币市值（无需单独接口）；定存按本金与利率应计；澳洲定存周复利已滚存。基金为天天基金 JSONP，失败多为网络阻断或代码错误。';
     if(strip) strip.innerHTML='<div class="alert alert-ok" style="margin:0">✅ 全部完成（'+n+' 条资产）：'+summary+'</div><div class="alert alert-info" style="margin:8px 0 0;font-size:12px;line-height:1.5">'+note+'</div>';
     setTimeout(()=>{if(strip) strip.innerHTML='';},12000);
+    showToast({message:'全部同步完成',type:'success',duration:2600});
   }catch(e){
     if(strip) strip.innerHTML='<div class="alert alert-warn" style="margin:0">⚠️ 刷新中断：'+(e.message||e)+'</div>';
+    showToast({message:'同步中断：'+(e.message||String(e)),type:'warn',duration:5200});
   }finally{
+    dismissToast(__woSyncToastId);
+    __woSyncToastId=null;
     busy(false);
   }
 }
@@ -3611,11 +3767,11 @@ function importData(input){
     D=Object.assign(blank(),raw);
     D.navHistory=mergeNavHistories(localNav,raw.navHistory||[]);
     save();renderOverview();maybeShowHttpDataTip();
-    alert('✅ 导入成功（持仓等已按文件更新；NAV 历史已与本地按日期合并）');
-  }catch(err){alert('失败:'+err.message);}};
+    showToast({message:'导入成功，NAV 历史已按日期与本地合并',type:'success',duration:3600});
+  }catch(err){showToast({message:'导入失败：'+err.message,type:'warn',duration:5000});}};
   r.readAsText(f);input.value='';
 }
-function clearAll(){if(!confirm('确定清空所有数据？'))return;D=blank();save();renderOverview();renderSidebar();maybeShowHttpDataTip();}
+function clearAll(){if(!confirm('确定清空所有数据？'))return;D=blank();save();renderOverview();renderSidebar();maybeShowHttpDataTip();showToast({message:'已清空本地账本',type:'info',duration:2800});}
 
 // ══ THEME：默认暖色日间，「夜间」为炭蓝深底 ══
 function toggleNight(){
@@ -3768,7 +3924,20 @@ function importCbaAuPreset(){
   if(mb)mb.addEventListener('click',function(e){e.preventDefault();toggleMobileSidebar();});
   if(bd)bd.addEventListener('click',closeMobileSidebar);
   window.addEventListener('resize',function(){if(!isMobileNav())closeMobileSidebar();});
-  document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeMobileSidebar();}});
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape'){closeMobileSidebar();closeCmdk();}
+    const k=String(e.key||'').toLowerCase();
+    if((e.metaKey||e.ctrlKey)&&k==='k'){e.preventDefault();toggleCmdk();}
+  });
+  const cmdkInp=document.getElementById('cmdk-search');
+  if(cmdkInp){
+    cmdkInp.addEventListener('input',function(){renderCmdkList(cmdkInp.value);});
+    cmdkInp.addEventListener('keydown',function(e){
+      if(e.key==='ArrowDown'){e.preventDefault();setCmdkActive(__cmdkActive+1);}
+      else if(e.key==='ArrowUp'){e.preventDefault();setCmdkActive(__cmdkActive-1);}
+      else if(e.key==='Enter'){e.preventDefault();execCmdkIndex(__cmdkActive);}
+    });
+  }
 })();
 renderOverview();
 renderSidebar();
@@ -3788,5 +3957,18 @@ initFinnhubUsLive();
   });
 });
 </script>
+
+<div id="toast-root" aria-live="polite" aria-relevant="additions"></div>
+<div id="cmdk-root" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="cmdk-dialog-title">
+  <div id="cmdk-backdrop" onclick="closeCmdk()" aria-hidden="true"></div>
+  <div id="cmdk-panel" onclick="event.stopPropagation()">
+    <div class="cmdk-hd">
+      <span id="cmdk-dialog-title" class="sr-only">快速跳转</span>
+      <input type="search" id="cmdk-search" placeholder="搜索页面与操作…" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="命令面板搜索">
+      <span class="cmdk-hint"><span class="hidden sm:inline">⌘K / Ctrl+K</span><span class="sm:hidden">关闭 · Esc</span></span>
+    </div>
+    <div id="cmdk-list" role="listbox" aria-label="跳转项"></div>
+  </div>
+</div>
 </body>
 </html>
