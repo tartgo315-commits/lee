@@ -2749,19 +2749,32 @@ async function refreshStocks(){
 }
 
 // ══ REFRESH FUNDS ══
+async function fetchFundPriceViaApi(code){
+  try{
+    if(location.protocol!=='https:'&&location.protocol!=='http:')return null;
+    const r=await fetch(location.origin+'/api/fund-price?code='+encodeURIComponent(code),{cache:'no-store'});
+    if(!r.ok)return null;
+    const d=await r.json();
+    if(d.price>0)return{price:d.price,name:d.name||code,date:d.date||''};
+  }catch(e){}
+  return null;
+}
 function fetchFundPrice(code){
-  return new Promise((resolve,reject)=>{
-    const cb='jcb_'+code+'_'+Date.now();
-    const sc=document.createElement('script');
-    const t=setTimeout(()=>{delete window[cb];sc.remove();reject(new Error('超时'));},10000);
-    window[cb]=d=>{clearTimeout(t);delete window[cb];sc.remove();
-      const gsz=parseFloat(d.gsz),dwjz=parseFloat(d.dwjz);
-      const price=gsz>0&&isFinite(gsz)?gsz:(dwjz>0&&isFinite(dwjz)?dwjz:0);
-      resolve({price,name:d.name||code,date:d.gztime||d.jzrq||''});
-    };
-    sc.src=`https://fundgz.1234567.com.cn/js/${code}.js?callback=${cb}&v=${Date.now()}`;
-    sc.onerror=()=>{clearTimeout(t);delete window[cb];sc.remove();reject(new Error('失败'));};
-    document.head.appendChild(sc);
+  return fetchFundPriceViaApi(code).then(r=>{
+    if(r&&r.price>0)return r;
+    return new Promise((resolve,reject)=>{
+      const cb='jcb_'+code+'_'+Date.now();
+      const sc=document.createElement('script');
+      const t=setTimeout(()=>{delete window[cb];sc.remove();reject(new Error('超时'));},10000);
+      window[cb]=d=>{clearTimeout(t);delete window[cb];sc.remove();
+        const gsz=parseFloat(d.gsz),dwjz=parseFloat(d.dwjz);
+        const price=gsz>0&&isFinite(gsz)?gsz:(dwjz>0&&isFinite(dwjz)?dwjz:0);
+        resolve({price,name:d.name||code,date:d.gztime||d.jzrq||''});
+      };
+      sc.src=`https://fundgz.1234567.com.cn/js/${code}.js?callback=${cb}&v=${Date.now()}`;
+      sc.onerror=()=>{clearTimeout(t);delete window[cb];sc.remove();reject(new Error('失败'));};
+      document.head.appendChild(sc);
+    });
   });
 }
 async function refreshFunds(){
