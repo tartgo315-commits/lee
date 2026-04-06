@@ -18,6 +18,9 @@
     },
     "api/fund-price.js": {
       "maxDuration": 15
+    },
+    "api/ai-advisor.js": {
+      "maxDuration": 60
     }
   }
 }

@@ -859,7 +859,15 @@ body.light .fh-mkt-badge.fh-mkt-night{color:#0f766e;background:rgba(15,118,110,.
             </div>
             <div style="font-size:12px;color:var(--text3);font-family:var(--mono);margin-top:4px">基于实时持仓数据自动分析</div>
           </div>
-          <button type="button" class="btn btn-primary btn-sm" onclick="runAiAdvisor()">✨ 生成分析报告</button>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <select id="ai-provider" style="height:34px;padding:0 10px;border:1px solid var(--border2);border-radius:var(--r-sm);background:var(--surface);color:var(--text);font-size:13px;font-family:var(--mono)">
+              <option value="gemini">Gemini Flash</option>
+              <option value="groq">Groq Llama3</option>
+              <option value="cohere">Cohere Command-R</option>
+            </select>
+            <button type="button" id="ai-advisor-btn" class="btn btn-primary btn-sm" onclick="fetchAiAdvice()">✨ AI 分析</button>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="runAiAdvisor()">📊 本地分析</button>
+          </div>
         </div>
         <div id="ai-advisor-result" style="display:none;border-top:1px solid var(--border);padding-top:16px"></div>
       </div>
@@ -2758,6 +2766,71 @@ function runAiAdvisor(){
     `<div style="margin-top:8px;padding-top:10px;border-top:1px dashed var(--border);font-size:11px;color:var(--text3);font-family:var(--mono)">
     📊 分析时间：${ts} · 基于本地持仓数据自动生成 · 仅供参考，不构成投资建议
   </div>`;
+}
+
+async function fetchAiAdvice(){
+  const btn=document.getElementById('ai-advisor-btn');
+  const result=document.getElementById('ai-advisor-result');
+  const provider=document.getElementById('ai-provider')?.value||'gemini';
+  if(!btn||!result)return;
+
+  btn.disabled=true;btn.textContent='🔄 分析中…';
+  result.style.display='block';
+  result.innerHTML='<div style="text-align:center;padding:24px;color:var(--text3);font-family:var(--mono);font-size:13px">🤖 AI 正在分析你的持仓，约需 5-15 秒…</div>';
+
+  const fx=D.fx||{};
+  const cny=totalCNY();
+  const stocks=D.products.filter(p=>p.type==='stock_us'&&p.ticker).map(p=>{
+    const pct=p.currentPrice&&p.costPrice?((p.currentPrice-p.costPrice)/p.costPrice*100).toFixed(1):'—';
+    return `${p.ticker} ${p.shares}股 成本$${p.costPrice} 现价$${p.currentPrice||'—'} 盈亏${pct}%${p.stopLoss?' 止损$'+p.stopLoss:''}`;
+  }).join('\n');
+  const golds=D.products.filter(p=>p.type==='gold').map(p=>{
+    const gp=p.goldPrice,gc=p.goldCost;
+    const pnl=gp!=null&&gc>0?((gp-gc)/gc*100).toFixed(1)+'%':'—';
+    return `黄金${p.grams}克 均价¥${p.goldCost}/克 现价¥${gp||'—'}/克 盈亏${pnl}`;
+  }).join('\n');
+  const funds=D.products.filter(p=>p.type==='fund_cn').map(p=>`${p.name} ${p.fundShares?.toFixed(0)||'—'}份 净值¥${p.fundPrice||'—'} 成本¥${p.fundCost||'—'}`).join('\n');
+  const tds=D.products.filter(p=>p.type==='term_deposit').map(p=>`定存${p.tdCur||p.currency||'AUD'} ${p.principal} ${p.rate}%p.a. 到期${p.tdContractEnd||p.tdEnd||'—'}`).join('\n');
+  const snaps=[...(D.navHistory||[])].sort((a,b)=>a.date>b.date?1:-1);
+  const navTrend=snaps.slice(-5).map(s=>`${s.date} ¥${s.cny}`).join(' → ');
+  const usPct=cny>0?(totalCNY('us')/cny*100).toFixed(1):'0.0';
+  const auPct=cny>0?(totalCNY('au')/cny*100).toFixed(1):'0.0';
+  const cnPct=cny>0?(totalCNY('cn')/cny*100).toFixed(1):'0.0';
+
+  const portfolio=`总净值：¥${Math.round(cny).toLocaleString()} / $${Math.round(cny/(fx.USD||7)).toLocaleString()} / A$${Math.round(cny/(fx.AUD||4.75)).toLocaleString()}
+汇率：USD/CNY=${fx.USD||'—'} AUD/CNY=${fx.AUD||'—'}
+区域分布：中国${cnPct}% 美国${usPct}% 澳洲${auPct}%
+目标：¥${D.goal?.amount?.toLocaleString()||'未设'} 进度${D.goal?.amount?(cny/D.goal.amount*100).toFixed(1)+'%':'—'}
+
+【美股】\n${stocks||'无'}
+【黄金】\n${golds||'无'}
+【基金】\n${funds||'无'}
+【定存】\n${tds||'无'}
+【NAV历史（近5条）】${navTrend||'无'}`;
+
+  try{
+    const r=await fetch('/api/ai-advisor',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({portfolio,provider})
+    });
+    const data=await r.json();
+    if(data.advice){
+      const safe=escOvHtml(data.advice);
+      result.innerHTML=
+        `<div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:12px;padding:6px 10px;background:var(--bg3);border-radius:var(--r-sm);display:inline-block">🤖 ${escOvHtml(String(data.model||''))} · ${new Date().toLocaleTimeString('zh-CN')}</div>`+
+        safe
+          .replace(/【(.+?)】/g,'<div style="font-weight:700;color:var(--accent);margin:14px 0 6px;font-size:14px;padding-bottom:4px;border-bottom:1px solid var(--border)">【$1】</div>')
+          .replace(/\n/g,'<br>')+
+        `<div style="margin-top:14px;padding-top:10px;border-top:1px dashed var(--border);font-size:11px;color:var(--text3);font-family:var(--mono)">⚠️ 仅供参考，不构成投资建议</div>`;
+    }else{
+      result.innerHTML=`<span style="color:var(--red)">失败：${escOvHtml(String(data.error||'未知'))}</span>`;
+    }
+  }catch(e){
+    result.innerHTML=`<span style="color:var(--red)">网络错误：${escOvHtml(String(e.message||''))}</span>`;
+  }finally{
+    btn.disabled=false;btn.textContent='✨ AI 分析';
+  }
 }
 
 // ══ OVERVIEW ══
