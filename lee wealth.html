@@ -2686,8 +2686,21 @@ function fetchGoldPriceSinaJsonp(){
     document.head.appendChild(sc);
   });
 }
+async function fetchGoldPriceViaApi(){
+  try{
+    if(location.protocol!=='https:'&&location.protocol!=='http:')return 0;
+    const r=await fetch(location.origin+'/api/gold-price',{cache:'no-store'});
+    if(!r.ok)return 0;
+    const d=await r.json();
+    const p=parseFloat(d.price||0);
+    if(p>100&&p<20000)return p;
+  }catch(e){}
+  return 0;
+}
 async function fetchGoldPrice(){
-  let price=await fetchGoldPriceSinaJsonp();
+  let price=await fetchGoldPriceViaApi();
+  if(price>0)return price;
+  price=await fetchGoldPriceSinaJsonp();
   if(price>0)return price;
   try{
     const body=await fetchProxiedText('https://hq.sinajs.cn/list=Au9999');
