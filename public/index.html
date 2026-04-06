@@ -2663,7 +2663,9 @@ function fetchFundPrice(code){
     const sc=document.createElement('script');
     const t=setTimeout(()=>{delete window[cb];sc.remove();reject(new Error('超时'));},10000);
     window[cb]=d=>{clearTimeout(t);delete window[cb];sc.remove();
-      resolve({price:parseFloat(d.gsz)||parseFloat(d.dwjz)||0,name:d.name||code,date:d.gztime||d.jzrq||''});
+      const gsz=parseFloat(d.gsz),dwjz=parseFloat(d.dwjz);
+      const price=gsz>0&&isFinite(gsz)?gsz:(dwjz>0&&isFinite(dwjz)?dwjz:0);
+      resolve({price,name:d.name||code,date:d.gztime||d.jzrq||''});
     };
     sc.src=`https://fundgz.1234567.com.cn/js/${code}.js?callback=${cb}&v=${Date.now()}`;
     sc.onerror=()=>{clearTimeout(t);delete window[cb];sc.remove();reject(new Error('失败'));};
@@ -2682,8 +2684,8 @@ async function refreshFunds(){
   }
   save();renderRegion('cn');renderSidebar();refreshOVTotals();
   el.innerHTML=fail.length
-    ?`<div class="alert alert-warn">✅ 更新 ${ok} 个 ⚠️ 失败: ${fail.join(', ')}（非交易日净值不更新）</div>`
-    :`<div class="alert alert-ok">✅ 已更新 ${ok} 个基金最新净值</div>`;
+    ?`<div class="alert alert-warn">✅ 更新 ${ok} 个 ⚠️ 失败: ${fail.join(', ')}（非交易日或接口失败时不更新；成功项已写入天天基金「估算净值」，无估算则用「单位净值」）</div>`
+    :`<div class="alert alert-ok">✅ 已更新 ${ok} 个基金的当前净值（天天基金：优先当日估算净值，否则已披露单位净值；市值=份额×该净值）</div>`;
   setTimeout(()=>el.innerHTML='',8000);
 }
 
