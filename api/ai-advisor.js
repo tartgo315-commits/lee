@@ -18,6 +18,15 @@ async function readJsonBody(req) {
 }
 
 export default async function handler(req, res) {
+  console.log(
+    'ENV CHECK:',
+    'GEMINI:',
+    !!process.env.GEMINI_API_KEY,
+    'GROQ:',
+    !!process.env.GROQ_API_KEY,
+    'COHERE:',
+    !!process.env.COHERE_API_KEY
+  );
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -62,7 +71,7 @@ ${portfolio}`;
 
   async function tryGemini() {
     const key = process.env.GEMINI_API_KEY;
-    if (!key) throw new Error('no key');
+    if (!key) throw new Error('no_key_GEMINI');
     const r = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`,
       {
@@ -82,7 +91,7 @@ ${portfolio}`;
 
   async function tryGroq() {
     const key = process.env.GROQ_API_KEY;
-    if (!key) throw new Error('no key');
+    if (!key) throw new Error('no_key_GROQ');
     const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
@@ -101,7 +110,7 @@ ${portfolio}`;
 
   async function tryCohere() {
     const key = process.env.COHERE_API_KEY;
-    if (!key) throw new Error('no key');
+    if (!key) throw new Error('no_key_COHERE');
     const r = await fetch('https://api.cohere.ai/v1/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
