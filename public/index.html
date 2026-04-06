@@ -855,6 +855,7 @@ body.light .fh-mkt-badge.fh-mkt-night{color:#0f766e;background:rgba(15,118,110,.
 
     <!-- US -->
     <div class="page" id="page-us">
+      <div id="us-stock-panel" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:12px;margin-bottom:20px"></div>
       <div class="page-header">
         <div>
           <div class="ph-label">🇺🇸 美国</div>
@@ -867,7 +868,6 @@ body.light .fh-mkt-badge.fh-mkt-night{color:#0f766e;background:rgba(15,118,110,.
           <button class="btn btn-primary btn-sm" onclick="openModal('us')">＋ 添加</button>
         </div>
       </div>
-      <div id="us-stock-panel" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:20px"></div>
       <div id="us-blocks"></div>
       <div id="us-refresh-status"></div>
     </div>
@@ -1593,6 +1593,11 @@ function scheduleUsLiveAggregates(){
   clearTimeout(finnhubAggTimer);
   finnhubAggTimer=setTimeout(()=>updateUsLiveAggregates(),180);
 }
+let __usStockPanelLiveTimer=null;
+function scheduleRenderUsStockPanelFromLiveQuote(){
+  clearTimeout(__usStockPanelLiveTimer);
+  __usStockPanelLiveTimer=setTimeout(()=>{__usStockPanelLiveTimer=null;try{renderUsStockPanel();}catch(e){}},0);
+}
 function usAccountHeaderCNY(acc){
   const aps=D.products.filter(p=>p.region==='us'&&p.account===acc);
   const productCashCny=sumUsdCashCNY(aps);
@@ -1672,6 +1677,7 @@ function patchUsStockLiveRow(sym,price){
   }
   syncFhmktBadgeForTicker(T);
   scheduleUsLiveAggregates();
+  scheduleRenderUsStockPanelFromLiveQuote();
 }
 function connectFinnhubWs(){
   /* FINNHUB_TOKEN 仅服务端 /api/finnhub-quote；浏览器无 token，不连 wss://ws.finnhub.io */
@@ -1809,6 +1815,7 @@ function initFinnhubUsLive(){
   finnhubCloseIntent=false;
   connectFinnhubWs();
   startFinnhubQuotePolling();
+  try{renderUsStockPanel();}catch(e){}
   document.addEventListener('visibilitychange',()=>{
     if(!document.hidden)pollFinnhubQuotesOnce();
   });
@@ -2711,8 +2718,15 @@ function renderNavMiniChart(days){
 
 // ══ REGION PAGE ══
 function renderUsStockPanel(){
-  const el=document.getElementById('us-stock-panel');
-  if(!el)return;
+  let el=document.getElementById('us-stock-panel');
+  if(!el){
+    const page=document.getElementById('page-us');
+    if(!page)return;
+    el=document.createElement('div');
+    el.id='us-stock-panel';
+    el.style.cssText='display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:12px;margin-bottom:20px';
+    page.insertBefore(el,page.firstChild);
+  }
   const stocks=D.products.filter(p=>p.type==='stock_us'&&p.ticker);
   if(!stocks.length){el.innerHTML='';return;}
   el.innerHTML=stocks.map(p=>{
@@ -2764,6 +2778,7 @@ function renderRegion(region){
   } else if(region==='us'){
     document.getElementById('us-total').textContent=fc(primaryVal,'USD',2);
     document.getElementById('us-sub').textContent=fc(rcny,'CNY')+' | '+fc(fromCNY(rcny,'AUD'),'AUD');
+    renderUsStockPanel();
     document.getElementById('us-blocks').innerHTML=buildAccountBlocks(ps,region);
     finnhubSyncSubscriptions();
     renderUsStockPanel();
