@@ -2230,12 +2230,12 @@ function renderOverview(){
         let name,sub,amt,cnyStr,pnl='',nameHtml='';
         if(p.type==='gold'){
           const price=p.goldPrice||0,grams=p.grams||0,cost=p.goldCost||0;
-          const mkt=grams*price,pnl=mkt-grams*cost,pct=cost>0?pnl/(grams*cost)*100:0;
+          const mkt=grams*price,pnlVal=mkt-grams*cost,pct=(cost>0&&grams>0)?pnlVal/(grams*cost)*100:0;
           name=p.name||'黄金积存';
           sub=`${fmt(grams,4)}克 · 均价¥${fmt(cost,2)}/克`;
           amt=price?`¥${fmt(price,2)}/克`:'待刷新';
           cnyStr=price?`市值 ${fc(mkt,'CNY',2)}`:'';
-          pnl=price?`<div class="ov-prod-pnl ${pnl>=0?'pos':'neg'}">${pnl>=0?'+':''}${fc(pnl,'CNY',2)} (${pnl>=0?'+':''}${safePctFixed(pct,1)}%)</div>`:'';
+          pnl=price?`<div class="ov-prod-pnl ${pnlVal>=0?'pos':'neg'}">${pnlVal>=0?'+':''}${fc(pnlVal,'CNY',2)} (${pnlVal>=0?'+':''}${safePctFixed(pct,1)}%)</div>`:'';
         } else if(p.type==='stock_us'){
           const price=p.currentPrice||0,cost=p.costPrice||0,shares=p.shares||0;
           const mkt=shares*price,pnlUSD=shares*(price-cost),pct=cost>0?(price-cost)/cost*100:0;
