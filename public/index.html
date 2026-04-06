@@ -850,6 +850,19 @@ body.light .fh-mkt-badge.fh-mkt-night{color:#0f766e;background:rgba(15,118,110,.
         </div>
         <div class="nav-chart-wrap"><canvas id="chart-ov"></canvas></div>
       </div>
+      <div id="ai-advisor-wrap" style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);padding:22px 24px;margin-top:24px;box-shadow:var(--shadow-sm)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px">
+          <div>
+            <div style="font-size:15px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:8px">
+              🤖 智能理财分析
+              <span style="font-size:10px;font-family:var(--mono);color:var(--text3);background:var(--bg4);padding:2px 8px;border-radius:999px">本地分析 · 完全免费</span>
+            </div>
+            <div style="font-size:12px;color:var(--text3);font-family:var(--mono);margin-top:4px">基于实时持仓数据自动分析</div>
+          </div>
+          <button type="button" class="btn btn-primary btn-sm" onclick="runAiAdvisor()">✨ 生成分析报告</button>
+        </div>
+        <div id="ai-advisor-result" style="display:none;border-top:1px solid var(--border);padding-top:16px"></div>
+      </div>
     </div>
 
     <!-- CHINA -->
@@ -2559,6 +2572,116 @@ function openGoalEdit(){
   D.goal={amount:n,currency:'CNY',label:(lbl!=null&&String(lbl).trim())?String(lbl).trim():'存款目标'};
   save();
   updateGoalBar();
+}
+
+function runAiAdvisor(){
+  const el=document.getElementById('ai-advisor-result');
+  if(!el)return;
+  el.style.display='block';
+  const fx=D.fx||{};
+  const cny=totalCNY();
+  const stocks=D.products.filter(p=>p.type==='stock_us'&&p.ticker&&p.currentPrice>0&&p.costPrice>0);
+  const golds=D.products.filter(p=>p.type==='gold'&&p.goldPrice>0);
+  const tds=D.products.filter(p=>p.type==='term_deposit');
+  const goal=D.goal;
+  const snaps=[...(D.navHistory||[])].filter(n=>n&&n.date&&n.cny!=null&&!isNaN(Number(n.cny))).sort((a,b)=>a.date.localeCompare(b.date));
+  const sections=[];
+  if(cny<=0){
+    el.innerHTML='<div style="font-size:13px;color:var(--text3);line-height:1.7">暂无有效净值数据，请先添加资产。</div>';
+    return;
+  }
+  const stockLines=[];
+  stocks.forEach(p=>{
+    const T=escOvHtml(String(p.ticker||'').trim().toUpperCase());
+    const pct=(p.currentPrice-p.costPrice)/p.costPrice*100;
+    const val=p.currentPrice*(p.shares||0);
+    if(pct>50)stockLines.push(`⚠️ <b>${T}</b> 已盈利 <b style="color:var(--green)">${pct.toFixed(1)}%</b>（$${val.toFixed(0)}），浮盈较大，可考虑分批止盈或上移止损线保护利润`);
+    else if(pct>20)stockLines.push(`✅ <b>${T}</b> 盈利 <b style="color:var(--green)">${pct.toFixed(1)}%</b>，趋势良好，继续持有观察`);
+    else if(pct<-10)stockLines.push(`🔴 <b>${T}</b> 亏损 <b style="color:var(--red)">${Math.abs(pct).toFixed(1)}%</b>，留意止损位，评估是否补仓或减仓`);
+    else if(pct<0)stockLines.push(`🟡 <b>${T}</b> 小幅亏损 <b style="color:var(--red)">${Math.abs(pct).toFixed(1)}%</b>，暂在成本附近震荡`);
+    else stockLines.push(`📊 <b>${T}</b> 盈利 ${pct.toFixed(1)}%，持仓正常`);
+    const sl=p.stopLoss!=null&&isFinite(Number(p.stopLoss))?Number(p.stopLoss):null;
+    if(sl!=null&&sl>0&&p.currentPrice>0){
+      const distStop=(p.currentPrice-sl)/p.currentPrice*100;
+      if(distStop<5)stockLines.push(`🚨 <b>${T}</b> 现价 $${p.currentPrice.toFixed(2)} 距止损 $${sl.toFixed(2)} 仅剩 <b style="color:var(--red)">${distStop.toFixed(1)}%</b>，请高度关注！`);
+    }
+  });
+  if(stockLines.length)sections.push({title:'📈 美股持仓分析',lines:stockLines});
+  const concLines=[];
+  const totalUs=stocks.reduce((s,p)=>s+(p.currentPrice||0)*(p.shares||0),0);
+  if(totalUs>0){
+    stocks.forEach(p=>{
+      const wt=(p.currentPrice*p.shares)/totalUs*100;
+      if(wt>45)concLines.push(`⚠️ <b>${escOvHtml(String(p.ticker||'').trim().toUpperCase())}</b> 占美股仓位 <b>${wt.toFixed(1)}%</b>，单一标的集中度偏高`);
+    });
+  }
+  const usAuPct=(totalCNY('us')+totalCNY('au'))/cny*100;
+  if(usAuPct>65){
+    const uRate=Number(fx.USD)>0?Number(fx.USD):7.25;
+    const usdExposure=totalCNY('us')/uRate;
+    const deltaApprox=Math.round(usdExposure*0.1);
+    concLines.push(`💱 美+澳资产占总净值 <b>${usAuPct.toFixed(1)}%</b>，汇率波动对净值影响较大。USD/CNY 每变动 0.1，美股美元仓位约影响净值 <b>¥${deltaApprox.toLocaleString('zh-CN')}</b>（粗略估算）`);
+  }
+  if(concLines.length)sections.push({title:'⚖️ 集中度与汇率风险',lines:concLines});
+  if(golds.length){
+    const goldLines=[];
+    golds.forEach(p=>{
+      const cost=p.goldCost||0,price=p.goldPrice||0,grams=p.grams||0;
+      const pct=cost>0?(price-cost)/cost*100:0;
+      const goldVal=grams*price;
+      const goldPct=cny>0?goldVal/cny*100:0;
+      const nm=escOvHtml(p.name||'黄金积存');
+      if(cost>0&&pct>25)goldLines.push(`🥇 <b>${nm}</b> 黄金积存盈利 <b style="color:var(--green)">${pct.toFixed(1)}%</b>，占总净值 ${goldPct.toFixed(1)}%。黄金已处历史高位区间，可适量减持锁定收益`);
+      else goldLines.push(`🥇 <b>${nm}</b> 黄金积存${cost>0?`盈利 <b>${pct.toFixed(1)}%</b>`:'暂无成本价'}，作为抗通胀配置可继续持有`);
+    });
+    sections.push({title:'🏅 黄金配置',lines:goldLines});
+  }
+  if(tds.length){
+    const tdLines=[];
+    const now=new Date();
+    tds.forEach(p=>{
+      const end=p.tdContractEnd||p.tdEnd;
+      if(!end)return;
+      const days=Math.round((new Date(end+'T12:00:00')-now)/86400000);
+      const nm=escOvHtml(p.name||'定期');
+      if(days<=30)tdLines.push(`🚨 <b>${nm}</b> 还有 <b style="color:var(--red)">${days} 天</b>到期，请提前考虑续存或转投`);
+      else if(days<=90)tdLines.push(`📅 <b>${nm}</b> 还有 <b>${days} 天</b>到期（${escOvHtml(String(end))}），${p.rate||0}% p.a.`);
+    });
+    if(tdLines.length)sections.push({title:'🏦 定存到期提醒',lines:tdLines});
+  }
+  if(goal&&goal.amount>0){
+    const goalLines=[];
+    const pct=cny/goal.amount*100;
+    const remaining=goal.amount-cny;
+    if(pct>=100)goalLines.push(`🎉 已达成目标 ¥${Number(goal.amount).toLocaleString('zh-CN')}！可考虑上调目标或优化资产结构`);
+    else if(pct>=95)goalLines.push(`🏁 距目标仅差 <b>¥${Math.round(remaining).toLocaleString('zh-CN')}</b>（${(100-pct).toFixed(1)}%），预计本月可达成`);
+    else if(snaps.length>=2){
+      const oldest=snaps[0],newest=snaps[snaps.length-1];
+      const days=Math.max(1,(new Date(newest.date+'T12:00:00')-new Date(oldest.date+'T12:00:00'))/86400000);
+      const growthPerDay=(Number(newest.cny)-Number(oldest.cny))/days;
+      if(growthPerDay>0&&remaining>0){
+        const daysLeft=Math.ceil(remaining/growthPerDay);
+        const eta=new Date(Date.now()+daysLeft*86400000);
+        goalLines.push(`🎯 目标进度 <b>${pct.toFixed(1)}%</b>，差 ¥${Math.round(remaining).toLocaleString('zh-CN')}。按近期日均增长 ¥${Math.round(growthPerDay).toLocaleString('zh-CN')} 估算，预计 <b>${eta.getFullYear()}年${eta.getMonth()+1}月</b>达成`);
+      }else goalLines.push(`🎯 目标进度 <b>${pct.toFixed(1)}%</b>，近期净值有所回落或增速不足，请关注持仓变化`);
+    }else goalLines.push(`🎯 目标进度 <b>${pct.toFixed(1)}%</b>，还差 ¥${Math.round(remaining).toLocaleString('zh-CN')}（快照≥2条后可估算达成时间）`);
+    sections.push({title:'🏆 目标达成分析',lines:goalLines});
+  }
+  const liqLines=[];
+  const cashCny=D.products.filter(p=>p.type==='cash').reduce((s,p)=>s+toCNY(p.amount||0,p.currency||'CNY'),0);
+  const cashPct=cashCny/cny*100;
+  if(cashPct<10)liqLines.push(`⚠️ 活期现金占比仅 <b>${cashPct.toFixed(1)}%</b>（¥${Math.round(cashCny).toLocaleString('zh-CN')}），流动性偏低，建议保留至少 3-6 个月生活费的现金`);
+  else if(cashPct>30)liqLines.push(`💡 活期现金占比 <b>${cashPct.toFixed(1)}%</b>，略显偏高，可考虑将部分转入定存或低风险理财以提高收益`);
+  else liqLines.push(`✅ 活期现金占比 ${cashPct.toFixed(1)}%，流动性配置合理`);
+  sections.push({title:'💧 流动性评估',lines:liqLines});
+  const ts=new Date().toLocaleString('zh-CN');
+  el.innerHTML=sections.map(s=>`<div style="margin-bottom:18px">
+      <div style="font-size:13px;font-weight:700;color:var(--accent);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)">${s.title}</div>
+      ${s.lines.map(l=>`<div style="font-size:13px;color:var(--text);line-height:1.7;margin-bottom:5px;padding-left:4px">${l}</div>`).join('')}
+    </div>`).join('')+
+    `<div style="margin-top:8px;padding-top:10px;border-top:1px dashed var(--border);font-size:11px;color:var(--text3);font-family:var(--mono)">
+    📊 分析时间：${ts} · 基于本地持仓数据自动生成 · 仅供参考，不构成投资建议
+  </div>`;
 }
 
 // ══ OVERVIEW ══
