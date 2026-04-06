@@ -2404,7 +2404,7 @@ function showPage(id){
   document.getElementById('topbar-title').textContent=titles[id]||id;
   if(id==='overview')renderOverview();
   else if(id==='cn')renderRegion('cn');
-  else if(id==='us')renderRegion('us');
+  else if(id==='us'){renderRegion('us');try{renderUsStockPanel();}catch(e){}}
   else if(id==='au')renderRegion('au');
   else if(id==='history')renderHistory();
   else if(id==='news')renderNewsPage();
@@ -2727,7 +2727,7 @@ function renderUsStockPanel(){
     el.style.cssText='display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:12px;margin-bottom:20px';
     page.insertBefore(el,page.firstChild);
   }
-  const stocks=D.products.filter(p=>p.type==='stock_us'&&p.ticker);
+  const stocks=D.products.filter(p=>p.type==='stock_us'&&String(p.ticker||'').trim());
   if(!stocks.length){el.innerHTML='';return;}
   el.innerHTML=stocks.map(p=>{
     const price=p.currentPrice||0;
@@ -2776,12 +2776,15 @@ function renderRegion(region){
     document.getElementById('cn-sub').textContent=fc(fromCNY(rcny,'USD'),'USD')+' | '+fc(fromCNY(rcny,'AUD'),'AUD');
     document.getElementById('cn-blocks').innerHTML=buildAccountBlocks(ps,region);
   } else if(region==='us'){
-    document.getElementById('us-total').textContent=fc(primaryVal,'USD',2);
-    document.getElementById('us-sub').textContent=fc(rcny,'CNY')+' | '+fc(fromCNY(rcny,'AUD'),'AUD');
-    renderUsStockPanel();
-    document.getElementById('us-blocks').innerHTML=buildAccountBlocks(ps,region);
+    const elUt=document.getElementById('us-total');
+    const elUs=document.getElementById('us-sub');
+    const elUb=document.getElementById('us-blocks');
+    if(elUt)elUt.textContent=fc(primaryVal,'USD',2);
+    if(elUs)elUs.textContent=fc(rcny,'CNY')+' | '+fc(fromCNY(rcny,'AUD'),'AUD');
+    try{renderUsStockPanel();}catch(e){}
+    if(elUb)elUb.innerHTML=buildAccountBlocks(ps,region);
     finnhubSyncSubscriptions();
-    renderUsStockPanel();
+    try{renderUsStockPanel();}catch(e){}
   } else if(region==='au'){
     maybeRollAuWeeklyCompound();
     document.getElementById('au-total').textContent=fc(primaryVal,'AUD');
@@ -2791,6 +2794,7 @@ function renderRegion(region){
     document.getElementById('au-blocks').innerHTML=buildAccountBlocks(ps,region);
   }
   attachToggleEvents();
+  if(region==='us')try{renderUsStockPanel();}catch(e){}
 }
 
 function buildAccountBlocks(ps,region){
@@ -4066,12 +4070,13 @@ function importAlipayChinaPreset(){
   const mkt=71953.83,holdPnl=22043.12;
   const fundPrice=2.3258;
   const fundShares=mkt/fundPrice;
-  const fundCost=(mkt-holdPnl)/fundShares;
-  D.products.push({id:D.nextId++,region:'cn',type:'fund_cn',account:acc,name:'前海开源黄金ETF联接C',fundCode:'021740',fundShares,fundCost,fundPrice,fundCurrency:'CNY',note:'黄金ETF联接 · 份额=金额÷净值；与资产详情页一致后可点「刷新基金」',createdAt:t,updatedAt:t});
+  const costTotal=mkt-holdPnl;
+  const fundCost=costTotal/fundShares;
+  D.products.push({id:D.nextId++,region:'cn',type:'fund_cn',account:acc,name:'前海开源黄金ETF联接C',fundCode:'021740',fundShares,fundCost,fundPrice,fundCurrency:'CNY',note:'黄金ETF联接 · 份额=金额÷当日净值；成本均价=(金额−持有收益)÷份额。若涨幅与支付宝差很多：打开编辑把「成本均价」改成资产详情里的成本价。',createdAt:t,updatedAt:t});
   save();renderSidebar();renderOverview();
   if(document.getElementById('page-cn')?.classList.contains('active'))renderRegion('cn');
   const el=document.getElementById('cn-refresh-status');
-  if(el)el.innerHTML='<div class="alert alert-ok">✅ 已写入支付宝 3 条。黄金联接已按净值 2.3258、代码 021740 推算份额与成本；请核对实盘后可点「刷新基金」更新净值。</div>';
+  if(el)el.innerHTML='<div class="alert alert-ok">✅ 已写入支付宝 3 条。黄金联接份额按截图日净值推算；盈亏比例对「成本均价」敏感，请与蚂蚁「资产详情」核对，不一致时在编辑里改成本均价。</div>';
 }
 
 const CBA_AU_IMPORT_TAG='cba_au_import';
