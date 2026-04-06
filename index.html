@@ -1292,6 +1292,16 @@ function parseYahooV7QuoteBatchMap(raw){
   }
   return m;
 }
+/** Twelve Data 与 Yahoo v7 合一：延长交易时段必须以 Yahoo（pickYahooDisplayPrice + marketState）为准，避免批量 Twelve 只有常规收市价却仍占满 seed 导致跳过 Yahoo。 */
+function combineTwelveDataYahoo(tdPx,yPx,sym){
+  const T=String(sym||'').trim().toUpperCase();
+  const st=String(yahooQuoteMetaBySym.get(T)?.state||'').toUpperCase();
+  const preferYahoo=st==='PRE'||st==='PREPRE'||st==='PREOPEN'||st==='POST'||st==='POSTPOST'||st==='EXTENDED'||st==='OVERNIGHT'||st==='CLOSED';
+  if(preferYahoo&&yPx>0&&isFinite(yPx))return yPx;
+  if(tdPx>0&&isFinite(tdPx))return tdPx;
+  if(yPx>0&&isFinite(yPx))return yPx;
+  return null;
+}
 /** Stooq CSV（独立数据源；部分标的为延迟行情，参与综合时可拉平单一渠道的偏差） */
 function parseStooqCsv(text){
   const lines=String(text||'').trim().split(/\r?\n/).filter(Boolean);
@@ -1379,17 +1389,16 @@ async function fetchTwelveDataStockPrice(ticker){
   return null;
 }
 /**
- * 美股现价：优先 Twelve Data（/api/stock-price）；Yahoo Chart/v7 与 Stooq 备用。
+ * 美股现价：Twelve Data 与 Yahoo Chart/v7 并行；盘前/盘后/收盘后盘后价以 Yahoo marketState 为准（combineTwelveDataYahoo）。
  */
 async function fetchYahooStockPrice(ticker){
   const sym=String(ticker||'').trim().toUpperCase();
   if(!sym)return null;
-  const td=await fetchTwelveDataStockPrice(sym);
-  if(td!=null)return td;
   const yChart='https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(sym)+'?interval=5m&range=5d&includePrePost=true';
   const yQuote='https://query1.finance.yahoo.com/v7/finance/quote?symbols='+encodeURIComponent(sym);
   const stooqUrl='https://stooq.com/q/l/?s='+encodeURIComponent(sym.toLowerCase())+'.us&f=sd2t2ohlcv&h&e=csv';
-  const [t1,t2,t3]=await Promise.all([
+  const [td,t1,t2,t3]=await Promise.all([
+    fetchTwelveDataStockPrice(sym),
     fetchTextCrossOrigin(yChart),
     fetchTextCrossOrigin(yQuote),
     fetchTextCrossOrigin(stooqUrl),
@@ -1397,9 +1406,9 @@ async function fetchYahooStockPrice(ticker){
   const p1=parseYahooChartPrice(t1);
   const p2=parseYahooV7Quote(t2);
   const p3=parseStooqCsv(t3);
-  if(p2!=null&&p2>0&&isFinite(p2))return p2;
-  if(p1!=null&&p1>0&&isFinite(p1))return p1;
-  return p3;
+  const yPx=(p2!=null&&p2>0&&isFinite(p2))?p2:((p1!=null&&p1>0&&isFinite(p1))?p1:((p3>0&&isFinite(p3))?p3:null));
+  const px=combineTwelveDataYahoo(td,yPx,sym);
+  return px!=null&&px>0?px:null;
 }
 
 // ══ Finnhub：REST 经同源 /api/finnhub-quote（密钥在 Vercel 环境变量 FINNHUB_TOKEN）；浏览器不再持有 token，故不使用 wss ══
@@ -1518,40 +1527,43 @@ function patchUsStockLiveRow(sym,price){
 function connectFinnhubWs(){
   /* FINNHUB_TOKEN 仅服务端 /api/finnhub-quote；浏览器无 token，不连 wss://ws.finnhub.io */
 }
-/** Yahoo v7 批量 → Map（不写屏；parse 内会 recordYahooQuoteMeta）；同源 /api/stock-price 优先 */
+/** Yahoo v7 批量 → Map（parse 内会 recordYahooQuoteMeta）；Twelve 与 Yahoo 始终合并，延长时段以 Yahoo 为准 */
 async function fetchYahooV7QuotePriceMap(syms,opts){
   opts=opts||{};
   const out=new Map();
-  if(opts.seedMap instanceof Map){
-    for(const [k,v] of opts.seedMap){
-      const T=String(k||'').trim().toUpperCase();
-      if(T&&typeof v==='number'&&v>0&&isFinite(v))out.set(T,v);
-    }
-  }
   if(!syms||!syms.length)return out;
   const uniq=[...new Set(syms.map(s=>String(s||'').trim().toUpperCase()).filter(Boolean))];
   const canApi=location.protocol==='http:'||location.protocol==='https:';
-  if(canApi&&!opts.skipTwelve){
+  const tdMap=new Map();
+  if(opts.seedMap instanceof Map){
+    for(const [k,v] of opts.seedMap){
+      const T=String(k||'').trim().toUpperCase();
+      if(T&&typeof v==='number'&&v>0&&isFinite(v))tdMap.set(T,v);
+    }
+  }else if(canApi&&!opts.skipTwelve){
     const apiBatch=12;
     for(let i=0;i<uniq.length;i+=apiBatch){
       const slice=uniq.slice(i,i+apiBatch);
       await Promise.all(slice.map(async sym=>{
         const p=await fetchTwelveDataStockPrice(sym);
-        if(p!=null)out.set(sym,p);
+        if(p!=null)tdMap.set(sym,p);
       }));
     }
   }
-  const missing=uniq.filter(s=>!out.has(s));
-  if(!missing.length)return out;
+  const yahooMap=new Map();
   const chunk=40;
-  for(let i=0;i<missing.length;i+=chunk){
-    const part=missing.slice(i,i+chunk);
+  for(let i=0;i<uniq.length;i+=chunk){
+    const part=uniq.slice(i,i+chunk);
     const url='https://query1.finance.yahoo.com/v7/finance/quote?symbols='+encodeURIComponent(part.join(','));
     try{
       const raw=await fetchTextCrossOrigin(url);
       const map=parseYahooV7QuoteBatchMap(raw);
-      for(const [sym,price] of map)out.set(sym,price);
+      for(const [sym,price] of map)yahooMap.set(sym,price);
     }catch(e){}
+  }
+  for(const sym of uniq){
+    const px=combineTwelveDataYahoo(tdMap.get(sym),yahooMap.get(sym),sym);
+    if(px!=null&&px>0&&isFinite(px))out.set(sym,px);
   }
   return out;
 }
@@ -3465,7 +3477,7 @@ if(localStorage.getItem('wo_night')==='1')document.body.classList.add('night');
 const TIGER_PRESET = [
   {ticker:'NVDA', name:'英伟达',    shares:40,   cost:105.36, price:168.19},
   {ticker:'PLTR', name:'Palantir', shares:5,    cost:158.38, price:143.33},
-  {ticker:'SGOV', name:'iShares 0-3月美债 ETF',  shares:66,   cost:100.64, price:100.65},
+  {ticker:'CRCL', name:'Circle',   shares:10,   cost:90.95,  price:90.26},
   {ticker:'TSLA', name:'特斯拉',   shares:31,   cost:269.08, price:363.46},
   {ticker:'VOO',  name:'Vanguard', shares:39.5, cost:619.20, price:584.98},
 ];
