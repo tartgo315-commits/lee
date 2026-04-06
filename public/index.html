@@ -694,6 +694,25 @@ body.light .fh-mkt-badge.fh-mkt-night{color:#0f766e;background:rgba(15,118,110,.
 </style>
 </head>
 <body>
+<div id="pin-overlay" style="display:none;position:fixed;inset:0;z-index:9999;background:var(--bg);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);flex-direction:column;align-items:center;justify-content:center;gap:24px" aria-modal="true" role="dialog" aria-labelledby="pin-overlay-title">
+  <div style="font-size:32px" aria-hidden="true">🔒</div>
+  <div id="pin-overlay-title" style="font-size:18px;font-weight:600;color:var(--text);letter-spacing:-.02em">LEE's Wealth</div>
+  <div style="font-size:13px;color:var(--text3);font-family:var(--mono)">输入 PIN 码解锁</div>
+  <div id="pin-dots" style="display:flex;gap:12px;margin:4px 0" aria-live="polite">
+    <div class="pin-dot"></div><div class="pin-dot"></div>
+    <div class="pin-dot"></div><div class="pin-dot"></div>
+  </div>
+  <div id="pin-error" style="font-size:12px;color:var(--red);font-family:var(--mono);height:16px;text-align:center"></div>
+  <div style="display:grid;grid-template-columns:repeat(3,72px);gap:10px" id="pin-keypad"></div>
+  <button type="button" onclick="pinForgot()" style="background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer;font-family:var(--mono);margin-top:8px">忘记PIN？（清除并用密码重新登录）</button>
+</div>
+<style>
+.pin-dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--border2);background:transparent;transition:background .15s,border-color .15s}
+.pin-dot.filled{background:var(--accent);border-color:var(--accent)}
+.pin-key{width:72px;height:72px;border-radius:50%;border:1px solid var(--border2);background:var(--surface);font-size:22px;font-weight:500;cursor:pointer;font-family:var(--mono);color:var(--text);transition:background .12s,transform .1s;display:flex;align-items:center;justify-content:center}
+.pin-key:hover{background:var(--bg3);transform:scale(1.05)}
+.pin-key:active{transform:scale(.95)}
+</style>
 
 <nav class="sidebar" id="main-sidebar" aria-label="主导航">
   <div class="sidebar-logo">
@@ -1036,6 +1055,14 @@ body.light .fh-mkt-badge.fh-mkt-night{color:#0f766e;background:rgba(15,118,110,.
         <div class="card-title">访问控制</div>
         <div style="font-size:13px;color:var(--text2);line-height:1.55;margin-bottom:10px">若部署时在 Vercel 配置了 <code style="font-size:11px;color:var(--accent2)">SITE_PASSWORD</code>，进入站点需先登录。退出将清除登录状态。</div>
         <a class="btn btn-ghost" href="/api/logout">退出登录</a>
+      </div>
+      <div style="margin-bottom:24px">
+        <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:12px">🔐 PIN 锁屏</div>
+        <div style="font-size:12px;color:var(--text3);margin-bottom:12px;font-family:var(--mono);line-height:1.6">30分钟无操作后自动锁屏，支持键盘输入。不影响 Vercel 站点密码。</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button type="button" class="btn btn-ghost btn-sm" onclick="setupPin()">🔑 设置 / 修改 PIN</button>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="clearPin()">🗑 清除 PIN</button>
+        </div>
       </div>
       <div class="card" style="border-color:rgba(239,68,68,.3)">
         <div class="card-title" style="color:var(--red)">危险操作</div>
@@ -4224,6 +4251,113 @@ initFinnhubUsLive();
     const rv4=document.getElementById('rv-audUSD');if(rv4) rv4.textContent=ua?(1/ua).toFixed(5):'—';
   });
 });
+
+// ══ PIN LOCK ══
+const PIN_KEY='lee_pin_hash';
+const PIN_IDLE_MS=30*60*1000;
+let _pinBuffer='';
+let _pinIdleTimer=null;
+function pinHash(s){
+  let h=0;
+  for(let i=0;i<s.length;i++)h=Math.imul(31,h)+s.charCodeAt(i)|0;
+  return h.toString(36);
+}
+function buildPinKeypad(){
+  const kp=document.getElementById('pin-keypad');
+  if(!kp||kp.children.length)return;
+  const keys=['1','2','3','4','5','6','7','8','9','','0','⌫'];
+  keys.forEach(k=>{
+    const btn=document.createElement('div');
+    btn.className='pin-key';
+    btn.textContent=k;
+    if(!k)btn.style.visibility='hidden';
+    else btn.onclick=()=>pinKeyPress(k);
+    kp.appendChild(btn);
+  });
+}
+function pinKeyPress(k){
+  const err=document.getElementById('pin-error');
+  if(err)err.textContent='';
+  if(k==='⌫')_pinBuffer=_pinBuffer.slice(0,-1);
+  else if(_pinBuffer.length<4)_pinBuffer+=k;
+  updatePinDots();
+  if(_pinBuffer.length===4)setTimeout(verifyPin,120);
+}
+function updatePinDots(){
+  document.querySelectorAll('#pin-dots .pin-dot').forEach((d,i)=>{d.classList.toggle('filled',i<_pinBuffer.length);});
+}
+function verifyPin(){
+  const stored=localStorage.getItem(PIN_KEY);
+  if(pinHash(_pinBuffer)===stored)hidePinOverlay();
+  else{
+    const err=document.getElementById('pin-error');
+    if(err)err.textContent='PIN 码错误，请重试';
+    const dots=document.getElementById('pin-dots');
+    if(dots){dots.style.animation='pinShake .35s ease';setTimeout(()=>{dots.style.animation='';},400);}
+    _pinBuffer='';
+    updatePinDots();
+  }
+}
+function showPinOverlay(){
+  const ov=document.getElementById('pin-overlay');
+  if(!ov)return;
+  _pinBuffer='';
+  updatePinDots();
+  buildPinKeypad();
+  ov.style.display='flex';
+  document.addEventListener('keydown',pinKeyboardHandler);
+}
+function hidePinOverlay(){
+  const ov=document.getElementById('pin-overlay');
+  if(ov)ov.style.display='none';
+  document.removeEventListener('keydown',pinKeyboardHandler);
+  resetPinIdleTimer();
+}
+function pinKeyboardHandler(e){
+  if(e.key>='0'&&e.key<='9')pinKeyPress(e.key);
+  else if(e.key==='Backspace')pinKeyPress('⌫');
+}
+function resetPinIdleTimer(){
+  clearTimeout(_pinIdleTimer);
+  const stored=localStorage.getItem(PIN_KEY);
+  if(!stored)return;
+  const ov=document.getElementById('pin-overlay');
+  if(ov&&ov.style.display==='flex')return;
+  _pinIdleTimer=setTimeout(()=>{showPinOverlay();},PIN_IDLE_MS);
+}
+function pinForgot(){
+  if(confirm('将清除 PIN 设置，页面会刷新。继续？')){
+    localStorage.removeItem(PIN_KEY);
+    location.reload();
+  }
+}
+function setupPin(){
+  const p1=prompt('设置新 PIN 码（4位数字）：');
+  if(!p1||!/^\d{4}$/.test(p1)){alert('请输入4位数字');return;}
+  const p2=prompt('再次确认 PIN 码：');
+  if(p1!==p2){alert('两次输入不一致');return;}
+  localStorage.setItem(PIN_KEY,pinHash(p1));
+  alert('✅ PIN 设置成功！下次30分钟无操作后自动锁屏。');
+  resetPinIdleTimer();
+}
+function clearPin(){
+  if(!confirm('确定清除 PIN 锁屏？'))return;
+  localStorage.removeItem(PIN_KEY);
+  clearTimeout(_pinIdleTimer);
+  alert('已清除 PIN');
+}
+['click','keydown','scroll','touchstart'].forEach(ev=>{
+  document.addEventListener(ev,()=>resetPinIdleTimer(),{passive:true});
+});
+(function pinShakeStyle(){
+  const st=document.createElement('style');
+  st.textContent='@keyframes pinShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}';
+  document.head.appendChild(st);
+})();
+(function initPin(){
+  if(localStorage.getItem(PIN_KEY))showPinOverlay();
+  else resetPinIdleTimer();
+})();
 </script>
 
 <div id="toast-root" aria-live="polite" aria-relevant="additions"></div>
