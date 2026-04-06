@@ -169,8 +169,8 @@ body:not(.light) .news-item:hover{background:rgba(255,255,255,.04)}
 .ov-insight-chip.warn{border-color:rgba(245,158,11,.45);color:var(--gold);background:var(--gold-bg)}
 .ov-insight-chip.info{border-color:rgba(202,138,4,.4);color:var(--accent2);background:var(--accent-soft)}
 .ov-insight-chip.ok{border-color:rgba(16,185,129,.35);color:var(--green);background:var(--green-bg)}
-/* 总览四卡：等高 stretch；大屏 区域·类别·流动性(1.4)·快照 */
-.ov-dash-toprow.ov-dash-bento{display:grid;gap:var(--s-3);align-items:stretch;min-width:0;grid-template-columns:1fr}
+/* 总览四卡：顶对齐；大屏 区域·类别·流动性(1.4)·快照 */
+.ov-dash-toprow.ov-dash-bento{display:grid;gap:var(--s-3);align-items:start;min-width:0;grid-template-columns:1fr}
 @media(min-width:640px){
   #page-overview .ov-dash-bento{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
@@ -180,9 +180,9 @@ body:not(.light) .news-item:hover{background:rgba(255,255,255,.04)}
 @media(min-width:1280px){
   #page-overview .ov-dash-bento{grid-template-columns:1fr 1fr 1.4fr 1fr}
 }
-.ov-dash-toprow>.card{margin-bottom:0!important;min-width:0;min-height:220px;padding:18px 18px 16px;display:flex;flex-direction:column}
+.ov-dash-toprow>.card{margin-bottom:0!important;min-width:0;min-height:0;padding:18px 18px 16px;display:flex;flex-direction:column}
 .ov-dash-toprow>.card .card-title{font-size:12px;margin-bottom:var(--s-2);line-height:var(--lh-snug);flex-shrink:0}
-.ov-dash-toprow .ov-donut-wrap{flex:1;min-height:0;height:auto;margin-top:8px}
+.ov-dash-toprow .ov-donut-wrap{flex:none;height:160px;margin-top:8px;position:relative;max-width:100%}
 .ov-dash-toprow #ov-liq-body{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .ov-dash-toprow #ov-mile-body{flex:1;min-height:0;display:flex;flex-direction:column}
 .ov-dash-toprow .ov-liq-hd{font-size:10px;flex-wrap:wrap;gap:var(--s-1);line-height:var(--lh-snug)}
@@ -190,7 +190,7 @@ body:not(.light) .news-item:hover{background:rgba(255,255,255,.04)}
 .ov-dash-toprow .ov-liq-track{height:6px}
 .ov-dash-toprow .ov-liq-row{margin-bottom:var(--s-2)}
 .ov-dash-toprow #ov-mile-body .ov-mile-foot-compact{font-size:10px;line-height:1.4;margin-top:auto;padding-top:10px;color:var(--text3);font-family:var(--mono)}
-#mile-first-delta.pos{color:var(--green)}#mile-first-delta.neg{color:var(--red)}
+#mile-first-delta.pos,#mile-recent-delta.pos{color:var(--green)}#mile-first-delta.neg,#mile-recent-delta.neg{color:var(--red)}
 .card#ov-nav-chart{margin-top:24px}
 #goal-fill{height:100%;border-radius:999px;transition:width .6s cubic-bezier(.4,0,.2,1);width:0%;background:linear-gradient(90deg,#4f46e5,#818cf8)}
 body.light #goal-fill{background:linear-gradient(90deg,var(--gold),#f59e0b)}
@@ -806,6 +806,10 @@ body.light .fh-mkt-badge.fh-mkt-night{color:#0f766e;background:rgba(15,118,110,.
                 <div style="font-size:16px;font-weight:600;font-variant-numeric:tabular-nums" id="mile-first-val">—</div>
                 <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:4px">相对首次</div>
                 <div style="font-size:15px;font-weight:600;font-variant-numeric:tabular-nums" id="mile-first-delta">—</div>
+                <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border)">
+                  <div style="font-size:11px;color:var(--text3);font-family:var(--mono)">较最近快照</div>
+                  <div style="font-size:14px;font-weight:600;margin-top:4px;font-variant-numeric:tabular-nums" id="mile-recent-delta">—</div>
+                </div>
               </div>
               <div class="ov-mile-foot-compact">变动含行情、汇率、申赎与新增资产，不单是盈亏。</div>
             </div>
@@ -3291,9 +3295,10 @@ function renderOverviewDashboard(){
   const elL=document.getElementById('ov-liq-body');
   const mileFirst=document.getElementById('mile-first-val');
   const mileDelta=document.getElementById('mile-first-delta');
+  const mileRecent=document.getElementById('mile-recent-delta');
   const ctxR=document.getElementById('chart-alloc-region');
   const ctxT=document.getElementById('chart-alloc-type');
-  if(!elI||!elL||!mileFirst||!mileDelta)return;
+  if(!elI||!elL||!mileFirst||!mileDelta||!mileRecent)return;
   const cny=totalCNY();
   const chips=[];
   if(!D.navHistory||!D.navHistory.length)
@@ -3332,6 +3337,8 @@ function renderOverviewDashboard(){
     mileFirst.textContent='—';
     mileDelta.textContent='—';
     mileDelta.className='';
+    mileRecent.textContent='—';
+    mileRecent.className='';
     return;
   }
   const bd=typeBreakdownForCharts();
@@ -3343,7 +3350,9 @@ function renderOverviewDashboard(){
     <div class="ov-liq-row"><div class="ov-liq-hd"><span>现金 / 活期（含手填闲置）</span><b>${(cashV/cny*100).toFixed(1)}% · ${fc(cashV,'CNY',0)}</b></div><div class="ov-liq-track"><div class="ov-liq-fill cash" style="width:${Math.min(100,cashV*scale)}%"></div></div></div>
     <div class="ov-liq-row"><div class="ov-liq-hd"><span>定期 / 锁定</span><b>${(lockV/cny*100).toFixed(1)}% · ${fc(lockV,'CNY',0)}</b></div><div class="ov-liq-track"><div class="ov-liq-fill lock" style="width:${Math.min(100,lockV*scale)}%"></div></div></div>
     <div class="ov-liq-row"><div class="ov-liq-hd"><span>投资类（基金·黄金·美股·其它）</span><b>${(invV/cny*100).toFixed(1)}% · ${fc(invV,'CNY',0)}</b></div><div class="ov-liq-track"><div class="ov-liq-fill inv" style="width:${Math.min(100,invV*scale)}%"></div></div></div>`;
-  const oldest=D.navHistory.filter(n=>n.date).sort((a,b)=>a.date.localeCompare(b.date))[0]||null;
+  const snapsSorted=(D.navHistory||[]).filter(n=>n&&n.date&&n.cny!=null&&!isNaN(Number(n.cny))).sort((a,b)=>a.date.localeCompare(b.date));
+  const oldest=snapsSorted[0]||null;
+  const lastSnap=snapsSorted.length?snapsSorted[snapsSorted.length-1]:null;
   if(oldest&&oldest.date&&cny>0){
     mileFirst.textContent=fc(oldest.cny,'CNY',0)+' · '+oldest.date;
     const d=cny-oldest.cny;
@@ -3353,6 +3362,14 @@ function renderOverviewDashboard(){
     mileFirst.textContent='—';
     mileDelta.textContent='—';
     mileDelta.className='';
+  }
+  if(lastSnap&&lastSnap.date&&cny>0){
+    const dr=cny-Number(lastSnap.cny);
+    mileRecent.textContent=(dr>=0?'+':'')+fc(dr,'CNY',0);
+    mileRecent.className=dr>=0?'pos':'neg';
+  }else{
+    mileRecent.textContent='—';
+    mileRecent.className='';
   }
   const textColor=document.body.classList.contains('light')?'#57534e':'#a1a1aa';
   const rCn=totalCNY('cn'),rUs=totalCNY('us'),rAu=totalCNY('au');
