@@ -169,13 +169,10 @@ body:not(.light) .news-item:hover{background:rgba(255,255,255,.04)}
 .ov-insight-chip.warn{border-color:rgba(245,158,11,.45);color:var(--gold);background:var(--gold-bg)}
 .ov-insight-chip.info{border-color:rgba(202,138,4,.4);color:var(--accent2);background:var(--accent-soft)}
 .ov-insight-chip.ok{border-color:rgba(16,185,129,.35);color:var(--green);background:var(--green-bg)}
-/* 总览四卡：顶对齐；大屏 区域·类别·流动性(1.4)·快照 */
+/* 总览四卡：顶对齐；中屏 2×2，大屏 1fr 1fr 1.4fr 1fr 四列 */
 .ov-dash-toprow.ov-dash-bento{display:grid;gap:var(--s-3);align-items:start;min-width:0;grid-template-columns:1fr}
 @media(min-width:640px){
   #page-overview .ov-dash-bento{grid-template-columns:repeat(2,minmax(0,1fr))}
-}
-@media(min-width:768px){
-  #page-overview .ov-dash-bento{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
 @media(min-width:1280px){
   #page-overview .ov-dash-bento{grid-template-columns:1fr 1fr 1.4fr 1fr}
@@ -198,7 +195,7 @@ body:not(.light) .news-item:hover{background:rgba(255,255,255,.04)}
 body.light #goal-fill{background:linear-gradient(90deg,var(--gold),#f59e0b)}
 #goal-remaining{color:var(--accent)}
 body:not(.light) #goal-remaining{color:var(--accent2)}
-/* 总览「配置/流动性/到期/快照」：略大于默认，避免 ×2 挤版 */
+/* 总览「配置/流动性/快照」：略大于默认，避免 ×2 挤版 */
 #page-overview .ov-dash-toprow>.card .card-title{font-size:15px;letter-spacing:-.01em}
 #page-overview .ov-dash-toprow .ov-liq-hd,#page-overview .ov-dash-toprow .ov-liq-hd b{font-size:12px;line-height:1.35}
 #page-overview .ov-dash-toprow .ov-liq-hd{align-items:flex-start;gap:var(--s-2)}
@@ -305,8 +302,9 @@ body:not(.light) .fh-mkt-badge.fh-mkt-night{color:#5eead4;background:rgba(94,234
 .pr-amt.primary{font-weight:500;color:var(--text);font-size:var(--text-base)}
 .pr-amt.dim{color:var(--text2)}
 .pr-amt.muted{color:var(--text3);font-size:13px;font-weight:400}
-.pr-pnl{font-size:var(--text-sm);font-weight:500;text-align:right;white-space:nowrap;line-height:var(--lh-body);font-variant-numeric:tabular-nums;padding-right:6px;min-width:80px}
+.pr-pnl{font-size:var(--text-sm);font-weight:500;text-align:right;white-space:nowrap!important;line-height:var(--lh-body);font-variant-numeric:tabular-nums;padding-right:6px;min-width:80px}
 .pr-pnl.pos{color:var(--green)}.pr-pnl.neg{color:var(--red)}.pr-pnl.neu{color:var(--text3)}
+.product-row .pr-pnl,.product-row .pr-pnl .fh-pnl-usd{white-space:nowrap!important}
 .pr-acts{display:flex;justify-content:flex-end;gap:4px;padding-left:8px}
 .pr-acts .btn-sm{width:26px;height:26px;padding:0;font-size:12px}
 .pr-pct{font-size:var(--text-sm);color:var(--text2);text-align:right;font-variant-numeric:tabular-nums;line-height:var(--lh-snug)}
