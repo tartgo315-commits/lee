@@ -912,6 +912,7 @@ body.night .ov-liq-fill.inv{background:linear-gradient(90deg,#4f46e5,#818cf8)}
           <button class="btn btn-ghost" onclick="document.getElementById('fi-import').click()">⬆ 导入 JSON</button>
           <input type="file" id="fi-import" accept=".json" style="display:none" onchange="importData(this)">
         </div>
+        <div style="font-size:12px;color:var(--text3);margin-top:10px;line-height:1.5">导入会按文件更新持仓与设置；<strong>NAV 历史</strong>会与当前浏览器里已有的快照<strong>按日期合并</strong>（同一天保留更完整的一条）。</div>
       </div>
       <div class="card">
         <div class="card-title">访问控制</div>
@@ -3090,6 +3091,34 @@ function takeSnapshot(){
 }
 function delSnap(date){if(!confirm('删除 '+date+' 快照？'))return;D.navHistory=D.navHistory.filter(n=>n.date!==date);save();renderHistory();if(document.getElementById('page-overview')?.classList.contains('active'))renderOverviewDashboard();}
 
+/** 导入 JSON 时合并 NAV 快照：按日期并集；同日保留「更完整」的一条（含分区/分类/汇率），一样完整则保留本地。 */
+function navSnapRichness(n){
+  if(!n||typeof n.date!=='string'||!n.date)return -1;
+  let s=0;
+  if(n.cny!=null&&!isNaN(Number(n.cny)))s+=1;
+  if(n.byRegion&&typeof n.byRegion==='object')s+=4;
+  if(n.byType&&typeof n.byType==='object')s+=4;
+  if(n.fx&&typeof n.fx==='object')s+=1;
+  return s;
+}
+function mergeNavHistories(local, imp){
+  const better=(a,b)=>{
+    const sa=navSnapRichness(a), sb=navSnapRichness(b);
+    if(sb>sa)return b;
+    if(sa>sb)return a;
+    return b;
+  };
+  const map=new Map();
+  for(const n of imp||[]){if(n&&typeof n.date==='string'&&n.date)map.set(n.date,{...n});}
+  for(const n of local||[]){
+    if(!n||typeof n.date!=='string'||!n.date)continue;
+    const prev=map.get(n.date);
+    if(!prev)map.set(n.date,{...n});
+    else map.set(n.date,better(prev,n));
+  }
+  return[...map.values()].sort((a,b)=>a.date.localeCompare(b.date));
+}
+
 // ══ FX ══
 function renderFXPage(){
   document.getElementById('fx-usd').value=D.fx.USD||'';
@@ -3392,7 +3421,14 @@ function exportData(){
 function importData(input){
   const f=input.files[0];if(!f)return;
   const r=new FileReader();
-  r.onload=e=>{try{D=Object.assign(blank(),JSON.parse(e.target.result));save();renderOverview();maybeShowHttpDataTip();alert('✅ 导入成功');}catch(err){alert('失败:'+err.message);}};
+  r.onload=e=>{try{
+    const localNav=[...(D.navHistory||[])];
+    const raw=JSON.parse(e.target.result);
+    D=Object.assign(blank(),raw);
+    D.navHistory=mergeNavHistories(localNav,raw.navHistory||[]);
+    save();renderOverview();maybeShowHttpDataTip();
+    alert('✅ 导入成功（持仓等已按文件更新；NAV 历史已与本地按日期合并）');
+  }catch(err){alert('失败:'+err.message);}};
   r.readAsText(f);input.value='';
 }
 function clearAll(){if(!confirm('确定清空所有数据？'))return;D=blank();save();renderOverview();renderSidebar();maybeShowHttpDataTip();}
