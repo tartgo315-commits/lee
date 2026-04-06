@@ -1233,6 +1233,20 @@ const today=()=>new Date().toISOString().slice(0,10);
 load();
 if(!D.goal||typeof D.goal!=='object'||!(Number(D.goal.amount)>0))
   D.goal={amount:1500000,currency:'CNY',label:'存款目标'};
+(function seedCrclDefaultStopLoss(){
+  if(!D.settings||typeof D.settings!=='object')D.settings={};
+  if(D.settings.crclStop82Applied)return;
+  const ps=D.products||[];
+  const hasCrcl=ps.some(p=>p.type==='stock_us'&&String(p.ticker||'').trim().toUpperCase()==='CRCL');
+  if(!hasCrcl)return;
+  let patched=false;
+  for(const p of ps){
+    if(p.type!=='stock_us'||String(p.ticker||'').trim().toUpperCase()!=='CRCL')continue;
+    if(!(Number(p.stopLoss)>0)){p.stopLoss=82.5;patched=true;}
+  }
+  D.settings.crclStop82Applied=true;
+  if(patched)save();
+})();
 maybeRollAuWeeklyCompound();
 function maybeShowHttpDataTip(){
   var el=document.getElementById('http-data-migrate-banner');
