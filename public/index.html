@@ -1081,6 +1081,7 @@ const blank=()=>({products:[],navHistory:[],fx:{USD:7.25,AUD:4.65},nextId:1,sett
 let D=blank();
 function load(){try{const s=localStorage.getItem(SK);if(s)D=Object.assign(blank(),JSON.parse(s));}catch(e){}}
 function save(){localStorage.setItem(SK,JSON.stringify(D));}
+const today=()=>new Date().toISOString().slice(0,10);
 load();
 maybeRollAuWeeklyCompound();
 function maybeShowHttpDataTip(){
@@ -1143,7 +1144,6 @@ maybeShowHttpDataTip();
 })();
 
 // ══ CURRENCY UTILS ══
-const today=()=>new Date().toISOString().slice(0,10);
 const fmt=(n,d=0)=>isNaN(n)||n==null?'—':new Intl.NumberFormat('zh-CN',{minimumFractionDigits:d,maximumFractionDigits:d}).format(n);
 const sym={CNY:'¥',USD:'$',AUD:'A$'};
 const fc=(n,c,d=0)=>n==null||isNaN(n)?'—':(sym[c]||c+' ')+fmt(n,d);
