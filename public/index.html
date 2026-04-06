@@ -2190,7 +2190,9 @@ function renderSidebar(){
   const usdaud=D.fx.USDAUD||(D.fx.USD&&D.fx.AUD&&D.fx.USD>0&&D.fx.AUD>0?D.fx.USD/D.fx.AUD:null);
   const audUsd=usdaud!=null&&usdaud>0?(1/usdaud).toFixed(5):null;
   if(audUsd!=null)fxParts.push(`<div class="fx-chip" title="1 澳元 = ${audUsd} 美元"><span>🇦🇺🇺🇸</span><span class="fx-chip-pair">AUD/USD</span><span class="fx-chip-rate">${audUsd}</span></div>`);
+  fxParts.push(`<div class="fx-chip" id="gold-price-chip" title="上海金 AU9999 · 点击刷新" onclick="refreshGoldChip()" style="cursor:pointer"><span class="fx-chip-pair">🥇 Au/g</span><span class="fx-chip-rate" id="fc-gold">—</span></div>`);
   document.getElementById('fx-strip').innerHTML=fxParts.join('');
+  updateGoldChip();
 }
 
 // ══ OVERVIEW ══
@@ -2709,6 +2711,27 @@ async function fetchGoldPrice(){
   if(price>0)return price;
   return await fetchGoldPriceEastmoney();
 }
+function updateGoldChip(){
+  const el=document.getElementById('fc-gold');
+  if(!el)return;
+  const g=D.products.find(p=>p.type==='gold'&&p.goldPrice>0);
+  if(g){el.textContent='¥'+Number(g.goldPrice).toFixed(2)+'/g';return;}
+  el.textContent='—';
+}
+async function refreshGoldChip(){
+  const el=document.getElementById('fc-gold');
+  if(el)el.textContent='…';
+  try{
+    const price=await fetchGoldPrice();
+    if(price>0){
+      D.products.filter(p=>p.type==='gold').forEach(g=>{g.goldPrice=price;g.goldUpdated=today();});
+      save();
+      renderRegion('cn');renderOverview();renderSidebar();
+    }else{
+      if(el)el.textContent='失败';
+    }
+  }catch(e){if(el)el.textContent='失败';}
+}
 async function refreshGold(){
   const golds=D.products.filter(p=>p.type==='gold');
   if(!golds.length){alert('没有黄金积存产品');return;}
@@ -2719,6 +2742,7 @@ async function refreshGold(){
   if(price>0){
     golds.forEach(g=>{g.goldPrice=price;g.goldUpdated=today();});
     save();renderRegion('cn');renderSidebar();renderOverview();
+    updateGoldChip();
     el.innerHTML=`<div class="alert alert-ok">✅ 金价 ¥${price}/克（上海金 AU9999 口径），已更新 ${golds.length} 个黄金积存（建行积存金报价与此接近）</div>`;
   }else{
     el.innerHTML='<div class="alert alert-warn">⚠️ 自动获取失败。请在「编辑」中<strong>手动填写当前金价（元/克）</strong>；若浏览器拦截跨域，可部署带 /proxy 的环境或换网络后再试。</div>';
@@ -2850,6 +2874,7 @@ async function refreshAllQuotes(){
         if(price>0){
           golds.forEach(g=>{g.goldPrice=price;g.goldUpdated=today();});
           lines.push('黄金×'+golds.length);
+          updateGoldChip();
           save();
           redrawAllAfterFullQuoteRefresh();
         }else lines.push('黄金失败');
@@ -3697,6 +3722,7 @@ function importCbaAuPreset(){
 })();
 renderOverview();
 renderSidebar();
+updateGoldChip();
 initFinnhubUsLive();
 
 // Live reverse rate preview as user types
