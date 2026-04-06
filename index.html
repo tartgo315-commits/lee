@@ -192,6 +192,10 @@ body:not(.light) .news-item:hover{background:rgba(255,255,255,.04)}
 .ov-dash-toprow #ov-mile-body .ov-mile-foot-compact{font-size:10px;line-height:1.4;margin-top:auto;padding-top:10px;color:var(--text3);font-family:var(--mono)}
 #mile-first-delta.pos{color:var(--green)}#mile-first-delta.neg{color:var(--red)}
 .card#ov-nav-chart{margin-top:24px}
+#goal-fill{height:100%;border-radius:999px;transition:width .6s cubic-bezier(.4,0,.2,1);width:0%;background:linear-gradient(90deg,#4f46e5,#818cf8)}
+body.light #goal-fill{background:linear-gradient(90deg,var(--gold),#f59e0b)}
+#goal-remaining{color:var(--accent)}
+body:not(.light) #goal-remaining{color:var(--accent2)}
 /* 总览「配置/流动性/到期/快照」：略大于默认，避免 ×2 挤版 */
 #page-overview .ov-dash-toprow>.card .card-title{font-size:15px;letter-spacing:-.01em}
 #page-overview .ov-dash-toprow .ov-liq-hd,#page-overview .ov-dash-toprow .ov-liq-hd b{font-size:12px;line-height:1.35}
@@ -741,6 +745,27 @@ body.light .fh-mkt-badge.fh-mkt-night{color:#0f766e;background:rgba(15,118,110,.
 
     <!-- OVERVIEW -->
     <div class="page active space-y-4 md:space-y-6" id="page-overview">
+      <div id="goal-bar-wrap" style="margin-bottom:16px;background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);padding:16px 22px;box-shadow:var(--shadow-sm);display:flex;align-items:center;gap:24px;flex-wrap:wrap">
+        <div style="flex:1;min-width:200px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">
+            <span style="font-size:12px;color:var(--text3);font-family:var(--mono);letter-spacing:.05em;text-transform:uppercase" id="goal-label">存款目标</span>
+            <span style="font-size:13px;font-weight:600;font-family:var(--mono);color:var(--text)" id="goal-pct">—%</span>
+          </div>
+          <div style="height:8px;background:var(--bg4);border-radius:999px;overflow:hidden">
+            <div id="goal-fill"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:6px">
+            <span style="font-size:12px;color:var(--text2);font-family:var(--mono)" id="goal-current">¥—</span>
+            <span style="font-size:12px;color:var(--text3);font-family:var(--mono)" id="goal-target">目标 ¥1,500,000</span>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
+          <span style="font-size:11px;color:var(--text3);font-family:var(--mono)">距目标</span>
+          <span style="font-size:18px;font-weight:600;font-variant-numeric:tabular-nums" id="goal-remaining">—</span>
+          <span style="font-size:11px;color:var(--text3);font-family:var(--mono)" id="goal-eta">预计达成 —</span>
+        </div>
+        <button type="button" onclick="openGoalEdit()" style="background:none;border:1px solid var(--border2);border-radius:var(--r-sm);padding:6px 12px;font-size:12px;color:var(--text3);cursor:pointer;font-family:var(--mono);white-space:nowrap">✏️ 修改目标</button>
+      </div>
       <div class="total-bar grid w-full min-w-0 grid-cols-1 gap-3 md:grid-cols-3 md:gap-5">
         <div class="total-card cn">
           <div class="tc-label">总资产 · 人民币</div>
@@ -1149,7 +1174,7 @@ const FIREBASE_PROXY_BASE='';
 /** 线上无同源 /_proxy 时回退（勿尾斜杠）。部署在 Vercel 且接口在 /_proxy 时填你的站点根。 */
 const WO_REMOTE_PROXY_ORIGIN='https://lee-lime.vercel.app';
 const SK='wo_v2';
-const blank=()=>({products:[],navHistory:[],fx:{USD:7.25,AUD:4.65},nextId:1,settings:{usPrincipalAUD:72640},usAccountMeta:{}});
+const blank=()=>({products:[],navHistory:[],fx:{USD:7.25,AUD:4.65},nextId:1,settings:{usPrincipalAUD:72640},usAccountMeta:{},goal:{amount:1500000,currency:'CNY',label:'存款目标'}});
 let D=blank();
 let __woSaveToastT=null,__woToastSeq=0,__woSyncToastId=null;
 function showToast(opts){
@@ -1197,6 +1222,8 @@ function save(){
 }
 const today=()=>new Date().toISOString().slice(0,10);
 load();
+if(!D.goal||typeof D.goal!=='object'||!(Number(D.goal.amount)>0))
+  D.goal={amount:1500000,currency:'CNY',label:'存款目标'};
 maybeRollAuWeeklyCompound();
 function maybeShowHttpDataTip(){
   var el=document.getElementById('http-data-migrate-banner');
@@ -2408,6 +2435,60 @@ function renderSidebar(){
   document.getElementById('fx-strip').innerHTML=fxParts.join('');
   updateGoldChip();
   updateTdExpiryChip();
+  updateGoalBar();
+}
+
+function updateGoalBar(){
+  const fill=document.getElementById('goal-fill');
+  const pctEl=document.getElementById('goal-pct');
+  const curEl=document.getElementById('goal-current');
+  const tgtEl=document.getElementById('goal-target');
+  const lblEl=document.getElementById('goal-label');
+  const remEl=document.getElementById('goal-remaining');
+  const etaEl=document.getElementById('goal-eta');
+  if(!fill||!pctEl||!curEl||!tgtEl||!lblEl||!remEl||!etaEl)return;
+  const goal=D.goal;
+  if(!goal||!goal.amount){return;}
+  const cny=totalCNY();
+  const target=goal.currency==='CNY'?Number(goal.amount):toCNY(Number(goal.amount),goal.currency||'CNY');
+  if(!isFinite(target)||target<=0)return;
+  const pct=Math.min(100,cny/target*100);
+  const remaining=Math.max(0,target-cny);
+  fill.style.width=pct.toFixed(1)+'%';
+  pctEl.textContent=pct.toFixed(1)+'%';
+  curEl.textContent=fc(cny,'CNY',0);
+  tgtEl.textContent='目标 '+fc(target,'CNY',0);
+  lblEl.textContent=goal.label||'财富目标';
+  remEl.textContent=remaining>0?'还差 '+fc(remaining,'CNY',0):'🎉 已达成';
+  const snaps=(D.navHistory||[]).slice().filter(n=>n&&n.date&&n.cny!=null&&!isNaN(Number(n.cny))).sort((a,b)=>a.date.localeCompare(b.date));
+  if(remaining<=0){
+    etaEl.textContent='—';
+  }else if(snaps.length>=2){
+    const oldest=snaps[0],newest=snaps[snaps.length-1];
+    const days=Math.max(1,(new Date(newest.date)-new Date(oldest.date))/86400000);
+    const growth=(Number(newest.cny)-Number(oldest.cny))/days;
+    if(growth>0){
+      const daysLeft=Math.ceil(remaining/growth);
+      const eta=new Date(Date.now()+daysLeft*86400000);
+      etaEl.textContent='预计 '+eta.getFullYear()+'年'+(eta.getMonth()+1)+'月达成';
+    }else{
+      etaEl.textContent='增速不足，暂无预测';
+    }
+  }else{
+    etaEl.textContent='快照≥2条后显示预测';
+  }
+}
+
+function openGoalEdit(){
+  const cur=D.goal||{amount:1500000,currency:'CNY',label:'存款目标'};
+  const amt=prompt('设定目标金额（人民币）：',String(cur.amount));
+  if(amt===null)return;
+  const n=parseFloat(amt);
+  if(!isFinite(n)||n<=0){alert('请输入有效金额');return;}
+  const lbl=prompt('目标名称：',cur.label||'存款目标');
+  D.goal={amount:n,currency:'CNY',label:(lbl!=null&&String(lbl).trim())?String(lbl).trim():'存款目标'};
+  save();
+  updateGoalBar();
 }
 
 // ══ OVERVIEW ══
@@ -2589,6 +2670,7 @@ function renderOverview(){
   try{renderOverviewDashboard();}catch(e){console.error('renderOverviewDashboard',e);}
   try{renderNavMiniChart(ovRange);}catch(e){console.error('renderNavMiniChart',e);}
   try{renderSidebar();}catch(e){console.error('renderSidebar',e);}
+  try{updateGoalBar();}catch(e){}
 }
 
 function setRange(days,btn){
@@ -3167,6 +3249,7 @@ function refreshOVTotals(){
   const e2=document.getElementById('ov-usd');if(e2)e2.textContent=fc(fromCNY(cny,'USD'),'USD');
   const e3=document.getElementById('ov-aud');if(e3)e3.textContent=fc(fromCNY(cny,'AUD'),'AUD');
   if(document.getElementById('page-overview')?.classList.contains('active'))renderOverviewDashboard();
+  try{updateGoalBar();}catch(e){}
 }
 
 // ══ NAV HISTORY ══
@@ -3770,6 +3853,8 @@ function importData(input){
     const raw=JSON.parse(e.target.result);
     D=Object.assign(blank(),raw);
     D.navHistory=mergeNavHistories(localNav,raw.navHistory||[]);
+    if(!D.goal||typeof D.goal!=='object'||!(Number(D.goal.amount)>0))
+      D.goal={amount:1500000,currency:'CNY',label:'存款目标'};
     save();renderOverview();maybeShowHttpDataTip();
     showToast({message:'导入成功，NAV 历史已按日期与本地合并',type:'success',duration:3600});
   }catch(err){showToast({message:'导入失败：'+err.message,type:'warn',duration:5000});}};
