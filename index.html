@@ -2675,10 +2675,86 @@ function runAiAdvisor(){
   else liqLines.push(`✅ 活期现金占比 ${cashPct.toFixed(1)}%，流动性配置合理`);
   sections.push({title:'💧 流动性评估',lines:liqLines});
   const ts=new Date().toLocaleString('zh-CN');
-  el.innerHTML=sections.map(s=>`<div style="margin-bottom:18px">
+  const aiHasStop=p=>{
+    const sl=p.stopLoss;
+    return sl!=null&&sl!==''&&isFinite(Number(sl))&&Number(sl)>0;
+  };
+  const summaryHtml=[];
+  let score=70;
+  const stockPnlPcts=stocks.map(p=>(p.currentPrice-p.costPrice)/p.costPrice*100);
+  const avgStockPnl=stockPnlPcts.length?stockPnlPcts.reduce((a,b)=>a+b,0)/stockPnlPcts.length:0;
+  if(stocks.length){
+    if(avgStockPnl>20)score+=10;
+    else if(avgStockPnl<-5)score-=10;
+  }
+  const usAuPct2=(totalCNY('us')+totalCNY('au'))/cny*100;
+  if(usAuPct2>70)score-=5;
+  if(goal&&goal.amount>0){
+    const gPct=cny/goal.amount*100;
+    if(gPct>=98)score+=10;
+    else if(gPct>=90)score+=5;
+  }
+  const noStopLoss=stocks.filter(p=>!aiHasStop(p)&&(p.currentPrice-p.costPrice)/p.costPrice*100>20);
+  if(noStopLoss.length)score-=5*noStopLoss.length;
+  score=Math.max(0,Math.min(100,score));
+  const scoreColor=score>=80?'var(--green)':score>=60?'var(--gold)':'var(--red)';
+  const scoreLabel=score>=85?'优秀':score>=75?'良好':score>=60?'中等':'需关注';
+  const risks=[];
+  if(noStopLoss.length)risks.push(`${noStopLoss.map(p=>escOvHtml(String(p.ticker||'').trim().toUpperCase())).join('、')} 无止损保护（盈利超20%但未设止损）`);
+  if(usAuPct2>68)risks.push(`美+澳资产占 ${usAuPct2.toFixed(0)}%，汇率风险集中`);
+  const bigLosers=stocks.filter(p=>(p.currentPrice-p.costPrice)/p.costPrice*100<-5);
+  if(bigLosers.length)risks.push(`${bigLosers.map(p=>escOvHtml(String(p.ticker||'').trim().toUpperCase())).join('、')} 持续亏损，需关注基本面`);
+  if(!risks.length)risks.push('暂无明显风险，继续保持');
+  const risksShow=risks.slice(0,3);
+  const actions=[];
+  const nvda=stocks.find(p=>String(p.ticker||'').trim().toUpperCase()==='NVDA');
+  if(nvda){
+    const np=(nvda.currentPrice-nvda.costPrice)/nvda.costPrice*100;
+    if(np>50&&!aiHasStop(nvda))actions.push(`🔴 <b>最优先</b>：NVDA 已盈利 ${np.toFixed(0)}%，建议立即设置移动止损或止盈价，保护 $${Math.round((nvda.currentPrice-nvda.costPrice)*(nvda.shares||0))} 浮盈`);
+  }
+  if(goal&&goal.amount>0&&cny/goal.amount>=0.97&&cny<goal.amount){
+    actions.push(`🟡 <b>目标冲刺</b>：距¥${Number(goal.amount).toLocaleString('zh-CN')}目标仅差 ¥${Math.round(goal.amount-cny).toLocaleString('zh-CN')}，可考虑减少不必要支出加速达成`);
+  }
+  if(bigLosers.length){
+    actions.push(`🟡 <b>止损评估</b>：${bigLosers.map(p=>escOvHtml(String(p.ticker||'').trim().toUpperCase())).join('、')} 处于亏损，建议设定最大亏损容忍位（如 -15%）作为强制止损线`);
+  }
+  if(usAuPct2>65){
+    actions.push(`🟢 <b>长期优化</b>：美澳资产占比 ${usAuPct2.toFixed(0)}%，人民币升值时净值会承压，可逐步增加境内优质资产比例至 35% 以上`);
+  }
+  const topActions=actions.slice(0,3);
+  summaryHtml.push(`
+<div style="background:linear-gradient(135deg,var(--surface-muted),var(--bg3));border:1.5px solid var(--border2);border-radius:var(--r);padding:18px 20px;margin-bottom:16px">
+  <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;flex-wrap:wrap">
+    <div style="text-align:center;flex-shrink:0">
+      <div style="font-size:36px;font-weight:700;color:${scoreColor};font-family:var(--mono);line-height:1">${score}</div>
+      <div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:2px">组合健康度</div>
+      <div style="font-size:12px;font-weight:600;color:${scoreColor}">${scoreLabel}</div>
+    </div>
+    <div style="flex:1;min-width:200px">
+      <div style="height:8px;background:var(--bg4);border-radius:999px;overflow:hidden;margin-bottom:8px">
+        <div style="height:100%;width:${score}%;background:${scoreColor};border-radius:999px;transition:width .6s ease"></div>
+      </div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.6">
+        美股平均盈亏 <b style="color:${avgStockPnl>=0?'var(--green)':'var(--red)'}">${stocks.length?(avgStockPnl>=0?'+':'')+avgStockPnl.toFixed(1)+'%':'—'}</b> ·
+        美+澳占比 <b>${usAuPct2.toFixed(0)}%</b> ·
+        目标进度 <b style="color:var(--accent)">${goal&&goal.amount>0?(cny/goal.amount*100).toFixed(1)+'%':'未设'}</b>
+      </div>
+    </div>
+  </div>
+  <div style="margin-bottom:14px">
+    <div style="font-size:11px;font-weight:700;color:var(--text3);font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px">⚡ 主要风险</div>
+    ${risksShow.map(r=>`<div style="font-size:12px;color:var(--text2);line-height:1.6;padding:3px 0;border-bottom:1px dashed var(--border)">• ${r}</div>`).join('')}
+  </div>
+  <div>
+    <div style="font-size:11px;font-weight:700;color:var(--text3);font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px">🎯 优先行动清单</div>
+    ${topActions.length?topActions.map((a,i)=>`<div style="font-size:13px;color:var(--text);line-height:1.7;margin-bottom:6px;padding:8px 12px;background:var(--surface);border-radius:var(--r-sm);border-left:3px solid ${i===0?'var(--red)':i===1?'var(--gold)':'var(--green)'}">${a}</div>`).join(''):`<div style="font-size:13px;color:var(--text3);line-height:1.7;padding:8px 12px;background:var(--surface);border-radius:var(--r-sm)">暂无需额外优先行动，保持观察即可。</div>`}
+  </div>
+</div>`);
+  const sectionsHtml=sections.map(s=>`<div style="margin-bottom:18px">
       <div style="font-size:13px;font-weight:700;color:var(--accent);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)">${s.title}</div>
       ${s.lines.map(l=>`<div style="font-size:13px;color:var(--text);line-height:1.7;margin-bottom:5px;padding-left:4px">${l}</div>`).join('')}
-    </div>`).join('')+
+    </div>`).join('');
+  el.innerHTML=summaryHtml.join('')+sectionsHtml+
     `<div style="margin-top:8px;padding-top:10px;border-top:1px dashed var(--border);font-size:11px;color:var(--text3);font-family:var(--mono)">
     📊 分析时间：${ts} · 基于本地持仓数据自动生成 · 仅供参考，不构成投资建议
   </div>`;
