@@ -49,6 +49,9 @@ export default async function handler(req, res) {
       if (/yahoo\.com$/i.test(h) || h.endsWith('.yahoo.com') || /yimg\.com$/i.test(h)) {
         headers['Referer'] = 'https://finance.yahoo.com/';
         headers['Origin'] = 'https://finance.yahoo.com';
+      } else if (/eastmoney\.com$/i.test(h) || h.endsWith('.eastmoney.com')) {
+        headers['Referer'] = 'https://quote.eastmoney.com/';
+        headers['Origin'] = 'https://quote.eastmoney.com';
       }
     } catch (_) {}
     const r = await fetch(target, {

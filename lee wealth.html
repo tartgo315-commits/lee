@@ -2518,10 +2518,10 @@ function buildProductRow(p,region,primaryCur,accountTotalCNY){
 
   if(p.type==='gold'){
     const price=p.goldPrice||0,grams=p.grams||0,cost=p.goldCost||0;
-    const mkt=grams*price,pnl=mkt-grams*cost,pct=cost>0?pnl/(grams*cost)*100:0;
+    const mkt=grams*price,pnl=mkt-grams*cost,pct=(cost>0&&grams>0)?pnl/(grams*cost)*100:0;
     nameCell=`<div><div class="pr-name">${p.name||'黄金积存'}</div><div class="pr-sub">${fmt(grams,4)}克 · 均价¥${fmt(cost,2)}/克 · ${p.goldUpdated?'更新:'+p.goldUpdated:''}</div></div>`;
     amtCell=price?`<div class="pr-amt primary">¥${fmt(price,2)}/克</div><div class="pr-amt dim">${fc(mkt,'CNY',2)}</div>`:`<div class="pr-amt muted">待刷新金价</div>`;
-    pnlCell=price?`<div class="pr-pnl ${pnl>=0?'pos':'neg'}">${pnl>=0?'+':''}${fc(pnl,'CNY',2)}<br>${(pnl>=0?'+':'')+pct.toFixed(2)}%</div>`:`<div class="pr-pnl neu">—</div>`;
+    pnlCell=price?`<div class="pr-pnl ${pnl>=0?'pos':'neg'}">${pnl>=0?'+':''}${fc(pnl,'CNY',2)}<br>${(pnl>=0?'+':'')+safePctFixed(pct,2)}%</div>`:`<div class="pr-pnl neu">—</div>`;
   } else if(p.type==='stock_us'){
     const price=p.currentPrice||0,cost=p.costPrice||0,shares=p.shares||0;
     const mkt=shares*price,pnlUSD=shares*(price-cost),pct=cost>0?(price-cost)/cost*100:0;
@@ -2617,25 +2617,51 @@ function parseSinaAu9999FromHttpText(body){
   if(m&&m[1])return parseSinaAu9999HqStr(m[1]);
   return 0;
 }
-/** 东方财富 上海金 AU9999：push2 返回 data.f43 为「元/克 ×100」（与行情页一致）。 */
-function parseEastmoneyAu9999Json(text){
+/** 东方财富 AU9999：无 cb 时 f43 多为整数「元/克×100」；带 cb 的 JSONP 常直接给元/克小数。 */
+function eastmoneyF43ToYuanPerGram(f43){
+  const n=typeof f43==='number'?f43:parseFloat(f43);
+  if(!isFinite(n)||n<=0)return 0;
+  const ypg=n>=10000?n/100:n;
+  if(ypg>=30&&ypg<=15000)return Math.round(ypg*100)/100;
+  return 0;
+}
+function parseEastmoneyAu9999Payload(o){
   try{
-    const o=JSON.parse(text);
     if(!o||o.rc!==0||!o.data)return 0;
-    const f43=o.data.f43;
-    const n=typeof f43==='number'?f43:parseFloat(f43);
-    if(!isFinite(n)||n<=0)return 0;
-    const ypg=n/100;
-    if(ypg>=80&&ypg<=8000)return Math.round(ypg*100)/100;
-    return 0;
+    return eastmoneyF43ToYuanPerGram(o.data.f43);
   }catch(e){return 0;}
 }
-const EASTMONEY_AU9999_URL='https://push2.eastmoney.com/api/qt/stock/get?secid=118.AU9999&fields=f43,f57,f58';
+function parseEastmoneyAu9999Json(text){
+  try{return parseEastmoneyAu9999Payload(JSON.parse(text));}catch(e){return 0;}
+}
+const EASTMONEY_AU9999_URL='https://push2.eastmoney.com/api/qt/stock/get?invt=2&fltt=2&secid=118.AU9999&fields=f43,f57,f58';
+function fetchGoldPriceEastmoneyJsonp(){
+  return new Promise(resolve=>{
+    const cb='emAu'+Date.now();
+    let done=false;
+    const sc=document.createElement('script');
+    const finish=v=>{
+      if(done)return;
+      done=true;
+      clearTimeout(t);
+      try{delete window[cb];}catch(e){}
+      try{sc.remove();}catch(e){}
+      resolve(v>0?v:0);
+    };
+    const t=setTimeout(()=>finish(0),6000);
+    window[cb]=payload=>{finish(parseEastmoneyAu9999Payload(payload));};
+    sc.onerror=()=>finish(0);
+    sc.src=EASTMONEY_AU9999_URL+'&cb='+encodeURIComponent(cb)+'&_='+Date.now();
+    document.head.appendChild(sc);
+  });
+}
 async function fetchGoldPriceEastmoney(){
+  let p=await fetchGoldPriceEastmoneyJsonp();
+  if(p>0)return p;
   try{
     const r=await fetch(EASTMONEY_AU9999_URL,{cache:'no-store',mode:'cors',referrerPolicy:'no-referrer'});
     if(r.ok){
-      const p=parseEastmoneyAu9999Json(await r.text());
+      p=parseEastmoneyAu9999Json(await r.text());
       if(p>0)return p;
     }
   }catch(e){}
