@@ -121,13 +121,13 @@ body{font-family:var(--font);color:var(--text);font-size:var(--text-md);font-wei
 body:not(.light) .news-item-zh{color:#a5b4fc;border-left-color:rgba(99,102,241,.45)}
 body:not(.light) .news-item:hover{background:rgba(255,255,255,.04)}
 .main-wrap{margin-left:var(--sidebar-w);flex:1;min-width:0;min-height:100vh;max-width:100%;display:flex;flex-direction:column;transition:margin-left .22s cubic-bezier(.4,0,.2,1);background:var(--bg)}
-.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:var(--s-4) var(--gutter-x);display:flex;align-items:center;min-height:64px;min-width:0;position:sticky;top:0;z-index:50;gap:var(--s-4);flex-wrap:wrap;max-width:100%;row-gap:var(--s-2);
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 20px;display:flex;align-items:center;min-height:52px;min-width:0;position:sticky;top:0;z-index:50;gap:var(--s-4);flex-wrap:wrap;max-width:100%;row-gap:var(--s-2);
   box-shadow:none;backdrop-filter:saturate(1.2) blur(8px);-webkit-backdrop-filter:saturate(1.2) blur(8px)}
 .topbar-title{font-size:var(--text-lg);font-weight:600;letter-spacing:-.02em;line-height:var(--lh-tight);flex-shrink:0}
 .fx-strip{display:flex;gap:var(--s-2);flex-wrap:nowrap;flex:1;min-width:0;overflow-x:auto;align-items:center;-webkit-overflow-scrolling:touch;scrollbar-width:thin}
 .fx-strip::-webkit-scrollbar{height:4px}
 .fx-strip::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
-.fx-chip{display:flex;align-items:center;gap:var(--s-2);background:var(--surface-muted);border:1px solid var(--border);border-radius:999px;padding:var(--s-2) var(--s-4);font-size:var(--text-xs);font-family:var(--mono);font-variant-numeric:tabular-nums;line-height:var(--lh-snug);transition:background .15s ease,border-color .15s ease;box-shadow:none}
+.fx-chip{display:flex;align-items:center;gap:5px;background:var(--surface-muted);border:1px solid var(--border);border-radius:999px;padding:4px 9px;font-size:10px;font-family:var(--mono);font-variant-numeric:tabular-nums;line-height:var(--lh-snug);transition:background .15s ease,border-color .15s ease;box-shadow:none}
 .fx-chip:hover{background:var(--bg3);border-color:var(--border2)}
 .fx-chip-pair{color:var(--text3);font-weight:400}
 .fx-chip-rate{font-weight:500;color:var(--text);font-variant-numeric:tabular-nums;font-family:var(--mono)}
@@ -148,8 +148,9 @@ body:not(.light) .news-item:hover{background:rgba(255,255,255,.04)}
 .btn-sm{height:34px;padding:0 var(--s-4);font-size:var(--text-sm)}
 
 /* Total bar（列数由 Tailwind grid 控制，见 #page-overview .total-bar） */
-.total-bar{display:grid;gap:var(--s-5);margin-bottom:20px;min-width:0;width:100%}
-.total-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:var(--card-pad) var(--s-6);position:relative;overflow:hidden;box-shadow:none;transition:background .2s ease,border-color .2s ease}
+.total-bar{display:grid;gap:16px;margin-bottom:16px;min-width:0;width:100%}
+#page-overview .total-bar{gap:16px}
+.total-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px 20px;position:relative;overflow:hidden;box-shadow:none;transition:background .2s ease,border-color .2s ease}
 .total-card:hover{background:var(--surface-muted);border-color:var(--border2)}
 .total-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;opacity:.95}
 .total-card.cn::before{background:linear-gradient(90deg,#dc2626,#ef4444)}
@@ -157,19 +158,19 @@ body:not(.light) .news-item:hover{background:rgba(255,255,255,.04)}
 .total-card.au::before{background:linear-gradient(90deg,#b45309,#f59e0b)}
 .tc-flag{font-size:24px;margin-bottom:var(--s-3);line-height:1}
 .tc-label{font-size:var(--text-xs);color:var(--text3);font-family:var(--mono);letter-spacing:var(--track-label);text-transform:uppercase;margin-bottom:var(--s-2);line-height:var(--lh-snug)}
-.tc-val{font-size:clamp(26px,3.5vw,32px);font-weight:600;letter-spacing:-.03em;line-height:var(--lh-tight);font-family:var(--mono);font-variant-numeric:tabular-nums}
+.tc-val{font-size:clamp(22px,3vw,28px);font-weight:600;letter-spacing:-.03em;line-height:var(--lh-tight);font-family:var(--mono);font-variant-numeric:tabular-nums;margin-top:4px}
 .tc-val.cn{color:var(--cn)}.tc-val.us{color:var(--us)}.tc-val.au{color:var(--au)}
-.tc-sub{font-size:var(--text-sm);color:var(--text3);font-family:var(--mono);font-variant-numeric:tabular-nums;margin-top:var(--s-3);line-height:var(--lh-snug)}
+.tc-sub{font-size:12px;color:var(--text3);font-family:var(--mono);font-variant-numeric:tabular-nums;margin-top:8px;line-height:var(--lh-snug)}
 
 /* Overview dashboard (allocations, liquidity, insights) */
-.ov-dash{margin-bottom:var(--s-6);display:flex;flex-direction:column;gap:var(--s-3);min-width:0}
-.ov-insights{display:flex;flex-wrap:wrap;gap:var(--s-2) var(--s-3);align-items:center;margin-bottom:16px}
-.ov-insight-chip{font-size:var(--text-sm);padding:var(--s-2) var(--s-4);border-radius:999px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);line-height:var(--lh-snug)}
+.ov-dash{margin-bottom:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.ov-insights{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:0}
+.ov-insight-chip{font-size:12px;padding:5px 12px;border-radius:999px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);line-height:var(--lh-snug)}
 .ov-insight-chip.warn{border-color:rgba(245,158,11,.45);color:var(--gold);background:var(--gold-bg)}
 .ov-insight-chip.info{border-color:rgba(202,138,4,.4);color:var(--accent2);background:var(--accent-soft)}
 .ov-insight-chip.ok{border-color:rgba(16,185,129,.35);color:var(--green);background:var(--green-bg)}
-/* 总览四卡：大屏 1fr 1fr 1.2fr 0.9fr（流动性略宽、快照略窄） */
-.ov-dash-toprow.ov-dash-bento{display:grid;gap:var(--s-3);align-items:start;min-width:0;grid-template-columns:1fr}
+/* 总览四卡：等高 stretch；大屏 1fr 1fr 1.3fr 0.85fr */
+.ov-dash-toprow.ov-dash-bento{display:grid;gap:var(--s-3);align-items:stretch;min-width:0;grid-template-columns:1fr}
 @media(min-width:640px){
   #page-overview .ov-dash-bento{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
@@ -177,24 +178,19 @@ body:not(.light) .news-item:hover{background:rgba(255,255,255,.04)}
   #page-overview .ov-dash-bento{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
 @media(min-width:1280px){
-  #page-overview .ov-dash-bento{grid-template-columns:1fr 1fr 1.2fr 0.9fr}
+  #page-overview .ov-dash-bento{grid-template-columns:1fr 1fr 1.3fr 0.85fr}
 }
-.ov-dash-toprow>.card{margin-bottom:0!important;min-width:0;padding:var(--s-3) var(--s-4);display:flex;flex-direction:column}
-.ov-dash-toprow>.card .card-title{font-size:12px;margin-bottom:var(--s-2);line-height:var(--lh-snug)}
-.ov-dash-toprow .ov-donut-wrap{height:110px;margin-top:0;flex-shrink:0}
-.ov-dash-toprow #ov-liq-body{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;max-height:min(52vh,420px)}
-.ov-dash-toprow #ov-mile-body{flex:0 1 auto;min-height:0}
+.ov-dash-toprow>.card{margin-bottom:0!important;min-width:0;min-height:220px;padding:18px 18px 16px;display:flex;flex-direction:column}
+.ov-dash-toprow>.card .card-title{font-size:12px;margin-bottom:var(--s-2);line-height:var(--lh-snug);flex-shrink:0}
+.ov-dash-toprow .ov-donut-wrap{flex:1;min-height:0;height:auto;margin-top:8px}
+.ov-dash-toprow #ov-liq-body{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.ov-dash-toprow #ov-mile-body{flex:1;min-height:0;display:flex;flex-direction:column}
 .ov-dash-toprow .ov-liq-hd{font-size:10px;flex-wrap:wrap;gap:var(--s-1);line-height:var(--lh-snug)}
 .ov-dash-toprow .ov-liq-hd b{font-size:10px}
 .ov-dash-toprow .ov-liq-track{height:6px}
 .ov-dash-toprow .ov-liq-row{margin-bottom:var(--s-2)}
-.ov-dash-toprow .ov-up-list{font-size:11px}
-.ov-dash-toprow .ov-up-item{flex-direction:column;align-items:flex-start;gap:2px;padding:var(--s-2) 0}
-.ov-dash-toprow .ov-up-item .u-meta{white-space:normal;font-size:10px}
-.ov-dash-toprow #ov-mile-body .ov-mile-foot-compact{font-size:10px;line-height:1.4;margin-top:10px;color:var(--text3);font-family:var(--mono)}
+.ov-dash-toprow #ov-mile-body .ov-mile-foot-compact{font-size:10px;line-height:1.4;margin-top:auto;padding-top:10px;color:var(--text3);font-family:var(--mono)}
 #mile-first-delta.pos{color:var(--green)}#mile-first-delta.neg{color:var(--red)}
-#ov-td-inline .ov-up-list{font-size:12px}
-#ov-td-inline .ov-up-item{padding:6px 0}
 .card#ov-nav-chart{margin-top:24px}
 /* 总览「配置/流动性/到期/快照」：略大于默认，避免 ×2 挤版 */
 #page-overview .ov-dash-toprow>.card .card-title{font-size:15px;letter-spacing:-.01em}
@@ -202,11 +198,8 @@ body:not(.light) .news-item:hover{background:rgba(255,255,255,.04)}
 #page-overview .ov-dash-toprow .ov-liq-hd{align-items:flex-start;gap:var(--s-2)}
 #page-overview .ov-dash-toprow .ov-liq-hd b{flex-shrink:0;margin-left:auto;text-align:right}
 #page-overview .ov-dash-toprow .ov-liq-hd>span{min-width:0;flex:1}
-#page-overview .ov-dash-toprow .ov-up-list{font-size:13px}
-#page-overview .ov-dash-toprow .ov-up-item .u-meta{font-size:11px;line-height:1.35}
 #page-overview .ov-dash-toprow #ov-mile-body .ov-mile-foot-compact{font-size:11px}
 #page-overview .ov-dash-toprow .ov-dash-empty{font-size:14px;line-height:var(--lh-body)}
-#page-overview .ov-dash-toprow .ov-donut-wrap{height:118px}
 /* 总览三国别卡片头部：略放大，三列数字仍单行优先 */
 #ov-regions .ov-col-name{font-size:15px}
 #ov-regions .ov-col-meta{font-size:11px;padding:4px 10px}
@@ -377,10 +370,10 @@ input::placeholder{color:var(--text3)}
 .fx-grid.mb{margin-bottom:var(--s-6)}
 
 /* Overview 3-column region list */
-#ov-regions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s-5);margin-bottom:var(--section-y);min-width:0;width:100%;max-width:100%}
+#ov-regions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-bottom:24px;min-width:0;width:100%;max-width:100%}
 .ov-col{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r-lg);overflow:hidden;display:flex;flex-direction:column;min-width:0;box-shadow:var(--shadow-sm);transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease}
 .ov-col:hover{transform:translateY(-2px);box-shadow:var(--shadow-md);border-color:rgba(202,138,4,.28)}
-.ov-col-header{padding:var(--s-5) var(--card-pad);border-bottom:1px solid var(--border);background:var(--surface-header);display:flex;flex-direction:column;gap:var(--s-3)}
+.ov-col-header{padding:16px 18px 14px;border-bottom:1px solid var(--border);background:var(--surface-header);display:flex;flex-direction:column;gap:var(--s-3)}
 .ov-us-totals-line{display:flex;flex-direction:row;align-items:baseline;flex-wrap:wrap;gap:var(--s-2) var(--s-4);margin-top:var(--s-2);width:100%}
 .ov-us-totals-line .ov-col-total{margin-bottom:0;flex-shrink:0}
 .ov-us-aud-inline{margin-left:auto;font-size:var(--text-lg);font-weight:500;color:#1d4ed8;line-height:var(--lh-tight);text-align:right;flex-shrink:0;font-variant-numeric:tabular-nums}
@@ -388,7 +381,7 @@ input::placeholder{color:var(--text3)}
 .ov-col-name-row{display:flex;align-items:center;justify-content:space-between;gap:var(--s-3);margin-bottom:var(--s-3);flex-wrap:wrap}
 .ov-col-name-row .ov-col-name{margin-bottom:0;flex:1;min-width:0}
 .ov-col-meta{font-size:10px;font-weight:600;color:var(--text3);font-family:var(--mono);letter-spacing:.04em;padding:4px 10px;border-radius:999px;background:var(--surface-muted);border:1px solid var(--border2);white-space:nowrap}
-.ov-head-triple{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;width:100%;border:1px solid var(--border2);border-radius:var(--r-sm);overflow:hidden;background:var(--surface-muted);box-shadow:0 1px 0 rgba(255,255,255,.65) inset}
+.ov-head-triple{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;width:100%;margin-top:10px;border:1px solid var(--border2);border-radius:var(--r-sm);overflow:hidden;background:var(--surface-muted);box-shadow:0 1px 0 rgba(255,255,255,.65) inset}
 .ov-head-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:10px 6px;border-right:1px solid var(--border);min-width:0}
 .ov-head-cell:last-child{border-right:none}
 .ov-head-cell-lbl{font-size:9px;font-weight:700;color:var(--text3);font-family:var(--mono);letter-spacing:.1em;text-transform:uppercase;line-height:1}
@@ -412,8 +405,8 @@ input::placeholder{color:var(--text3)}
 .ov-us-cap-split{padding:var(--s-1) var(--s-2);border-radius:var(--r-sm);background:var(--accent-soft);border:1px solid rgba(202,138,4,.3);display:flex;flex-wrap:wrap;align-items:center;gap:var(--s-2) var(--s-3);font-size:var(--text-xs);color:var(--text3);font-family:var(--mono);line-height:var(--lh-snug);flex:0 1 auto;margin-left:auto;justify-content:flex-end;text-align:right}
 .ov-us-cap-split .ov-cap-val{color:#92400e;font-weight:600;font-size:var(--text-sm)}
 .ov-us-cap-split .ov-cap-sep{opacity:.45}
-.ov-col-body{flex:1;padding:var(--s-3) 0 var(--s-2);font-size:var(--text-base);line-height:var(--lh-body);font-weight:400}
-.ov-acc-block{padding:0 var(--card-pad);margin-bottom:var(--s-3)}
+.ov-col-body{flex:1;padding:8px 0 6px;font-size:var(--text-base);line-height:var(--lh-body);font-weight:400}
+.ov-acc-block{padding:0 18px;margin-bottom:8px}
 .ov-acc-name{font-size:var(--text-sm);font-weight:600;color:var(--text2);padding:var(--list-y) 0 var(--s-3);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;line-height:var(--lh-snug);letter-spacing:.01em}
 .ov-acc-total{font-size:var(--text-sm);font-weight:500;color:var(--text);font-variant-numeric:tabular-nums;line-height:var(--lh-snug)}
 .ov-prod-row{display:grid;grid-template-columns:minmax(0,1fr) auto min-content;gap:var(--s-4);align-items:center;padding:var(--list-y) var(--s-3);margin:0 calc(-1 * var(--s-3));border-bottom:1px solid var(--border);border-radius:var(--r-sm);transition:background .15s ease}
@@ -734,9 +727,9 @@ body.light .fh-mkt-badge.fh-mkt-night{color:#0f766e;background:rgba(15,118,110,.
     <div class="topbar-title" id="topbar-title">总览</div>
     <div class="fx-strip" id="fx-strip"></div>
     <div class="topbar-right">
-      <button type="button" class="btn btn-ghost btn-sm" id="snap-btn" onclick="takeSnapshot()" title="写入今日 NAV 历史快照">📸 记录今日快照</button>
-      <button type="button" class="btn btn-ghost btn-sm" id="theme-btn" onclick="toggleNight()" title="默认深色锌灰主题；点此切换日间暖色">☀️ 日间（暖色）</button>
-      <button type="button" class="btn btn-ghost btn-sm" id="refresh-all-btn" onclick="refreshAllQuotes()" title="刷新汇率与各类行情 → 写入今日快照 → 拉取并翻译资讯">🔄 全部刷新并快照</button>
+      <button type="button" class="btn btn-ghost btn-sm" id="theme-btn" onclick="toggleNight()" title="深色 / 日间主题切换" aria-label="切换深浅色主题">☀️</button>
+      <button type="button" class="btn btn-ghost btn-sm" id="snap-btn" onclick="takeSnapshot()" title="写入今日 NAV 历史快照">📸 快照</button>
+      <button type="button" class="btn btn-ghost btn-sm" id="refresh-all-btn" onclick="refreshAllQuotes()" title="刷新汇率与各类行情，并写入今日快照、拉取资讯">🔄 刷新</button>
       <button type="button" class="btn btn-primary btn-sm" onclick="openModal()">＋ 添加资产</button>
     </div>
   </div>
@@ -779,7 +772,6 @@ body.light .fh-mkt-badge.fh-mkt-night{color:#0f766e;background:rgba(15,118,110,.
           <div class="card mb-0" id="ov-liq-card">
             <div class="card-title">流动性结构</div>
             <div class="ov-liq-bars" id="ov-liq-body"></div>
-            <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);font-size:11px;color:var(--text3);font-family:var(--mono)" id="ov-td-inline"></div>
           </div>
           <div class="card mb-0" id="ov-mile-card">
             <div class="card-title">快照对比</div>
@@ -2270,7 +2262,7 @@ const CMDK_ITEMS=[
   {id:'settings',label:'设置',kw:'设置 导入 导出',ico:'⚙️',run:function(){showPage('settings');}},
   {id:'add',label:'添加资产',kw:'新建 添加',ico:'＋',run:function(){openModal();}},
   {id:'snapshot',label:'记录今日快照',kw:'快照 拍照',ico:'📸',run:function(){takeSnapshot();}},
-  {id:'refresh',label:'全部刷新并快照',kw:'同步 刷新 行情',ico:'🔄',run:function(){refreshAllQuotes();}}
+  {id:'refresh',label:'全部刷新',kw:'同步 刷新 行情',ico:'🔄',run:function(){refreshAllQuotes();}}
 ];
 let __cmdkFiltered=[],__cmdkActive=0;
 function filterCmdkItems(q){
@@ -2379,6 +2371,26 @@ function showPage(id){
 }
 
 // ══ SIDEBAR ══
+function updateTdExpiryChip(){
+  const chip=document.getElementById('td-expiry-chip');
+  const rate=document.getElementById('fc-td-expiry');
+  if(!chip||!rate)return;
+  const n=D.products.filter(p=>p.type==='term_deposit'&&(p.tdContractEnd||p.tdEnd))
+    .map(p=>tdDaysLeft(p))
+    .filter(dl=>dl!=null&&dl>=0&&dl<=90).length;
+  chip.style.display='flex';
+  if(n>0){
+    rate.textContent=n+'笔到期';
+    chip.style.borderColor='rgba(239,68,68,.4)';
+    chip.style.color='#b91c1c';
+    rate.style.color='#b91c1c';
+  }else{
+    rate.textContent='90天无到期';
+    chip.style.removeProperty('border-color');
+    chip.style.removeProperty('color');
+    rate.style.removeProperty('color');
+  }
+}
 function renderSidebar(){
   const cny=totalCNY();
   document.getElementById('sb-cny').textContent=fc(cny,'CNY');
@@ -2392,8 +2404,10 @@ function renderSidebar(){
   const audUsd=usdaud!=null&&usdaud>0?(1/usdaud).toFixed(5):null;
   if(audUsd!=null)fxParts.push(`<div class="fx-chip" title="1 澳元 = ${audUsd} 美元"><span>🇦🇺🇺🇸</span><span class="fx-chip-pair">AUD/USD</span><span class="fx-chip-rate">${audUsd}</span></div>`);
   fxParts.push(`<div class="fx-chip" id="gold-price-chip" title="上海金 AU9999 · 点击刷新" onclick="refreshGoldChip()" style="cursor:pointer"><span class="fx-chip-pair">🥇 Au/g</span><span class="fx-chip-rate" id="fc-gold">—</span></div>`);
+  fxParts.push('<div class="fx-chip" id="td-expiry-chip" style="display:none" aria-live="polite"><span class="fx-chip-pair">📅 近到期</span><span class="fx-chip-rate" id="fc-td-expiry">—</span></div>');
   document.getElementById('fx-strip').innerHTML=fxParts.join('');
   updateGoldChip();
+  updateTdExpiryChip();
 }
 
 // ══ OVERVIEW ══
@@ -3143,6 +3157,7 @@ async function refreshAllQuotes(){
     dismissToast(__woSyncToastId);
     __woSyncToastId=null;
     busy(false);
+    try{updateTdExpiryChip();}catch(e){}
   }
 }
 
@@ -3191,12 +3206,11 @@ function destroyOvDashCharts(){
 function renderOverviewDashboard(){
   const elI=document.getElementById('ov-insights');
   const elL=document.getElementById('ov-liq-body');
-  const elTd=document.getElementById('ov-td-inline');
   const mileFirst=document.getElementById('mile-first-val');
   const mileDelta=document.getElementById('mile-first-delta');
   const ctxR=document.getElementById('chart-alloc-region');
   const ctxT=document.getElementById('chart-alloc-type');
-  if(!elI||!elL||!elTd||!mileFirst||!mileDelta)return;
+  if(!elI||!elL||!mileFirst||!mileDelta)return;
   const cny=totalCNY();
   const chips=[];
   if(!D.navHistory||!D.navHistory.length)
@@ -3232,7 +3246,6 @@ function renderOverviewDashboard(){
   if(cny<=0){
     destroyOvDashCharts();
     elL.innerHTML='<div class="ov-dash-empty" style="color:var(--text3)">暂无资产数据</div>';
-    elTd.innerHTML='<div class="ov-dash-empty" style="color:var(--text3);font-family:var(--font)">90 天内无定期到期</div>';
     mileFirst.textContent='—';
     mileDelta.textContent='—';
     mileDelta.className='';
@@ -3247,19 +3260,6 @@ function renderOverviewDashboard(){
     <div class="ov-liq-row"><div class="ov-liq-hd"><span>现金 / 活期（含手填闲置）</span><b>${(cashV/cny*100).toFixed(1)}% · ${fc(cashV,'CNY',0)}</b></div><div class="ov-liq-track"><div class="ov-liq-fill cash" style="width:${Math.min(100,cashV*scale)}%"></div></div></div>
     <div class="ov-liq-row"><div class="ov-liq-hd"><span>定期 / 锁定</span><b>${(lockV/cny*100).toFixed(1)}% · ${fc(lockV,'CNY',0)}</b></div><div class="ov-liq-track"><div class="ov-liq-fill lock" style="width:${Math.min(100,lockV*scale)}%"></div></div></div>
     <div class="ov-liq-row"><div class="ov-liq-hd"><span>投资类（基金·黄金·美股·其它）</span><b>${(invV/cny*100).toFixed(1)}% · ${fc(invV,'CNY',0)}</b></div><div class="ov-liq-track"><div class="ov-liq-fill inv" style="width:${Math.min(100,invV*scale)}%"></div></div></div>`;
-  const soon=D.products.filter(p=>p.type==='term_deposit'&&(p.tdContractEnd||p.tdEnd))
-    .map(p=>({p,dl:tdDaysLeft(p),end:p.tdContractEnd||p.tdEnd}))
-    .filter(x=>x.dl!=null&&x.dl>=0&&x.dl<=90)
-    .sort((a,b)=>a.dl-b.dl);
-  if(!soon.length)
-    elTd.innerHTML='<div class="ov-dash-empty" style="color:var(--text3);font-family:var(--font)">90 天内无定期到期</div>';
-  else
-    elTd.innerHTML='<div style="font-size:10px;color:var(--text2);font-weight:600;margin-bottom:6px;letter-spacing:.04em">近期到期（定期 · 90 天内）</div>'+
-    `<div class="ov-up-list">${soon.slice(0,12).map(x=>{
-      const p=x.p,cur=p.tdCur||'AUD';
-      const nm=String(p.name||'定存').replace(/</g,'').replace(/>/g,'');
-      return`<div class="ov-up-item"><span class="u-name">${nm}</span><span class="u-meta">剩 ${x.dl} 天 · ${x.end} · ${fc(tdCurVal(p),cur,2)}</span></div>`;
-    }).join('')}</div>`;
   const oldest=D.navHistory.filter(n=>n.date).sort((a,b)=>a.date.localeCompare(b.date))[0]||null;
   if(oldest&&oldest.date&&cny>0){
     mileFirst.textContent=fc(oldest.cny,'CNY',0)+' · '+oldest.date;
@@ -3431,7 +3431,7 @@ function takeSnapshot(){
   if(document.getElementById('page-history')?.classList.contains('active'))renderHistory();
   if(document.getElementById('page-overview')?.classList.contains('active'))renderOverviewDashboard();
   const btn=document.getElementById('snap-btn');
-  if(btn){btn.textContent='✅ 已记录';setTimeout(()=>btn.textContent='📸 记录今日快照',3000);}
+  if(btn){btn.textContent='✅ 已记录';setTimeout(()=>btn.textContent='📸 快照',3000);}
 }
 function delSnap(date){if(!confirm('删除 '+date+' 快照？'))return;D.navHistory=D.navHistory.filter(n=>n.date!==date);save();renderHistory();if(document.getElementById('page-overview')?.classList.contains('active'))renderOverviewDashboard();}
 
@@ -3783,7 +3783,7 @@ function toggleNight(){
   localStorage.setItem('wo_light',document.body.classList.contains('light')?'1':'0');
   document.documentElement.classList.toggle('dark',!document.body.classList.contains('light'));
   const btn=document.getElementById('theme-btn');
-  if(btn) btn.textContent=document.body.classList.contains('light')?'🌙 深色仪表盘':'☀️ 日间（暖色）';
+  if(btn) btn.textContent=document.body.classList.contains('light')?'🌙':'☀️';
   if(document.getElementById('page-overview')?.classList.contains('active'))renderOverviewDashboard();
   try{renderNavMiniChart(ovRange);}catch(e){}
   try{renderHistory();}catch(e){}
@@ -3810,7 +3810,7 @@ if(localStorage.getItem('wo_light')==='1')document.body.classList.add('light');
 document.documentElement.classList.toggle('dark',!document.body.classList.contains('light'));
 (function syncThemeBtn(){
   const btn=document.getElementById('theme-btn');
-  if(btn) btn.textContent=document.body.classList.contains('light')?'🌙 深色仪表盘':'☀️ 日间（暖色）';
+  if(btn) btn.textContent=document.body.classList.contains('light')?'🌙':'☀️';
 })();
 if(localStorage.getItem('wo_sb_rail')==='1')document.body.classList.add('sidebar-collapsed');
 
