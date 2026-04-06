@@ -71,6 +71,7 @@ ${portfolio}`;
 
   async function tryGemini() {
     const key = process.env.GEMINI_API_KEY;
+    console.log('Gemini key exists:', !!key, 'key prefix:', key?.slice(0, 8));
     if (!key) throw new Error('no_key_GEMINI');
     const r = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`,
@@ -83,6 +84,11 @@ ${portfolio}`;
         }),
       }
     );
+    if (!r.ok) {
+      const errText = await r.text();
+      console.log('Gemini error:', r.status, errText.slice(0, 200));
+      throw new Error('gemini_http_' + r.status);
+    }
     const d = await r.json();
     const text = d?.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!text) throw new Error('empty');
@@ -91,25 +97,32 @@ ${portfolio}`;
 
   async function tryGroq() {
     const key = process.env.GROQ_API_KEY;
+    console.log('Groq key exists:', !!key, 'key prefix:', key?.slice(0, 8));
     if (!key) throw new Error('no_key_GROQ');
     const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
       body: JSON.stringify({
-        model: 'llama3-70b-8192',
+        model: 'llama-3.3-70b-versatile',
         messages: [{ role: 'user', content: prompt }],
         max_tokens: 1200,
         temperature: 0.7,
       }),
     });
+    if (!r.ok) {
+      const errText = await r.text();
+      console.log('Groq error:', r.status, errText.slice(0, 200));
+      throw new Error('groq_http_' + r.status);
+    }
     const d = await r.json();
     const text = d?.choices?.[0]?.message?.content;
     if (!text) throw new Error('empty');
-    return { advice: text, model: 'Groq Llama3-70B' };
+    return { advice: text, model: 'Groq Llama 3.3 70B' };
   }
 
   async function tryCohere() {
     const key = process.env.COHERE_API_KEY;
+    console.log('Cohere key exists:', !!key, 'key prefix:', key?.slice(0, 8));
     if (!key) throw new Error('no_key_COHERE');
     const r = await fetch('https://api.cohere.ai/v1/generate', {
       method: 'POST',
@@ -121,6 +134,11 @@ ${portfolio}`;
         temperature: 0.7,
       }),
     });
+    if (!r.ok) {
+      const errText = await r.text();
+      console.log('Cohere error:', r.status, errText.slice(0, 200));
+      throw new Error('cohere_http_' + r.status);
+    }
     const d = await r.json();
     const text = d?.generations?.[0]?.text;
     if (!text) throw new Error('empty');
