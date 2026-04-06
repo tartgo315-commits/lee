@@ -276,7 +276,7 @@ body:not(.light) #goal-remaining{color:var(--accent2)}
 /* Products */
 .products-wrap{display:none;border-top:1px solid var(--border);min-width:0;overflow-x:hidden;-webkit-overflow-scrolling:touch}
 .products-wrap.open{display:block}
-.product-row{display:grid;grid-template-columns:minmax(120px,1fr) minmax(112px,148px) minmax(88px,108px) minmax(40px,52px) minmax(72px,96px) 76px;align-items:center;padding:8px var(--card-pad);border-bottom:1px solid var(--border);gap:var(--s-2) var(--s-4);transition:background .15s ease}
+.product-row{display:grid;grid-template-columns:minmax(120px,1fr) minmax(112px,148px) minmax(88px,108px) minmax(40px,52px) minmax(80px,100px) 60px;align-items:center;padding:8px var(--card-pad);border-bottom:1px solid var(--border);gap:var(--s-2) var(--s-4);transition:background .15s ease}
 .product-row .pr-amt,.product-row .pr-pnl{font-variant-numeric:tabular-nums}
 .product-row:last-child{border-bottom:none}
 .product-row:not(.hdr):hover{background:var(--bg3)}
@@ -305,9 +305,9 @@ body:not(.light) .fh-mkt-badge.fh-mkt-night{color:#5eead4;background:rgba(94,234
 .pr-amt.primary{font-weight:500;color:var(--text);font-size:var(--text-base)}
 .pr-amt.dim{color:var(--text2)}
 .pr-amt.muted{color:var(--text3);font-size:13px;font-weight:400}
-.pr-pnl{font-size:var(--text-sm);font-weight:500;text-align:right;line-height:var(--lh-body);font-variant-numeric:tabular-nums}
+.pr-pnl{font-size:var(--text-sm);font-weight:500;text-align:right;line-height:var(--lh-body);font-variant-numeric:tabular-nums;padding-right:6px;min-width:80px}
 .pr-pnl.pos{color:var(--green)}.pr-pnl.neg{color:var(--red)}.pr-pnl.neu{color:var(--text3)}
-.pr-acts{display:flex;gap:5px;justify-content:flex-end}
+.pr-acts{display:flex;justify-content:flex-end;gap:4px;padding-left:8px}
 .pr-pct{font-size:var(--text-sm);color:var(--text2);text-align:right;font-variant-numeric:tabular-nums;line-height:var(--lh-snug)}
 .add-row{padding:var(--s-4) var(--card-pad);border-top:1px dashed var(--border);display:flex;align-items:center;gap:var(--s-3)}
 .us-acc-split{display:flex;flex-direction:column;gap:var(--s-4);padding:var(--s-4) var(--card-pad);background:var(--surface-muted);border-bottom:1px solid var(--border)}
