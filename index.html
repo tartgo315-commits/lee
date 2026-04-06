@@ -898,8 +898,22 @@ body.light .fh-mkt-badge.fh-mkt-night{color:#0f766e;background:rgba(15,118,110,.
         <button class="btn btn-primary" onclick="takeSnapshot()">📸 记录今日快照</button>
       </div>
       <div class="alert alert-info" style="margin-bottom:14px">每次快照会保存<strong>当日折合人民币</strong>下的<strong>分区（中/美/澳）</strong>与<strong>资产类型</strong>（现金、国内基金、黄金、美股、定期、其它）及<strong>汇率</strong>。列表中<strong>较上一快照</strong>指时间更早的那一条（上一条历史记录）。黄金 ETF 联接若登记为「国内基金」会统计在「国内基金」而非「黄金」。</div>
-      <div class="card" style="margin-bottom:14px">
-        <div style="height:260px"><canvas id="chart-hist"></canvas></div>
+      <div id="nav-chart-wrap" style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);padding:20px 24px;margin-bottom:24px;box-shadow:var(--shadow-sm)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--text)">NAV 净值走势</div>
+            <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px">按快照日期 · 人民币</div>
+          </div>
+          <div style="display:flex;gap:6px">
+            <button type="button" onclick="setNavChartRange('3M')" id="ncr-3m" class="btn btn-ghost btn-sm">3M</button>
+            <button type="button" onclick="setNavChartRange('6M')" id="ncr-6m" class="btn btn-ghost btn-sm">6M</button>
+            <button type="button" onclick="setNavChartRange('ALL')" id="ncr-all" class="btn btn-ghost btn-sm" style="background:var(--bg4)">ALL</button>
+          </div>
+        </div>
+        <div style="height:220px;position:relative;width:100%">
+          <canvas id="nav-history-chart"></canvas>
+        </div>
+        <div id="nav-chart-empty" style="display:none;text-align:center;padding:40px;color:var(--text3);font-size:13px">快照不足 2 条，暂无图表</div>
       </div>
       <div class="card mb-0 overflow-hidden p-0">
         <div class="hist-wrap">
@@ -3571,7 +3585,62 @@ function buildHistBreakRow(n,older){
   }
   return`<tr class="hist-break"><td colspan="7">${html}</td></tr>`;
 }
-let histChart=null;
+let _navChartInst=null;
+let _navChartRange='ALL';
+function setNavChartRange(r){
+  _navChartRange=r;
+  ['3M','6M','ALL'].forEach(x=>{
+    const b=document.getElementById('ncr-'+x.toLowerCase());
+    if(b) b.style.background=x===r?'var(--bg4)':'';
+  });
+  renderNavChart(r);
+}
+function renderNavChart(range){
+  range=range||_navChartRange;
+  _navChartRange=range;
+  const wrap=document.getElementById('nav-chart-wrap');
+  const canvas=document.getElementById('nav-history-chart');
+  const empty=document.getElementById('nav-chart-empty');
+  if(!wrap||!canvas)return;
+  ['3M','6M','ALL'].forEach(x=>{
+    const b=document.getElementById('ncr-'+x.toLowerCase());
+    if(b) b.style.background=x===range?'var(--bg4)':'';
+  });
+  const snaps=[...(D.navHistory||[])].filter(n=>n&&n.date&&n.cny!=null&&!isNaN(Number(n.cny))).sort((a,b)=>a.date.localeCompare(b.date));
+  if(snaps.length<2){
+    if(_navChartInst){try{_navChartInst.destroy();}catch(e){}_navChartInst=null;}
+    canvas.style.display='none';
+    if(empty)empty.style.display='block';
+    return;
+  }
+  canvas.style.display='block';
+  if(empty)empty.style.display='none';
+  const now=new Date();
+  const cutoff=range==='3M'?new Date(now.getFullYear(),now.getMonth()-3,now.getDate())
+    :range==='6M'?new Date(now.getFullYear(),now.getMonth()-6,now.getDate())
+    :new Date('2000-01-01');
+  let filtered=snaps.filter(s=>new Date(s.date+'T12:00:00')>=cutoff);
+  if(filtered.length<1&&range!=='ALL'){
+    setNavChartRange('ALL');
+    return;
+  }
+  if(filtered.length<1){
+    if(_navChartInst){try{_navChartInst.destroy();}catch(e){}_navChartInst=null;}
+    canvas.style.display='none';
+    if(empty)empty.style.display='block';
+    return;
+  }
+  const labels=filtered.map(s=>s.date.slice(5));
+  const values=filtered.map(s=>Number(s.cny));
+  const isDark=!document.body.classList.contains('light');
+  const gridCol=isDark?'rgba(255,255,255,.06)':'rgba(0,0,0,.06)';
+  const textCol=isDark?'#a1a1aa':'#78716c';
+  const trend=values[values.length-1]>=values[0];
+  const lineCol=trend?'#16a34a':'#dc2626';
+  const fillCol=trend?'rgba(22,163,74,.08)':'rgba(220,38,38,.07)';
+  if(_navChartInst){try{_navChartInst.destroy();}catch(e){}_navChartInst=null;}
+  _navChartInst=new Chart(canvas,{type:'line',data:{labels,datasets:[{data:values,borderColor:lineCol,backgroundColor:fillCol,borderWidth:2,pointRadius:filtered.length>30?0:3,pointHoverRadius:5,fill:true,tension:0.35}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' ¥'+Math.round(c.raw).toLocaleString('zh-CN')}}},scales:{x:{grid:{color:gridCol},ticks:{color:textCol,font:{size:10},maxTicksLimit:10}},y:{grid:{color:gridCol},ticks:{color:textCol,font:{size:10},callback:v=>'¥'+(v/10000).toFixed(0)+'万'}}}}});
+}
 function renderHistory(){
   const hist=[...D.navHistory].sort((a,b)=>b.date.localeCompare(a.date));
   const cny=totalCNY();
@@ -3595,18 +3664,7 @@ function renderHistory(){
       return main+buildHistBreakRow(n,prev||null);
     }).join('');
   }
-  let all=[...D.navHistory].sort((a,b)=>a.date.localeCompare(b.date));
-  if(!all.length||all[all.length-1].date!==today())all.push({date:today(),cny});
-  if(histChart)histChart.destroy();
-  const ctx=document.getElementById('chart-hist');
-  const isDark=!document.body.classList.contains('light');
-  const line=isDark?'#6366f1':'#ca8a04';
-  const g=ctx.getContext('2d').createLinearGradient(0,0,0,260);
-  g.addColorStop(0,isDark?'rgba(99,102,241,.22)':'rgba(202,138,4,.22)');
-  g.addColorStop(1,isDark?'rgba(99,102,241,0)':'rgba(202,138,4,0)');
-  const grid=isDark?'rgba(255,255,255,.06)':'rgba(28,25,23,.08)';
-  const tick=isDark?'#a1a1aa':'#78716c';
-  histChart=new Chart(ctx,{type:'line',data:{labels:all.map(n=>n.date),datasets:[{data:all.map(n=>n.cny),borderColor:line,backgroundColor:g,borderWidth:2,fill:true,tension:0.4,pointRadius:all.length<50?3:0,pointHoverRadius:4,pointBackgroundColor:line}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fc(c.raw,'CNY')}}},scales:{x:{grid:{color:grid},ticks:{maxTicksLimit:8,font:{family:'ui-monospace,monospace',size:10},color:tick}},y:{grid:{color:grid},ticks:{callback:v=>fc(v,'CNY',0),font:{family:'ui-monospace,monospace',size:10},color:tick}}}}});
+  try{renderNavChart(_navChartRange);}catch(e){}
 }
 function takeSnapshot(){
   const d=today();
@@ -3979,6 +4037,7 @@ function toggleNight(){
   if(document.getElementById('page-overview')?.classList.contains('active'))renderOverviewDashboard();
   try{renderNavMiniChart(ovRange);}catch(e){}
   try{renderHistory();}catch(e){}
+  try{renderNavChart(_navChartRange);}catch(e){}
 }
 function toggleSidebarRail(){
   if(typeof window.matchMedia==='function'&&window.matchMedia('(max-width:1000px)').matches)return;
