@@ -4037,7 +4037,6 @@ function toggleNight(){
   if(document.getElementById('page-overview')?.classList.contains('active'))renderOverviewDashboard();
   try{renderNavMiniChart(ovRange);}catch(e){}
   try{renderHistory();}catch(e){}
-  try{renderNavChart(_navChartRange);}catch(e){}
 }
 function toggleSidebarRail(){
   if(typeof window.matchMedia==='function'&&window.matchMedia('(max-width:1000px)').matches)return;
