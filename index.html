@@ -2023,6 +2023,9 @@ function commitUsIdleInput(region,idx){
   setUsAccountIdle(acc,inp.value);
 }
 function escAttr(s){return String(s??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+/** 总览分区等 innerHTML 用：防止名称/备注里的 &lt; &gt; 破坏结构或触发解析异常 */
+function escOvHtml(s){return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function safePctFixed(n,d){const x=Number(n);return Number.isFinite(x)?x.toFixed(d):'—';}
 function tdCurVal(p){
   if(!p.principal)return 0;
   const s=new Date(p.tdStart||today()),now=new Date(),e=new Date((p.tdContractEnd||p.tdEnd)||today());
@@ -2099,7 +2102,7 @@ function buildAuTdBanners(ps){
     if(now>=remind&&now<=end){
       const dl=tdDaysLeft(p);
       const cur=p.tdCur||'AUD';
-      parts.push(`<div class="au-td-alert">⏰ <strong>定存到期提醒（7天内）</strong> · ${p.name||'定存'} · 当前约 ${fc(tdCurVal(p),cur,2)} · 还剩 <strong>${dl}</strong> 天 · 到期日 ${p.tdContractEnd||p.tdEnd}</div>`);
+      parts.push(`<div class="au-td-alert">⏰ <strong>定存到期提醒（7天内）</strong> · ${escOvHtml(p.name||'定存')} · 当前约 ${fc(tdCurVal(p),cur,2)} · 还剩 <strong>${dl}</strong> 天 · 到期日 ${escOvHtml(String(p.tdContractEnd||p.tdEnd||''))}</div>`);
     }
   }
   if(tds.length){
@@ -2107,7 +2110,7 @@ function buildAuTdBanners(ps){
     const wlines=tds.map(p=>{
       const cv=tdCurVal(p),w=cv*(p.rate||0)/100/52,cur=p.tdCur||'AUD';
       wsum+=w;
-      return `${(p.name||'定存').slice(0,18)} ~${fc(w,cur,2)}`;
+      return `${escOvHtml((p.name||'定存').slice(0,18))} ~${fc(w,cur,2)}`;
     });
     parts.push(`<div class="au-td-weekly"><strong>定存本周估算利息（合计）</strong> ${fc(wsum,'AUD',2)} <span class="dim">年利率÷52×当前本息，非银行精确结息</span><div class="tw">${wlines.join(' · ')}</div></div>`);
   }
@@ -2236,27 +2239,27 @@ function renderOverview(){
           sub=`${fmt(grams,4)}克 · 均价¥${fmt(cost,2)}/克`;
           amt=price?`¥${fmt(price,2)}/克`:'待刷新';
           cnyStr=price?`市值 ${fc(mkt,'CNY',2)}`:'';
-          pnl=price?`<div class="ov-prod-pnl ${pnl>=0?'pos':'neg'}">${pnl>=0?'+':''}${fc(pnl,'CNY',2)} (${pnl>=0?'+':''}${pct.toFixed(1)}%)</div>`:'';
+          pnl=price?`<div class="ov-prod-pnl ${pnl>=0?'pos':'neg'}">${pnl>=0?'+':''}${fc(pnl,'CNY',2)} (${pnl>=0?'+':''}${safePctFixed(pct,1)}%)</div>`:'';
         } else if(p.type==='stock_us'){
           const price=p.currentPrice||0,cost=p.costPrice||0,shares=p.shares||0;
           const mkt=shares*price,pnlUSD=shares*(price-cost),pct=cost>0?(price-cost)/cost*100:0;
           const tick=(p.ticker||'').trim()||'—';
           const hasName=p.name&&p.name.trim()&&p.name.trim().toUpperCase()!==tick.toUpperCase();
-          nameHtml=`<div class="ov-prod-name ov-prod-name--stock">${hasName?`<span class="ov-prod-tick">${p.name.trim()}</span><span class="ov-prod-ticktag">${tick}</span>`:`<span class="ov-prod-tick">${tick}</span>`}<span class="ov-prod-px${price?'':' wait'}">${price?fmtUsdShare(price):'待刷新'}</span></div>`;
+          nameHtml=`<div class="ov-prod-name ov-prod-name--stock">${hasName?`<span class="ov-prod-tick">${escOvHtml(p.name.trim())}</span><span class="ov-prod-ticktag">${escOvHtml(tick)}</span>`:`<span class="ov-prod-tick">${escOvHtml(tick)}</span>`}<span class="ov-prod-px${price?'':' wait'}">${price?fmtUsdShare(price):'待刷新'}</span></div>`;
           const wPct=acny>0?(cny/acny*100).toFixed(1):null;
           sub=`${fmt(shares,2)}股 · 成本${fc(cost,'USD',2)}${wPct!=null?` · 占比 ${wPct}%`:''}`;
           amt=price?fc(mkt,'USD',2):'待刷新';
           cnyStr='';
-          pnl=price?`<div class="ov-prod-pnl ${pnlUSD>=0?'pos':'neg'}">${pnlUSD>=0?'+':''}${fc(pnlUSD,'USD',2)} (${pnlUSD>=0?'+':''}${pct.toFixed(1)}%)</div>`:'';
+          pnl=price?`<div class="ov-prod-pnl ${pnlUSD>=0?'pos':'neg'}">${pnlUSD>=0?'+':''}${fc(pnlUSD,'USD',2)} (${pnlUSD>=0?'+':''}${safePctFixed(pct,1)}%)</div>`:'';
         } else if(p.type==='fund_cn'){
           const price=p.fundPrice||0,shares=p.fundShares||0,cost=p.fundCost||0;
           const cur=p.fundCurrency||'CNY';
-          const mkt=shares*price,pnlVal=mkt-shares*cost,pct=cost>0?pnlVal/(shares*cost)*100:0;
+          const mkt=shares*price,pnlVal=mkt-shares*cost,pct=(cost>0&&shares>0)?pnlVal/(shares*cost)*100:0;
           name=p.name||p.fundCode||'—';
-          sub=`${p.fundCode?p.fundCode+' · ':''}${fmt(shares,2)}份`;
+          sub=`${p.fundCode?escOvHtml(String(p.fundCode))+' · ':''}${fmt(shares,2)}份`;
           amt=price?fc(mkt,cur,2):'待更新净值';
           cnyStr=price&&cur!=='CNY'?`≈ ${fc(cny,'CNY',0)}`:'';
-          pnl=price?`<div class="ov-prod-pnl ${pnlVal>=0?'pos':'neg'}">${pnlVal>=0?'+':''}${fc(pnlVal,cur,2)} (${pnlVal>=0?'+':''}${pct.toFixed(1)}%)</div>`:'';
+          pnl=price?`<div class="ov-prod-pnl ${pnlVal>=0?'pos':'neg'}">${pnlVal>=0?'+':''}${fc(pnlVal,cur,2)} (${pnlVal>=0?'+':''}${safePctFixed(pct,1)}%)</div>`:'';
         } else if(p.type==='term_deposit'){
           const cur=p.tdCur||'AUD',curVal=tdCurVal(p),acc=tdAccruedVsOrig(p),daysLeft=tdDaysLeft(p);
           const wk=curVal*(p.rate||0)/100/52;
@@ -2276,8 +2279,8 @@ function renderOverview(){
         }
         return `<div class="ov-prod-row">
           <div class="ov-prod-main">
-            ${nameHtml||`<div class="ov-prod-name">${name}</div>`}
-            ${sub?`<div class="ov-prod-sub">${sub}</div>`:''}
+            ${nameHtml||`<div class="ov-prod-name">${escOvHtml(name)}</div>`}
+            ${sub?`<div class="ov-prod-sub">${escOvHtml(sub)}</div>`:''}
           </div>
           <div class="ov-prod-right">
             <div class="ov-prod-metrics">
@@ -2294,7 +2297,7 @@ function renderOverview(){
       }).join('');
       return `<div class="ov-acc-block">
         <div class="ov-acc-name">
-          <span>${acc}</span>
+          <span>${escOvHtml(acc)}</span>
           <div style="display:flex;align-items:center;gap:8px">
             <span class="ov-acc-total">${fc(alocal,r.cur,0)}</span>
             <button class="ov-acc-add-btn" onclick="openModal(${JSON.stringify(r.id)},${JSON.stringify(acc)})" title="添加到${escAttr(acc)}">＋</button>
@@ -2348,7 +2351,7 @@ function renderOverview(){
           </div>
         </div>
         <div class="ov-col-pnl-row">
-          <span class="ov-pnl-item" style="color:${col}">${sign}${fc(pnlAUD,'AUD',0)} <span class="ov-pnl-pct">${sign}${pnlPct.toFixed(1)}%</span></span>
+          <span class="ov-pnl-item" style="color:${col}">${sign}${fc(pnlAUD,'AUD',0)} <span class="ov-pnl-pct">${sign}${safePctFixed(pnlPct,1)}%</span></span>
           <span class="ov-pnl-item" style="color:${col}">${sign}${fc(pnlUSD,'USD',0)}</span>
           <span class="ov-pnl-item" style="color:${col}">${sign}${fc(pnlCNY,'CNY',0)}</span>
         </div>`;
