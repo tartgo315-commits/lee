@@ -182,7 +182,8 @@ body:not(.light) .news-item:hover{background:rgba(255,255,255,.04)}
 }
 .ov-dash-toprow>.card{margin-bottom:0!important;min-width:0;min-height:0;padding:18px 18px 16px;display:flex;flex-direction:column}
 .ov-dash-toprow>.card .card-title{font-size:12px;margin-bottom:var(--s-2);line-height:var(--lh-snug);flex-shrink:0}
-.ov-dash-toprow .ov-donut-wrap{flex:none;height:160px;margin-top:8px;position:relative;max-width:100%}
+.ov-dash-toprow>.card:has(.ov-donut-wrap){justify-content:center}
+.ov-dash-toprow>.card:has(.ov-donut-wrap) .ov-donut-wrap{flex:none;height:160px;margin:auto 0;position:relative;max-width:100%}
 .ov-dash-toprow #ov-liq-body{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .ov-dash-toprow #ov-mile-body{flex:1;min-height:0;display:flex;flex-direction:column}
 .ov-dash-toprow .ov-liq-hd{font-size:10px;flex-wrap:wrap;gap:var(--s-1);line-height:var(--lh-snug)}
@@ -190,7 +191,8 @@ body:not(.light) .news-item:hover{background:rgba(255,255,255,.04)}
 .ov-dash-toprow .ov-liq-track{height:6px}
 .ov-dash-toprow .ov-liq-row{margin-bottom:var(--s-2)}
 .ov-dash-toprow #ov-mile-body .ov-mile-foot-compact{font-size:10px;line-height:1.4;margin-top:auto;padding-top:10px;color:var(--text3);font-family:var(--mono)}
-#mile-first-delta.pos,#mile-recent-delta.pos{color:var(--green)}#mile-first-delta.neg,#mile-recent-delta.neg{color:var(--red)}
+#mile-first-delta.mile-delta-pos,#mile-recent-delta.mile-delta-pos{color:var(--green)}
+#mile-first-delta.mile-delta-neg,#mile-recent-delta.mile-delta-neg{color:var(--red)!important}
 .card#ov-nav-chart{margin-top:24px}
 #goal-fill{height:100%;border-radius:999px;transition:width .6s cubic-bezier(.4,0,.2,1);width:0%;background:linear-gradient(90deg,#4f46e5,#818cf8)}
 body.light #goal-fill{background:linear-gradient(90deg,var(--gold),#f59e0b)}
@@ -3382,8 +3384,10 @@ function renderOverviewDashboard(){
     mileFirst.textContent='—';
     mileDelta.textContent='—';
     mileDelta.className='';
+    mileDelta.style.color='';
     mileRecent.textContent='—';
     mileRecent.className='';
+    mileRecent.style.color='';
     return;
   }
   const bd=typeBreakdownForCharts();
@@ -3402,19 +3406,23 @@ function renderOverviewDashboard(){
     mileFirst.textContent=fc(oldest.cny,'CNY',0)+' · '+oldest.date;
     const d=cny-oldest.cny;
     mileDelta.textContent=(d>=0?'+':'')+fc(d,'CNY',0);
-    mileDelta.className=d>=0?'pos':'neg';
+    mileDelta.className=d<0?'mile-delta-neg':'mile-delta-pos';
+    mileDelta.style.color=d<0?'var(--red)':d>0?'var(--green)':'';
   }else{
     mileFirst.textContent='—';
     mileDelta.textContent='—';
     mileDelta.className='';
+    mileDelta.style.color='';
   }
   if(lastSnap&&lastSnap.date&&cny>0){
-    const dr=cny-Number(lastSnap.cny);
+    const dr=Number(cny)-Number(lastSnap.cny);
     mileRecent.textContent=(dr>=0?'+':'')+fc(dr,'CNY',0);
-    mileRecent.className=dr>=0?'pos':'neg';
+    mileRecent.className=dr<0?'mile-delta-neg':'mile-delta-pos';
+    mileRecent.style.color=dr<0?'var(--red)':dr>0?'var(--green)':'';
   }else{
     mileRecent.textContent='—';
     mileRecent.className='';
+    mileRecent.style.color='';
   }
   const textColor=document.body.classList.contains('light')?'#57534e':'#a1a1aa';
   const rCn=totalCNY('cn'),rUs=totalCNY('us'),rAu=totalCNY('au');
