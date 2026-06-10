@@ -159,7 +159,7 @@ body{
 .ov-layout-main,.ov-layout-side{display:flex;flex-direction:column;gap:24px;min-width:0}
 .ov-top-unified.card{margin-bottom:0;padding:0;border-radius:var(--radius-lg);border-color:var(--border-accent);overflow:hidden}
 .ov-top-split{display:grid;grid-template-columns:1fr;min-width:0}
-@media(min-width:960px){.ov-top-split{grid-template-columns:minmax(0,1fr) minmax(300px,340px)}}
+@media(min-width:960px){.ov-top-split{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .ov-top-left{padding:32px;min-width:0}
 @media(min-width:960px){.ov-top-left{border-right:1px solid var(--border-light)}}
 .ov-top-right{padding:20px 20px 24px;min-width:0;display:flex;flex-direction:column;min-height:0;background:rgba(11,15,23,.2)}
