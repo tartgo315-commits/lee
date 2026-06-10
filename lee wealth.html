@@ -177,12 +177,19 @@ body{
 @media(min-width:720px){.ov-hero-head{flex-direction:row;align-items:stretch;gap:20px}}
 .ov-hero-main{flex:1;min-width:0}
 .ov-hero-chart-block{margin-top:0;min-width:0;display:flex;flex-direction:column;justify-content:center}
-@media(min-width:720px){.ov-hero-chart-block{flex:0 0 44%;max-width:48%}}
+@media(min-width:720px){.ov-hero-chart-block{flex:0 0 44%;max-width:48%;align-self:stretch}}
 .ov-hero-chart-block .nav-chart-wrap{height:72px}
 .ov-hero-chart-block #chart-ov{max-height:72px;height:72px!important}
-.ov-hero-goal-below{margin-top:16px;padding:14px 16px;border:1px solid var(--border-light);border-radius:var(--radius-md);background:rgba(11,15,23,.35);position:relative}
-.ov-hero-goal-below .ov-goal-hd{margin-bottom:8px}
-.ov-hero-goal-below .ov-goal-aside{margin-top:10px;padding-top:10px;border-top:1px solid var(--border-light)}
+.ov-hero-goal-compact{margin-top:10px;padding:10px 12px;border:1px solid var(--border-light);border-radius:var(--radius-md);background:rgba(11,15,23,.35);position:relative}
+.ov-hero-goal-compact .ov-goal-hd{margin-bottom:4px}
+.ov-hero-goal-compact .ov-goal-pct{font-size:18px;line-height:1.1}
+.ov-hero-goal-compact .ov-goal-track{height:4px;margin-top:6px}
+.ov-hero-goal-compact .ov-goal-meta{margin-top:6px;font-size:11px;gap:6px}
+.ov-hero-goal-compact .ov-goal-meta span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.ov-hero-goal-compact .ov-goal-aside{margin-top:8px;padding-top:8px;border-top:1px solid var(--border-light);display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 8px}
+.ov-hero-goal-compact .ov-goal-remaining{display:inline;font-size:12px;font-weight:600;color:var(--dn-soft);margin:0}
+.ov-hero-goal-compact .ov-goal-eta{margin:0;font-size:11px;text-align:right;white-space:nowrap}
+.ov-hero-goal-compact .ov-goal-edit{position:absolute;top:6px;right:6px;width:26px;height:26px;padding:0}
 .ov-hero-card{padding:32px;border-radius:var(--radius-lg);border-color:var(--border-accent)}
 .ov-hero-label{font-size:var(--text-xs);font-weight:500;text-transform:uppercase;letter-spacing:.08em;color:var(--text-4);margin-bottom:12px}
 .ov-hero-fx{display:flex;flex-wrap:wrap;gap:16px 24px;margin-top:16px;font-size:var(--fs-caption)}
@@ -559,25 +566,24 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
                       <button class="rt" onclick="setRange(9999,this)">ALL</button>
                     </div>
                   </div>
-                </div>
-              </div>
-              <div class="ov-hero-goal-below" id="goal-bar-wrap">
-                <div class="ov-goal-inner">
-                  <div class="ov-goal-hd">
-                    <span class="ov-goal-lbl" id="goal-label">存款目标</span>
-                    <span class="ov-goal-pct" id="goal-pct">—%</span>
+                  <div class="ov-hero-goal-compact" id="goal-bar-wrap">
+                    <div class="ov-goal-inner">
+                      <div class="ov-goal-hd">
+                        <span class="ov-goal-lbl" id="goal-label">存款目标</span>
+                        <span class="ov-goal-pct" id="goal-pct">—%</span>
+                      </div>
+                      <div class="ov-goal-track"><div id="goal-fill"></div></div>
+                      <div class="ov-goal-meta">
+                        <span id="goal-current">¥—</span>
+                        <span id="goal-target">目标 ¥1,500,000</span>
+                      </div>
+                      <div class="ov-goal-aside">
+                        <span class="ov-goal-aside-lbl">还差 <span class="ov-goal-remaining" id="goal-remaining">—</span></span>
+                        <span class="ov-goal-eta" id="goal-eta">预计达成 —</span>
+                      </div>
+                      <button type="button" class="btn btn-icon btn-sm ov-goal-edit" onclick="openGoalEdit()" title="修改目标"><i class="ti ti-pencil"></i></button>
+                    </div>
                   </div>
-                  <div class="ov-goal-track"><div id="goal-fill"></div></div>
-                  <div class="ov-goal-meta">
-                    <span id="goal-current">¥—</span>
-                    <span id="goal-target">目标 ¥1,500,000</span>
-                  </div>
-                  <div class="ov-goal-aside">
-                    <span class="ov-goal-aside-lbl">还差</span>
-                    <span class="ov-goal-remaining" id="goal-remaining">—</span>
-                    <span class="ov-goal-eta" id="goal-eta">预计达成 —</span>
-                  </div>
-                  <button type="button" class="btn btn-icon btn-sm" onclick="openGoalEdit()" title="修改目标" style="position:absolute;top:10px;right:10px"><i class="ti ti-pencil"></i></button>
                 </div>
               </div>
             </div>
