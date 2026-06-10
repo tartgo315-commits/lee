@@ -1002,7 +1002,7 @@ const FIREBASE_PROXY_BASE='';
 /** 线上无同源 /_proxy 时回退（勿尾斜杠）。部署在 Vercel 且接口在 /_proxy 时填你的站点根。 */
 const WO_REMOTE_PROXY_ORIGIN='https://lee-lime.vercel.app';
 const SK='wo_v2';
-const blank=()=>({products:[],navHistory:[],fx:{USD:7.25,AUD:4.65},nextId:1,settings:{usPrincipalAUD:72640},usAccountMeta:{},goal:{amount:1500000,currency:'CNY',label:'存款目标'}});
+const blank=()=>({products:[],navHistory:[],fx:{USD:7.24,AUD:4.75},nextId:1,settings:{usPrincipalAUD:72640},usAccountMeta:{},goal:{amount:1500000,currency:'CNY',label:'存款目标'}});
 let D=blank();
 
 // ══ Asset schema v2（统一 market / asset_type / risk_profile / yield_config）══
@@ -1262,16 +1262,38 @@ maybeShowHttpDataTip();
 })();
 
 // ══ CURRENCY UTILS ══
+/** 核心汇率矩阵（以 CNY 为基准；交叉汇率由矩阵动态衍生，避免全球账本失真） */
+const FX_RATES={
+  get USD_TO_CNY(){return Number(D.fx?.USD)>0?Number(D.fx.USD):7.24;},
+  set USD_TO_CNY(v){if(!D.fx)D.fx={};const n=Number(v);if(n>0)D.fx.USD=n;},
+  get AUD_TO_CNY(){return Number(D.fx?.AUD)>0?Number(D.fx.AUD):4.75;},
+  set AUD_TO_CNY(v){if(!D.fx)D.fx={};const n=Number(v);if(n>0)D.fx.AUD=n;},
+  get CNY_TO_USD(){return 1/this.USD_TO_CNY;},
+  get CNY_TO_AUD(){return 1/this.AUD_TO_CNY;},
+  get AUD_TO_USD(){return this.AUD_TO_CNY/this.USD_TO_CNY;},
+  get USD_TO_AUD(){return this.USD_TO_CNY/this.AUD_TO_CNY;},
+  syncCross(){
+    if(!D.fx)D.fx={};
+    D.fx.USDAUD=parseFloat(this.USD_TO_AUD.toFixed(5));
+  }
+};
 const fmt=(n,d=0)=>isNaN(n)||n==null?'—':new Intl.NumberFormat('zh-CN',{minimumFractionDigits:d,maximumFractionDigits:d}).format(n);
 const sym={CNY:'¥',USD:'$',AUD:'A$'};
 const fc=(n,c,d=0)=>n==null||isNaN(n)?'—':(sym[c]||c+' ')+fmt(n,d);
 function toCNY(v,c){
   if(c==='CNY')return v;
+  if(c==='USD')return v*FX_RATES.USD_TO_CNY;
+  if(c==='AUD')return v*FX_RATES.AUD_TO_CNY;
   /* 旧数据若含 HKD 持仓：不再维护港币汇率，按约 0.93 折算（或历史 JSON 里曾保存的 fx.HKD） */
   if(c==='HKD')return v*((D.fx&&D.fx.HKD>0)?D.fx.HKD:0.93);
   return v*(D.fx[c]||1);
 }
-function fromCNY(v,c){if(c==='CNY')return v;return v/(D.fx[c]||1);}
+function fromCNY(v,c){
+  if(c==='CNY')return v;
+  if(c==='USD')return v*FX_RATES.CNY_TO_USD;
+  if(c==='AUD')return v*FX_RATES.CNY_TO_AUD;
+  return v/(D.fx[c]||1);
+}
 
 /** Yahoo v8 chart JSON → 最近价；meta 按 marketState 选价（与 pickYahooDisplayPrice 一致），避免盘前误用昨收作 currentPrice */
 function parseYahooChartPrice(raw){
@@ -1731,7 +1753,7 @@ function mergeYahooFinnhubPrice(yPx,fhRow,sym){
 async function pollFinnhubQuotesOnce(){
   /* 不在此用 document.hidden 直接 return：手机切后台/系统省电会导致长时间不轮询，页面上像「股价死了」。 */
   fetchCNYRates().then(fx=>{
-    if(fx){Object.assign(D.fx,fx);save();renderSidebar();}
+    if(fx){Object.assign(D.fx,fx);FX_RATES.syncCross();save();renderSidebar();}
   }).catch(()=>{});
   const syms=[...finnhubDesiredSymbols()];
   if(!syms.length)return;
@@ -2408,12 +2430,12 @@ function renderSidebar(){
   document.getElementById('sb-usd').textContent=fc(fromCNY(cny,'USD'),'USD');
   document.getElementById('sb-aud').textContent=fc(fromCNY(cny,'AUD'),'AUD');
   ['cn','us','au'].forEach(r=>{const el=document.getElementById('nc-'+r);if(el)el.textContent=D.products.filter(p=>p.region===r).length;});
-  // FX strip（AUD/USD 与汇率页「1 澳元 = … 美元」同逻辑：优先 D.fx.USDAUD，否则由 USD/CNY、AUD/CNY 交叉算出）
+  // FX strip（交叉汇率由 FX_RATES 矩阵衍生）
+  FX_RATES.syncCross();
   const flags={USD:'🇺🇸',AUD:'🇦🇺'};
-  const fxParts=['USD','AUD'].filter(c=>D.fx[c]!=null).map(c=>`<div class="fx-chip"><span>${flags[c]||''}</span><span class="fx-chip-pair">${c}/CNY</span><span class="fx-chip-rate">${D.fx[c]}</span></div>`);
-  const usdaud=D.fx.USDAUD||(D.fx.USD&&D.fx.AUD&&D.fx.USD>0&&D.fx.AUD>0?D.fx.USD/D.fx.AUD:null);
-  const audUsd=usdaud!=null&&usdaud>0?(1/usdaud).toFixed(5):null;
-  if(audUsd!=null)fxParts.push(`<div class="fx-chip" title="1 澳元 = ${audUsd} 美元"><span>🇦🇺🇺🇸</span><span class="fx-chip-pair">AUD/USD</span><span class="fx-chip-rate">${audUsd}</span></div>`);
+  const fxParts=['USD','AUD'].map(c=>`<div class="fx-chip"><span>${flags[c]||''}</span><span class="fx-chip-pair">${c}/CNY</span><span class="fx-chip-rate">${c==='USD'?FX_RATES.USD_TO_CNY:FX_RATES.AUD_TO_CNY}</span></div>`);
+  const audUsd=FX_RATES.AUD_TO_USD.toFixed(5);
+  fxParts.push(`<div class="fx-chip" title="1 澳元 = ${audUsd} 美元"><span>🇦🇺🇺🇸</span><span class="fx-chip-pair">AUD/USD</span><span class="fx-chip-rate">${audUsd}</span></div>`);
   fxParts.push(`<div class="fx-chip" id="gold-price-chip" title="上海金 AU9999 · 点击刷新" onclick="refreshGoldChip()" style="cursor:pointer"><span class="fx-chip-pair">🥇 Au/g</span><span class="fx-chip-rate" id="fc-gold">—</span></div>`);
   fxParts.push('<div class="fx-chip" id="td-expiry-chip" style="display:none" aria-live="polite"><span class="fx-chip-pair">📅 近到期</span><span class="fx-chip-rate" id="fc-td-expiry">—</span></div>');
   document.getElementById('fx-strip').innerHTML=fxParts.join('');
@@ -3333,9 +3355,9 @@ function renderOverview(){
   document.getElementById('ov-cny').textContent=fc(cny,'CNY');
   document.getElementById('ov-cny-sub').textContent=D.products.length+' 个资产项目';
   document.getElementById('ov-usd').textContent=fc(usd,'USD');
-  document.getElementById('ov-usd-sub').textContent='1 USD = ¥'+D.fx.USD;
+  document.getElementById('ov-usd-sub').textContent='1 USD = ¥'+FX_RATES.USD_TO_CNY;
   document.getElementById('ov-aud').textContent=fc(aud,'AUD');
-  document.getElementById('ov-aud-sub').textContent='1 AUD = ¥'+D.fx.AUD;
+  document.getElementById('ov-aud-sub').textContent='1 AUD = ¥'+FX_RATES.AUD_TO_CNY;
 
   const regions=[
     {id:'cn',flag:'🇨🇳',name:'中国境内',cur:'CNY'},
@@ -4151,6 +4173,7 @@ async function refreshAllQuotes(){
       const fx=await fetchCNYRates();
       if(fx){
         Object.assign(D.fx,fx);
+        FX_RATES.syncCross();
         lines.push('汇率');
         const nCn=D.products.filter(p=>p.region==='cn').length;
         const nAu=D.products.filter(p=>p.region==='au').length;
@@ -4617,19 +4640,16 @@ function mergeNavHistories(local, imp){
 
 // ══ FX ══
 function renderFXPage(){
-  document.getElementById('fx-usd').value=D.fx.USD||'';
-  document.getElementById('fx-aud').value=D.fx.AUD||'';
-  // USD/AUD: derive from USD→CNY and AUD→CNY if not stored
-  const usdaud = D.fx.USDAUD || (D.fx.USD&&D.fx.AUD ? (D.fx.USD/D.fx.AUD) : '');
-  document.getElementById('fx-usdaud').value=usdaud?parseFloat(usdaud).toFixed(5):'';
+  FX_RATES.syncCross();
+  document.getElementById('fx-usd').value=FX_RATES.USD_TO_CNY||'';
+  document.getElementById('fx-aud').value=FX_RATES.AUD_TO_CNY||'';
+  document.getElementById('fx-usdaud').value=FX_RATES.USD_TO_AUD.toFixed(5);
   renderReverseRates();
 }
 function renderReverseRates(){
-  const usd=D.fx.USD,aud=D.fx.AUD;
-  const usdaud=D.fx.USDAUD||(usd&&aud?usd/aud:null);
-  document.getElementById('rv-usd').textContent  = usd  ? (1/usd).toFixed(6)  : '—';
-  document.getElementById('rv-aud').textContent  = aud  ? (1/aud).toFixed(6)  : '—';
-  document.getElementById('rv-audUSD').textContent = usdaud ? (1/usdaud).toFixed(5) : '—';
+  document.getElementById('rv-usd').textContent=FX_RATES.CNY_TO_USD.toFixed(6);
+  document.getElementById('rv-aud').textContent=FX_RATES.CNY_TO_AUD.toFixed(6);
+  document.getElementById('rv-audUSD').textContent=FX_RATES.AUD_TO_USD.toFixed(5);
 }
 /** 以 CNY 为基准拉 USD/AUD（及 USDAUD）。多源依次尝试：currency-api(CF/jsDelivr) → er-api → Frankfurter → allorigins 代理 → exchangerate.host */
 async function fetchCNYRates(){
@@ -4637,7 +4657,6 @@ async function fetchCNYRates(){
     const fx={};
     if(!rates)return null;
     ['USD','AUD'].forEach(c=>{if(rates[c]!=null&&rates[c]>0)fx[c]=parseFloat((1/rates[c]).toFixed(5));});
-    if(rates.USD&&rates.AUD&&rates.USD>0&&rates.AUD>0) fx.USDAUD=parseFloat((rates.AUD/rates.USD).toFixed(5));
     return fx.USD&&fx.AUD?fx:null;
   };
   function parseFxFromJson(d){
@@ -4711,6 +4730,7 @@ async function fetchFX(){
     const fx=await fetchCNYRates();
     if(fx){
       Object.assign(D.fx,fx);
+      FX_RATES.syncCross();
       save();renderFXPage();renderSidebar();
       el.innerHTML='<div class="alert alert-ok">✅ 汇率已更新</div>';
       setTimeout(()=>el.innerHTML='',4000);
@@ -4723,8 +4743,9 @@ function saveFX(){
   const u=parseFloat(document.getElementById('fx-usd').value);
   const a=parseFloat(document.getElementById('fx-aud').value);
   const ua=parseFloat(document.getElementById('fx-usdaud').value);
-  if(!isNaN(u)&&u>0)D.fx.USD=u;
-  if(!isNaN(a)&&a>0)D.fx.AUD=a;
+  if(!isNaN(u)&&u>0)FX_RATES.USD_TO_CNY=u;
+  if(!isNaN(a)&&a>0)FX_RATES.AUD_TO_CNY=a;
+  FX_RATES.syncCross();
   if(!isNaN(ua)&&ua>0)D.fx.USDAUD=ua;
   if(D.fx)delete D.fx.HKD;
   save();renderSidebar();renderReverseRates();
@@ -5121,12 +5142,12 @@ initFinnhubUsLive();
 ['fx-usd','fx-aud','fx-usdaud'].forEach(id=>{
   const el=document.getElementById(id);
   if(el) el.addEventListener('input',()=>{
-    const usd=parseFloat(document.getElementById('fx-usd').value)||D.fx.USD;
-    const aud=parseFloat(document.getElementById('fx-aud').value)||D.fx.AUD;
+    const usd=parseFloat(document.getElementById('fx-usd').value)||FX_RATES.USD_TO_CNY;
+    const aud=parseFloat(document.getElementById('fx-aud').value)||FX_RATES.AUD_TO_CNY;
     const ua=parseFloat(document.getElementById('fx-usdaud').value)||(usd&&aud?usd/aud:null);
     const rv1=document.getElementById('rv-usd');   if(rv1) rv1.textContent=usd?(1/usd).toFixed(6):'—';
     const rv2=document.getElementById('rv-aud');   if(rv2) rv2.textContent=aud?(1/aud).toFixed(6):'—';
-    const rv4=document.getElementById('rv-audUSD');if(rv4) rv4.textContent=ua?(1/ua).toFixed(5):'—';
+    const rv4=document.getElementById('rv-audUSD');if(rv4) rv4.textContent=ua&&aud&&usd?(aud/usd).toFixed(5):'—';
   });
 });
 
