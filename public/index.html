@@ -208,6 +208,35 @@ body:not(.light) .news-item:hover{background:rgba(255,255,255,.04)}
 /* Overview dashboard (allocations, liquidity, insights) */
 .ov-dash{margin-bottom:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
 .ov-insights{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:0}
+/* 大事件关注 · 未来 12 个月 */
+.ov-events-card{margin-bottom:16px}
+.ov-events-hd{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.ov-events-sub{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:4px}
+.ov-events-filters{display:flex;flex-wrap:wrap;gap:6px}
+.ov-events-filter{font-size:11px;padding:4px 10px;border-radius:999px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer;font-family:var(--mono);transition:background .12s ease,border-color .12s ease,color .12s ease}
+.ov-events-filter.active{background:var(--accent-soft);border-color:rgba(99,102,241,.35);color:var(--text);font-weight:600}
+.ov-events-list{display:flex;flex-direction:column;gap:0;max-height:420px;overflow-y:auto;scrollbar-width:thin}
+.ov-events-list::-webkit-scrollbar{width:5px}
+.ov-events-list::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+.ov-event-row{display:grid;grid-template-columns:72px 1fr;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);align-items:start}
+.ov-event-row:last-child{border-bottom:none}
+.ov-event-row.soon{background:rgba(234,179,8,.04);margin:0 -8px;padding:12px 8px;border-radius:var(--r-sm)}
+.ov-event-row.personal{border-left:2px solid var(--teal);padding-left:10px;margin-left:-2px}
+.ov-event-date{font-family:var(--mono);font-size:11px;color:var(--text3);line-height:1.45}
+.ov-event-date b{display:block;font-size:13px;color:var(--text);font-weight:600;margin-bottom:2px}
+.ov-event-date .countdown{color:var(--gold);font-size:10px;margin-top:3px}
+.ov-event-body{min-width:0}
+.ov-event-title{font-size:14px;font-weight:600;color:var(--text);line-height:1.4;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ov-event-desc{font-size:12px;color:var(--text2);line-height:1.55;margin-top:4px}
+.ov-event-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.ov-event-tag{font-size:10px;padding:2px 7px;border-radius:999px;font-family:var(--mono);border:1px solid var(--border2);color:var(--text3)}
+.ov-event-tag.region-cn{background:rgba(248,113,113,.1);border-color:rgba(248,113,113,.25);color:var(--cn)}
+.ov-event-tag.region-us{background:rgba(96,165,250,.1);border-color:rgba(96,165,250,.25);color:var(--us)}
+.ov-event-tag.region-au{background:rgba(251,191,36,.1);border-color:rgba(251,191,36,.25);color:var(--au)}
+.ov-event-tag.region-global{background:rgba(99,102,241,.1);border-color:rgba(99,102,241,.25);color:var(--accent2)}
+.ov-event-tag.impact-high{background:var(--red-bg);border-color:rgba(239,68,68,.25);color:var(--red)}
+.ov-event-tag.impact-med{background:var(--gold-bg);border-color:rgba(234,179,8,.25);color:var(--gold)}
+.ov-events-empty{font-size:13px;color:var(--text3);padding:16px 0;text-align:center;font-family:var(--mono)}
 .ov-insight-chip{font-size:12px;padding:5px 12px;border-radius:999px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);line-height:var(--lh-snug)}
 .ov-insight-chip.warn{border-color:rgba(245,158,11,.45);color:var(--gold);background:var(--gold-bg)}
 .ov-insight-chip.info{border-color:rgba(202,138,4,.4);color:var(--accent2);background:var(--accent-soft)}
@@ -845,6 +874,21 @@ body.light .fh-mkt-badge.fh-mkt-night{color:#0f766e;background:rgba(15,118,110,.
           <div class="tc-val au" id="ov-aud">A$ —</div>
           <div class="tc-sub" id="ov-aud-sub">—</div>
         </div>
+      </div>
+      <div class="card ov-events-card mb-0" id="ov-events-card">
+        <div class="ov-events-hd">
+          <div>
+            <div class="card-title" style="margin-bottom:0">📅 大事件关注</div>
+            <div class="ov-events-sub" id="ov-events-range">未来 12 个月 · 宏观日历 + 持仓到期</div>
+          </div>
+          <div class="ov-events-filters" id="ov-events-filters">
+            <button type="button" class="ov-events-filter active" data-ev-filter="all" onclick="setEventsFilter('all',this)">全部</button>
+            <button type="button" class="ov-events-filter" data-ev-filter="macro" onclick="setEventsFilter('macro',this)">宏观</button>
+            <button type="button" class="ov-events-filter" data-ev-filter="personal" onclick="setEventsFilter('personal',this)">我的持仓</button>
+            <button type="button" class="ov-events-filter" data-ev-filter="high" onclick="setEventsFilter('high',this)">高影响</button>
+          </div>
+        </div>
+        <div class="ov-events-list" id="ov-events-list"></div>
       </div>
       <div id="ov-dash" class="ov-dash">
         <div id="ov-insights" class="ov-insights"></div>
@@ -3078,6 +3122,132 @@ async function fetchAiAdvice(){
 
 // ══ OVERVIEW ══
 let ovChart=null,ovDashChartRegion=null,ovDashChartType=null,ovRange=30;
+let ovEventsFilter='all';
+
+const MACRO_EVENTS_WATCH=[
+  {date:'2026-06-17',title:'FOMC 利率决议',region:'us',cat:'monetary',impact:'high',desc:'美联储公布利率决定及点阵图摘要，影响美元、美股与全球风险偏好。'},
+  {date:'2026-06-30',title:'二季度末 · 机构再平衡窗口',region:'global',cat:'market',impact:'medium',desc:'季末/半年末常见指数调仓与资金再配置，短期波动可能放大。'},
+  {date:'2026-07-15',title:'美国 CPI 通胀数据',region:'us',cat:'market',impact:'high',desc:'核心通胀走势直接影响 Fed 降息/加息预期与美债收益率。'},
+  {date:'2026-07-29',title:'FOMC 利率决议',region:'us',cat:'monetary',impact:'high',desc:'关注声明措辞对经济前景与通胀风险的定调。'},
+  {date:'2026-08-21',title:'杰克逊霍尔全球央行年会',region:'global',cat:'monetary',impact:'high',desc:'央行行长演讲常释放货币政策信号，市场波动率往往上升。'},
+  {date:'2026-09-02',title:'RBA 利率决议',region:'au',cat:'monetary',impact:'high',desc:'澳洲联储利率决定影响 AUD 汇率与本地定存/现金收益预期。'},
+  {date:'2026-09-17',title:'FOMC 利率决议',region:'us',cat:'monetary',impact:'high',desc:'秋季议息窗口，关注劳动力市场与通胀双目标平衡。'},
+  {date:'2026-10-15',title:'美国 CPI 通胀数据',region:'us',cat:'market',impact:'high',desc:'大选季前后通胀数据对政策预期与市场情绪影响更大。'},
+  {date:'2026-11-03',title:'美国中期选举',region:'us',cat:'policy',impact:'high',desc:'国会控制权变化影响财税、监管与财政支出预期，美股或出现板块轮动。'},
+  {date:'2026-11-05',title:'FOMC 利率决议',region:'us',cat:'monetary',impact:'high',desc:'选举后首场 FOMC，关注政治格局变化下的政策沟通。'},
+  {date:'2026-12-09',title:'FOMC 年终利率决议',region:'us',cat:'monetary',impact:'high',desc:'全年收官议息，常伴随来年政策路径展望与流动性季节性收紧。'},
+  {date:'2027-01-01',title:'新年度 · 资产配置窗口',region:'global',cat:'market',impact:'medium',desc:'新税年/新年度目标调整，适合检视区域配置、流动性与再投资计划。'},
+  {date:'2027-01-26',title:'澳洲联邦大选（预计窗口）',region:'au',cat:'policy',impact:'high',desc:'选举结果影响 AUD、本地监管与移民/住房政策预期，需关注民调与投票日确认。'},
+  {date:'2027-02-04',title:'RBA 利率决议',region:'au',cat:'monetary',impact:'high',desc:'年初首场 RBA，定存续存与 AUD 敞口需提前规划。'},
+  {date:'2027-03-05',title:'中国全国两会',region:'cn',cat:'policy',impact:'high',desc:'GDP 目标、财政赤字、产业与地产政策定调，影响 A 股/港股与人民币资产情绪。'},
+  {date:'2027-03-17',title:'FOMC 利率决议',region:'us',cat:'monetary',impact:'high',desc:'春季议息，关注银行信贷条件与就业市场边际变化。'},
+  {date:'2027-04-15',title:'美国个税申报截止日',region:'us',cat:'market',impact:'medium',desc:'补税/退税流动性冲击，可能影响短期消费与美国现金类资产流向。'},
+  {date:'2027-05-11',title:'澳大利亚联邦预算案（预计）',region:'au',cat:'policy',impact:'high',desc:'预算案决定税收、福利与基建支出，影响 AUD 与本地利率预期。'},
+  {date:'2027-05-05',title:'RBA 利率决议',region:'au',cat:'monetary',impact:'high',desc:'预算季后的利率路径沟通，与定存到期安排高度相关。'},
+  {date:'2027-06-08',title:'FOMC 利率决议',region:'us',cat:'monetary',impact:'high',desc:'年中议息，评估上半年通胀回落与就业韧性。'}
+];
+
+function eventDaysUntil(dateStr){
+  const today=new Date();
+  today.setHours(0,0,0,0);
+  const d=new Date(dateStr+'T12:00:00');
+  return Math.round((d-today)/86400000);
+}
+
+function collectPersonalWatchEvents(){
+  const out=[];
+  const now=new Date();now.setHours(0,0,0,0);
+  const horizon=new Date(now);horizon.setDate(horizon.getDate()+365);
+  (D.products||[]).forEach(p=>{
+    if(p.type!=='term_deposit')return;
+    const end=p.tdContractEnd||p.tdEnd;
+    if(!end)return;
+    const d=new Date(end+'T12:00:00');
+    if(d<now||d>horizon)return;
+    const days=eventDaysUntil(end);
+    const cur=p.tdCur||p.currency||'AUD';
+    const val=tdCurVal(p);
+    const region=p.region||'au';
+    out.push({
+      date:end,
+      title:`定存到期 · ${p.name||'定期存款'}`,
+      region,
+      cat:'personal',
+      impact:days<=30?'high':days<=90?'medium':'medium',
+      personal:true,
+      desc:`${cur} ${fc(val,cur,2)} · ${p.rate||0}% p.a. · 到期后需决定续存、转投或调回现金。`
+    });
+  });
+  return out;
+}
+
+function mergeWatchEvents(){
+  const today=new Date();today.setHours(0,0,0,0);
+  const horizon=new Date(today);horizon.setDate(horizon.getDate()+365);
+  const all=[...MACRO_EVENTS_WATCH.map(e=>({...e,personal:false})),...collectPersonalWatchEvents()];
+  return all
+    .filter(e=>{
+      const d=new Date(e.date+'T12:00:00');
+      return d>=today&&d<=horizon;
+    })
+    .sort((a,b)=>a.date.localeCompare(b.date)||(a.personal===b.personal?0:a.personal?1:-1));
+}
+
+function setEventsFilter(filter,btn){
+  ovEventsFilter=filter;
+  document.querySelectorAll('.ov-events-filter').forEach(b=>b.classList.toggle('active',b===btn));
+  renderMajorEventsWatch();
+}
+
+function renderMajorEventsWatch(){
+  const listEl=document.getElementById('ov-events-list');
+  const rangeEl=document.getElementById('ov-events-range');
+  if(!listEl)return;
+  let events=mergeWatchEvents();
+  if(ovEventsFilter==='macro')events=events.filter(e=>!e.personal);
+  else if(ovEventsFilter==='personal')events=events.filter(e=>e.personal);
+  else if(ovEventsFilter==='high')events=events.filter(e=>e.impact==='high');
+
+  const today=new Date();today.setHours(0,0,0,0);
+  const end=new Date(today);end.setDate(end.getDate()+365);
+  const fmtR=d=>`${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
+  if(rangeEl)rangeEl.textContent=`${fmtR(today)} — ${fmtR(end)} · 共 ${events.length} 项`;
+
+  if(!events.length){
+    listEl.innerHTML='<div class="ov-events-empty">该筛选下暂无 upcoming 事件</div>';
+    return;
+  }
+
+  const regionLabel={cn:'🇨🇳 中国',us:'🇺🇸 美国',au:'🇦🇺 澳洲',global:'🌐 全球'};
+  const catLabel={monetary:'央行',policy:'政策',market:'市场',personal:'持仓',geopolitical:'地缘'};
+  listEl.innerHTML=events.map(ev=>{
+    const days=eventDaysUntil(ev.date);
+    const d=new Date(ev.date+'T12:00:00');
+    const dateLbl=`${d.getMonth()+1}月${d.getDate()}日`;
+    const yearLbl=d.getFullYear()!==today.getFullYear()?` ${d.getFullYear()}`:'';
+    let countdown='';
+    if(days===0)countdown='今天';
+    else if(days===1)countdown='明天';
+    else if(days>0&&days<=60)countdown=`${days} 天后`;
+    else if(days<0)countdown='已过期';
+    const soon=days>=0&&days<=14;
+    const impactCls=ev.impact==='high'?'impact-high':'impact-med';
+    return `<div class="ov-event-row${soon?' soon':''}${ev.personal?' personal':''}">
+      <div class="ov-event-date"><b>${dateLbl}</b><span>${yearLbl.trim()||'本年'}</span>${countdown?`<div class="countdown">${countdown}</div>`:''}</div>
+      <div class="ov-event-body">
+        <div class="ov-event-title">${escOvHtml(ev.title)}</div>
+        <div class="ov-event-desc">${escOvHtml(ev.desc||'')}</div>
+        <div class="ov-event-tags">
+          <span class="ov-event-tag region-${ev.region||'global'}">${regionLabel[ev.region]||regionLabel.global}</span>
+          <span class="ov-event-tag">${catLabel[ev.cat]||ev.cat||'—'}</span>
+          <span class="ov-event-tag ${impactCls}">${ev.impact==='high'?'高影响':'中影响'}</span>
+          ${ev.personal?'<span class="ov-event-tag">📌 自动同步</span>':''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
 function renderOverview(){
   maybeRollAuWeeklyCompound();
   const cny=totalCNY(),usd=fromCNY(cny,'USD'),aud=fromCNY(cny,'AUD');
@@ -3252,6 +3422,7 @@ function renderOverview(){
     const elRg=document.getElementById('ov-regions');
     if(elRg)elRg.innerHTML='<div class="alert alert-warn" style="margin:12px 0">分区列表渲染失败（常见原因：账户名含引号等特殊字符，或某条资产数据异常）。请按 F12 打开控制台查看报错；可先<strong>导出 JSON</strong>备份，再逐条编辑资产。</div>';
   }
+  try{renderMajorEventsWatch();}catch(e){console.error('renderMajorEventsWatch',e);}
   try{renderOverviewDashboard();}catch(e){console.error('renderOverviewDashboard',e);}
   try{renderNavMiniChart(ovRange);}catch(e){console.error('renderNavMiniChart',e);}
   try{renderSidebar();}catch(e){console.error('renderSidebar',e);}
@@ -3935,6 +4106,7 @@ function destroyOvDashCharts(){
   if(ovDashChartType){try{ovDashChartType.destroy();}catch(e){}ovDashChartType=null;}
 }
 function renderOverviewDashboard(){
+  try{renderMajorEventsWatch();}catch(e){console.error('renderMajorEventsWatch',e);}
   const elI=document.getElementById('ov-insights');
   const elL=document.getElementById('ov-liq-body');
   const mileFirst=document.getElementById('mile-first-val');
