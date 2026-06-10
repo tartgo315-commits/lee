@@ -1653,6 +1653,20 @@ function pickStableFundNav(gsz,dwjz,prev){
   return p>0?p:0;
 }
 let __ovLiveDirty=false,__ovLiveFlushTimer=null;
+/** 行情微调时只更新顶部数字与走势图，避免整页重绘 + Chart 销毁重建导致闪烁 */
+function patchOverviewLive(){
+  maybeRollAuWeeklyCompound();
+  const cny=totalCNY(),usd=fromCNY(cny,'USD'),aud=fromCNY(cny,'AUD');
+  const e0=document.getElementById('ov-cny');if(e0)e0.textContent=fc(cny,'CNY');
+  const e1=document.getElementById('ov-usd');if(e1)e1.textContent=fc(usd,'USD');
+  const e2=document.getElementById('ov-usd-sub');if(e2)e2.textContent='1 USD = ¥'+FX_RATES.USD_TO_CNY;
+  const e3=document.getElementById('ov-aud');if(e3)e3.textContent=fc(aud,'AUD');
+  const e4=document.getElementById('ov-aud-sub');if(e4)e4.textContent='1 AUD = ¥'+FX_RATES.AUD_TO_CNY;
+  if(D.btcQuote?.usd>0){const hb=document.getElementById('ov-hero-btc');if(hb)hb.textContent=formatBtcUsd(D.btcQuote.usd);}
+  try{renderNavMiniChart(ovRange);}catch(e){console.error('patchOverviewLive chart',e);}
+  try{updateGoalBar();}catch(e){}
+  try{renderSidebar();}catch(e){}
+}
 function scheduleOverviewLiveRefresh(){
   __ovLiveDirty=true;
   clearTimeout(__ovLiveFlushTimer);
@@ -1661,10 +1675,7 @@ function scheduleOverviewLiveRefresh(){
     if(!__ovLiveDirty)return;
     __ovLiveDirty=false;
     if(!document.getElementById('page-overview')?.classList.contains('active'))return;
-    try{
-      maybeRollAuWeeklyCompound();
-      renderOverview();
-    }catch(e){console.error('scheduleOverviewLiveRefresh',e);}
+    try{patchOverviewLive();}catch(e){console.error('scheduleOverviewLiveRefresh',e);}
   },150);
 }
 function patchOverviewStockRow(sym,price){
@@ -3123,7 +3134,7 @@ async function fetchAiAdvice(){
 }
 
 // ══ OVERVIEW ══
-let ovChart=null,ovDashChartRegion=null,ovDashChartType=null,ovRange=30;
+let ovChart=null,ovDashChartRegion=null,ovDashChartType=null,ovRange=30,__ovChartDays=null,__ovChartDark=null;
 let ovEventsFilter='all';
 
 const MACRO_EVENTS_WATCH=[
@@ -3741,7 +3752,10 @@ function setRange(days,btn){
   btn.classList.add('active');
   renderNavMiniChart(days);
 }
-function renderNavMiniChart(days){
+function renderNavMiniChart(days,opts){
+  opts=opts||{};
+  const force=!!opts.force;
+  days=days==null?ovRange:days;
   let hist=[...D.navHistory].sort((a,b)=>a.date.localeCompare(b.date));
   if(days<9999){const cut=new Date();cut.setDate(cut.getDate()-days);hist=hist.filter(n=>n.date>=cut.toISOString().slice(0,10));}
   const td=today(),tcny=totalCNY();
@@ -3756,16 +3770,26 @@ function renderNavMiniChart(days){
     lbl.textContent=vals.length>1&&chg!==0?sign+fc(chg,'CNY')+'  '+sign+Math.abs(pct).toFixed(1)+'%':'';
     lbl.style.color=chg>=0?'var(--up-soft)':chg<0?'var(--dn-soft)':'var(--text-4)';
   }
-  if(ovChart)ovChart.destroy();
   const ctx=document.getElementById('chart-ov');if(!ctx)return;
   const isDark=!document.body.classList.contains('light');
+  const pointRadius=vals.length<30?3:0;
+  if(ovChart&&!force&&__ovChartDays===days&&__ovChartDark===isDark){
+    ovChart.data.labels=lbls;
+    ovChart.data.datasets[0].data=vals;
+    ovChart.data.datasets[0].pointRadius=pointRadius;
+    ovChart.update('none');
+    return;
+  }
+  if(ovChart){try{ovChart.destroy();}catch(e){}ovChart=null;}
   const line=isDark?'#10B981':'#ca8a04';
   const g=ctx.getContext('2d').createLinearGradient(0,0,0,200);
   g.addColorStop(0,isDark?'rgba(16,185,129,.18)':'rgba(202,138,4,.22)');
   g.addColorStop(1,isDark?'rgba(16,185,129,0)':'rgba(202,138,4,0)');
   const grid=isDark?'rgba(255,255,255,.06)':'rgba(28,25,23,.08)';
   const tick=isDark?'#6B7280':'#78716c';
-  ovChart=new Chart(ctx,{type:'line',data:{labels:lbls,datasets:[{data:vals,borderColor:line,backgroundColor:g,borderWidth:2,fill:true,tension:0.4,pointRadius:vals.length<30?3:0,pointHoverRadius:4,pointBackgroundColor:line}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fc(c.raw,'CNY')}}},scales:{x:{grid:{color:grid},ticks:{maxTicksLimit:6,font:{family:'ui-monospace,monospace',size:10},color:tick}},y:{grid:{color:grid},ticks:{callback:v=>fc(v,'CNY',0),font:{family:'ui-monospace,monospace',size:10},color:tick}}}}});
+  ovChart=new Chart(ctx,{type:'line',data:{labels:lbls,datasets:[{data:vals,borderColor:line,backgroundColor:g,borderWidth:2,fill:true,tension:0.4,pointRadius,pointHoverRadius:4,pointBackgroundColor:line}]},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fc(c.raw,'CNY')}}},scales:{x:{grid:{color:grid},ticks:{maxTicksLimit:6,font:{family:'ui-monospace,monospace',size:10},color:tick}},y:{grid:{color:grid},ticks:{callback:v=>fc(v,'CNY',0),font:{family:'ui-monospace,monospace',size:10},color:tick}}}}});
+  __ovChartDays=days;
+  __ovChartDark=isDark;
 }
 
 // ══ REGION PAGE ══
@@ -5260,7 +5284,7 @@ function toggleNight(){
   const btn=document.getElementById('theme-btn');
   if(btn) btn.textContent=document.body.classList.contains('light')?'🌙':'☀️';
   if(document.getElementById('page-overview')?.classList.contains('active'))renderOverviewDashboard();
-  try{renderNavMiniChart(ovRange);}catch(e){}
+  try{renderNavMiniChart(ovRange,{force:true});}catch(e){}
   try{renderHistory();}catch(e){}
 }
 function toggleSidebarRail(){
