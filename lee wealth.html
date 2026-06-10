@@ -1004,6 +1004,141 @@ const WO_REMOTE_PROXY_ORIGIN='https://lee-lime.vercel.app';
 const SK='wo_v2';
 const blank=()=>({products:[],navHistory:[],fx:{USD:7.25,AUD:4.65},nextId:1,settings:{usPrincipalAUD:72640},usAccountMeta:{},goal:{amount:1500000,currency:'CNY',label:'存款目标'}});
 let D=blank();
+
+// ══ Asset schema v2（统一 market / asset_type / risk_profile / yield_config）══
+const ASSET_V2_MARKET={US:'us',CN:'cn',AU:'au'};
+function getStopLossPrice(p){
+  if(!p)return null;
+  const rp=p.risk_profile;
+  if(rp&&rp.has_stop_loss&&Number(rp.stop_loss_price)>0)return Number(rp.stop_loss_price);
+  const sl=p.stopLoss;
+  return sl!=null&&isFinite(Number(sl))&&Number(sl)>0?Number(sl):null;
+}
+function isStopLossTriggered(p){
+  if(!p||p.type!=='stock_us')return false;
+  const sl=getStopLossPrice(p);
+  const px=p.currentPrice||0;
+  if(sl==null||px<=0)return false;
+  if(p.risk_profile&&typeof p.risk_profile.is_triggered==='boolean')return p.risk_profile.is_triggered;
+  return px<=sl;
+}
+function isStopLossNear(p,thresholdPct){
+  const th=thresholdPct==null?5:Number(thresholdPct);
+  const sl=getStopLossPrice(p);
+  const px=p.currentPrice||0;
+  if(sl==null||px<=0||!isFinite(th))return false;
+  return ((px-sl)/px*100)<th;
+}
+function stockRiskSubHtml(p){
+  const sl=getStopLossPrice(p);
+  if(sl==null)return '';
+  const triggered=isStopLossTriggered(p);
+  const near=!triggered&&isStopLossNear(p);
+  const tag=triggered?' · 🚨止损已触发':near?` · 距止损 ${((p.currentPrice-sl)/p.currentPrice*100).toFixed(1)}%`:'';
+  return ` · 止损 $${sl.toFixed(2)}${tag}`;
+}
+function findProductForAssetV2(a){
+  if(!a||typeof a!=='object')return null;
+  const market=String(a.market||'').toUpperCase();
+  const region=ASSET_V2_MARKET[market];
+  const ticker=a.ticker?String(a.ticker).trim().toUpperCase():'';
+  if(ticker&&region==='us'){
+    const acc=a.account||'Tiger';
+    return D.products.find(p=>p.type==='stock_us'&&String(p.ticker||'').toUpperCase()===ticker&&String(p.account||'')===String(acc))
+      ||D.products.find(p=>p.type==='stock_us'&&String(p.ticker||'').toUpperCase()===ticker);
+  }
+  if(a.id&&String(a.id).includes('crcl'))return D.products.find(p=>p.type==='stock_us'&&String(p.ticker||'').toUpperCase()==='CRCL');
+  return null;
+}
+function assetV2ToProduct(a){
+  if(!a||typeof a!=='object')return null;
+  const market=String(a.market||'').toUpperCase();
+  const region=ASSET_V2_MARKET[market]||'us';
+  const assetType=String(a.asset_type||'Investment');
+  const cur=a.currency||({US:'USD',AU:'AUD',CN:'CNY'}[market]||'CNY');
+  const ex=findProductForAssetV2(a);
+  const base={
+    id:ex?ex.id:D.nextId++,
+    region,type:'other',account:a.account||(region==='us'?'Tiger':region==='au'?'CBA':'默认'),
+    name:a.name||a.ticker||'—',note:a.note||'',currency:cur,
+    createdAt:ex?.createdAt||today(),updatedAt:today()
+  };
+  if(assetType==='Cash'){
+    return {...base,type:'cash',amount:Number(a.holding_qty)||Number(a.amount)||0,currency:cur};
+  }
+  if(assetType==='Lock'||assetType==='Investment'&&region==='au'&&a.yield_config){
+    const yc=a.yield_config||{};
+    const rate=Number(yc.annual_rate)>0&&Number(yc.annual_rate)<=1?Number(yc.annual_rate)*100:Number(yc.annual_rate)||Number(a.rate)||0;
+    return {...base,type:'term_deposit',principal:Number(a.holding_qty)||Number(a.principal)||0,rate,
+      tdCur:cur,currency:cur,tdStart:a.tdStart||today(),tdEnd:a.tdEnd||'',
+      tdCompoundWeekly:!!yc.is_compounding&&String(yc.compound_frequency||'').toLowerCase()==='weekly'};
+  }
+  if(region==='us'&&a.ticker){
+    const sl=a.risk_profile?.has_stop_loss?Number(a.risk_profile.stop_loss_price):null;
+    const stopLoss=sl>0?sl:null;
+    const triggered=!!(a.risk_profile?.is_triggered);
+    const p={...base,type:'stock_us',ticker:String(a.ticker).toUpperCase(),
+      shares:Number(a.holding_qty)||0,costPrice:Number(a.cost_price)||0,currentPrice:Number(a.current_price)||0};
+    if(stopLoss!=null)p.stopLoss=stopLoss;
+    if(stopLoss!=null||a.risk_profile)p.risk_profile={
+      has_stop_loss:stopLoss!=null,
+      stop_loss_price:stopLoss||undefined,
+      is_triggered:triggered||(p.currentPrice>0&&stopLoss!=null&&p.currentPrice<=stopLoss)
+    };
+    return p;
+  }
+  if(region==='cn'){
+    return {...base,type:'fund_cn',fundCode:a.ticker||a.fundCode||'',fundShares:Number(a.holding_qty)||0,
+      fundCost:Number(a.cost_price)||0,fundPrice:Number(a.current_price)||0,fundCurrency:cur};
+  }
+  return null;
+}
+function productToAssetV2(p){
+  if(!p)return null;
+  const market={us:'US',cn:'CN',au:'AU'}[p.region]||'US';
+  const assetType=p.type==='cash'?'Cash':p.type==='term_deposit'?'Lock':'Investment';
+  const sl=getStopLossPrice(p);
+  const a={
+    id:`${p.region}_${String(p.account||'default').toLowerCase().replace(/\s+/g,'_')}_${p.ticker||p.type||p.id}`,
+    name:p.name||p.ticker||'—',
+    market,asset_type:assetType,currency:p.currency||p.tdCur||p.fundCurrency||({US:'USD',AU:'AUD',CN:'CNY'}[market]||'CNY'),
+    holding_qty:p.shares??p.grams??p.fundShares??p.principal??p.amount??0,
+    cost_price:p.costPrice??p.goldCost??p.fundCost??0,
+    current_price:p.currentPrice??p.goldPrice??p.fundPrice??0
+  };
+  if(p.ticker)a.ticker=String(p.ticker).toUpperCase();
+  if(sl!=null)a.risk_profile={has_stop_loss:true,stop_loss_price:sl,is_triggered:isStopLossTriggered(p)};
+  if(p.type==='term_deposit'){
+    a.yield_config={
+      is_compounding:!!p.tdCompoundWeekly,
+      compound_frequency:p.tdCompoundWeekly?'weekly':'monthly',
+      annual_rate:(p.rate||0)/100
+    };
+  }
+  return a;
+}
+function importAssetsV2(list){
+  if(!Array.isArray(list))return 0;
+  let n=0;
+  for(const raw of list){
+    const p=assetV2ToProduct(raw);
+    if(!p)continue;
+    const ex=findProductForAssetV2(raw);
+    if(ex){
+      const idx=D.products.findIndex(x=>x.id===ex.id);
+      if(idx>=0)D.products[idx]={...ex,...p,id:ex.id,createdAt:ex.createdAt||p.createdAt};
+    }else{
+      D.products.push(p);
+      if(p.id>=D.nextId)D.nextId=p.id+1;
+    }
+    n++;
+  }
+  return n;
+}
+function isAssetV2Payload(raw){
+  if(Array.isArray(raw))return raw.length>0&&raw.every(x=>x&&typeof x==='object'&&(x.market||x.asset_type));
+  return raw&&Array.isArray(raw.assets)&&raw.assets.length>0;
+}
 let __woSaveToastT=null,__woToastSeq=0,__woSyncToastId=null;
 function showToast(opts){
   const o=typeof opts==='string'?{message:opts,type:'info'}:(opts||{});
@@ -3240,10 +3375,28 @@ function renderOverview(){
           const hasName=p.name&&p.name.trim()&&p.name.trim().toUpperCase()!==tick.toUpperCase();
           nameHtml=`<div class="ov-prod-name ov-prod-name--stock">${hasName?`<span class="ov-prod-tick">${escOvHtml(p.name.trim())}</span><span class="ov-prod-ticktag">${escOvHtml(tick)}</span>`:`<span class="ov-prod-tick">${escOvHtml(tick)}</span>`}<span class="ov-prod-px${price?'':' wait'}">${price?fmtUsdShare(price):'待刷新'}</span></div>`;
           const wPct=acny>0?(cny/acny*100).toFixed(1):null;
-          sub=`${fmt(shares,2)}股 · 成本${fc(cost,'USD',2)}${wPct!=null?` · 占比 ${wPct}%`:''}`;
+          sub=`${fmt(shares,2)}股 · 成本${fc(cost,'USD',2)}${wPct!=null?` · 占比 ${wPct}%`:''}${stockRiskSubHtml(p)}`;
           amt=price?fc(mkt,'USD',2):'待刷新';
           cnyStr='';
           pnl=price?`<div class="ov-prod-pnl ${pnlUSD>=0?'pos':'neg'}">${pnlUSD>=0?'+':''}${fc(pnlUSD,'USD',2)} (${pnlUSD>=0?'+':''}${safePctFixed(pct,1)}%)</div>`:'';
+          const slWarn=isStopLossTriggered(p)||isStopLossNear(p)?' crcl-warn':'';
+          return `<div class="ov-prod-row${slWarn}">
+          <div class="ov-prod-main">
+            ${nameHtml||`<div class="ov-prod-name">${escOvHtml(name)}</div>`}
+            ${sub?`<div class="ov-prod-sub">${escOvHtml(sub)}</div>`:''}
+          </div>
+          <div class="ov-prod-right">
+            <div class="ov-prod-metrics">
+              <div class="ov-prod-amt">${amt}</div>
+              ${cnyStr?`<div class="ov-prod-cny">${cnyStr}</div>`:''}
+              ${pnl}
+            </div>
+          </div>
+          <div class="ov-prod-actions">
+            <button class="ov-row-btn" onclick="event.stopPropagation();editProduct(${p.id})">✏️</button>
+            <button class="ov-row-btn danger" onclick="event.stopPropagation();deleteProduct(${p.id})">✕</button>
+          </div>
+        </div>`;
         } else if(p.type==='fund_cn'){
           const price=p.fundPrice||0,shares=p.fundShares||0,cost=p.fundCost||0;
           const cur=p.fundCurrency||'CNY';
@@ -3592,7 +3745,8 @@ function buildProductRow(p,region,primaryCur,accountTotalCNY){
     const title=nm&&nm.toUpperCase()!==tick.toUpperCase()?`${nm} (${tick})`:tick;
     const etfTag=/^(SGOV|SHV|BIL|VOO|IVV|SPY|QQQ|IWM|GLD|TLT)$/i.test(tick)?' · ETF':'';
     const pxShow=price?fmtUsdShare(price):'—';
-    nameCell=`<div><div class="pr-name">${title}</div><div class="pr-sub">${fmt(shares,4)} 股 · 成本 ${fc(cost,'USD',2)}${etfTag} · 现价 <span class="fh-px fh-flat" data-ticker="${escAttr(tick)}">${pxShow}</span>${fhMktBadgeHtml(tick,p)}</div></div>`;
+    const slNote=stockRiskSubHtml(p);
+    nameCell=`<div><div class="pr-name">${title}</div><div class="pr-sub">${fmt(shares,4)} 股 · 成本 ${fc(cost,'USD',2)}${etfTag} · 现价 <span class="fh-px fh-flat" data-ticker="${escAttr(tick)}">${pxShow}</span>${fhMktBadgeHtml(tick,p)}${slNote}</div></div>`;
     amtCell=`<div class="pr-amt primary"><span class="fh-mkt-usd" data-ticker="${escAttr(tick)}">${price?fc(mkt,'USD',2):'—'}</span></div>${price?'':'<div class="pr-amt dim" style="font-size:11px;margin-top:2px">WS/手动刷新</div>'}`;
     pnlCell=price
       ?`<div class="pr-pnl ${pnlUSD>=0?'pos':'neg'}"><span class="fh-pnl-usd" data-ticker="${escAttr(tick)}">${pnlUSD>=0?'+':''}${fc(pnlUSD,'USD',2)}<br>${(pnlUSD>=0?'+':'')+pct.toFixed(2)}%</span></div>`
@@ -3633,7 +3787,8 @@ function buildProductRow(p,region,primaryCur,accountTotalCNY){
   const pctCell=stockTick
     ?`<div class="pr-pct"><span class="fh-row-pct" data-ticker="${escAttr(stockTick)}">${rowPct==='—'?rowPct:rowPct+'%'}</span></div>`
     :`<div class="pr-pct">${rowPct==='—'?rowPct:rowPct+'%'}</div>`;
-  return `<div class="product-row"${usTickerAttr}>
+  const stopWarn=p.type==='stock_us'&&(isStopLossTriggered(p)||isStopLossNear(p))?' stop-warn':'';
+  return `<div class="product-row${stopWarn}"${usTickerAttr}>
     ${nameCell}
     <div style="text-align:right">${amtCell}</div>
     ${cnyCell}
@@ -4660,6 +4815,8 @@ function saveProduct(){
     const slRaw=parseFloat(document.getElementById('m-stoploss').value);
     const stopLoss=isFinite(slRaw)&&slRaw>0?slRaw:null;
     p={...p,ticker,shares,costPrice:cost,currentPrice:price,stopLoss};
+    if(stopLoss!=null)p.risk_profile={has_stop_loss:true,stop_loss_price:stopLoss,is_triggered:price>0&&price<=stopLoss};
+    else delete p.risk_profile;
   } else if(type==='fund_cn'){
     const code=document.getElementById('m-fcode').value.trim();
     const shares=parseFloat(document.getElementById('m-fshares').value);
@@ -4766,8 +4923,16 @@ function importData(input){
   const f=input.files[0];if(!f)return;
   const r=new FileReader();
   r.onload=e=>{try{
-    const localNav=[...(D.navHistory||[])];
     const raw=JSON.parse(e.target.result);
+    if(isAssetV2Payload(raw)){
+      const list=Array.isArray(raw)?raw:raw.assets;
+      const n=importAssetsV2(list);
+      save();renderOverview();renderSidebar();maybeShowHttpDataTip();
+      if(document.getElementById('page-us')?.classList.contains('active'))renderRegion('us');
+      showToast({message:`已导入 ${n} 条资产（v2 统一格式）`,type:'success',duration:3600});
+      return;
+    }
+    const localNav=[...(D.navHistory||[])];
     D=Object.assign(blank(),raw);
     D.navHistory=mergeNavHistories(localNav,raw.navHistory||[]);
     if(!D.goal||typeof D.goal!=='object'||!(Number(D.goal.amount)>0))
@@ -4864,6 +5029,7 @@ async function saveBatch(){
     let stopLoss=null;
     if(ds!==undefined&&ds!==''){const x=parseFloat(ds);if(isFinite(x)&&x>0)stopLoss=x;}
     const p={id:existing>=0?D.products[existing].id:D.nextId++,region:'us',type:'stock_us',account:'Tiger',name:name||ticker,ticker,shares,costPrice:cost,currentPrice:price,note:'',createdAt:today(),updatedAt:today(),...(stopLoss!=null?{stopLoss}:{})};
+    if(stopLoss!=null)p.risk_profile={has_stop_loss:true,stop_loss_price:stopLoss,is_triggered:price>0&&price<=stopLoss};
     if(existing>=0)D.products[existing]=p;else D.products.push(p);
     imported++;
   });
