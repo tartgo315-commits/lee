@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>LEE's Wealth · 全球资产</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%2309090b'/><text y='.9em' font-size='72' x='10'>💎</text></svg>">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
@@ -15,7 +16,7 @@ tailwind.config={
     extend:{
       fontFamily:{
         sans:['Inter','system-ui','sans-serif'],
-        mono:['JetBrains Mono','ui-monospace','monospace']
+        mono:['DM Mono','ui-monospace','monospace']
       }
     }
   }
@@ -23,31 +24,30 @@ tailwind.config={
 </script>
 <style>
 :root{
-  /* Dark-first · Tailwind zinc 系 + 单一 indigo 强调（SaaS 2026） */
-  --sidebar-w:280px;
-  --bg:#09090b;--bg2:#18181b;--bg3:#27272a;--bg4:#3f3f46;
-  --surface:#18181b;--surface-muted:#27272a;--surface-header:#18181b;
-  --border:rgba(255,255,255,.06);--border2:rgba(255,255,255,.1);
-  --text:#fafafa;--text2:#a1a1aa;--text3:#71717a;
-  --accent:#6366f1;--accent2:#818cf8;
-  --accent-soft:rgba(99,102,241,.14);
-  --green:#22c55e;--green-bg:rgba(34,197,94,.12);
-  --red:#ef4444;--red-bg:rgba(239,68,68,.12);
-  --gold:#eab308;--gold-bg:rgba(234,179,8,.1);
-  --teal:#2dd4bf;--teal-bg:rgba(45,212,191,.1);
-  --cn:#f87171;--us:#60a5fa;--au:#fbbf24;
-  --r:12px;--r-sm:8px;--r-lg:16px;
-  --shadow-sm:0 1px 0 rgba(255,255,255,.04) inset;
-  --shadow-md:0 12px 40px rgba(0,0,0,.35);
-  --shadow-float:0 24px 64px rgba(0,0,0,.5);
-  --ring:0 0 0 2px rgba(99,102,241,.45);
-  --font:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"PingFang SC","Hiragino Sans GB","Microsoft YaHei UI","Microsoft YaHei","Noto Sans SC",sans-serif;
-  --font-brand:Inter,system-ui,sans-serif;
-  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,"Cascadia Code","Segoe UI Mono",Menlo,Consolas,monospace;
+  --sidebar-w:0px;
+  --bg:#0A0F1E;--bg2:#0D1425;--bg3:#0A0F1E;--bg4:#1A2340;
+  --surface:#0D1425;--surface-muted:#0A0F1E;--surface-header:#0D1425;
+  --border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.1);
+  --text:#E8EBF0;--text2:#9BAAC0;--text3:#5A6580;--text4:#3A4460;
+  --accent:#00D4FF;--accent2:#00D4FF;
+  --accent-soft:rgba(0,212,255,.12);
+  --green:#00C87A;--green-bg:rgba(0,200,122,.12);
+  --red:#FF4D6A;--red-bg:rgba(255,77,106,.12);
+  --gold:#F5B731;--gold-bg:rgba(245,183,49,.1);
+  --teal:#00D4FF;--teal-bg:rgba(0,212,255,.1);
+  --cn:#00D4FF;--us:#F5B731;--au:#7A5CFF;
+  --purple:#7A5CFF;
+  --r:12px;--r-sm:6px;--r-lg:12px;--r-btn:8px;--r-pill:20px;
+  --shadow-sm:none;--shadow-md:0 8px 32px rgba(0,0,0,.35);
+  --shadow-float:0 16px 48px rgba(0,0,0,.5);
+  --ring:0 0 0 1px rgba(0,212,255,.45);
+  --font:'Inter',system-ui,-apple-system,sans-serif;
+  --font-brand:'Inter',system-ui,sans-serif;
+  --mono:'DM Mono',ui-monospace,monospace;
   --s-1:4px;--s-2:8px;--s-3:12px;--s-4:16px;--s-5:20px;--s-6:24px;--s-7:32px;--s-8:40px;
-  --section-y:32px;--gutter-x:28px;--card-pad:24px;--list-y:12px;
+  --section-y:20px;--gutter-x:20px;--card-pad:18px;--list-y:12px;
   --lh-tight:1.25;--lh-snug:1.4;--lh-body:1.625;--lh-relaxed:1.7;
-  --text-xs:11px;--text-sm:13px;--text-base:15px;--text-md:16px;--text-lg:18px;
+  --text-xs:11px;--text-sm:13px;--text-base:14px;--text-md:15px;--text-lg:18px;
   --track-wide:.04em;--track-label:.06em;
 }
 *{box-sizing:border-box;margin:0;padding:0}
@@ -802,33 +802,267 @@ body.light .fh-mkt-badge.fh-mkt-pre{color:#b45309;background:rgba(180,83,9,.12)}
 body.light .fh-mkt-badge.fh-mkt-post{color:#7c3aed;background:rgba(124,58,237,.12)}
 body.light .fh-mkt-badge.fh-mkt-closed{color:#6b7280;background:rgba(107,114,128,.14)}
 body.light .fh-mkt-badge.fh-mkt-night{color:#0f766e;background:rgba(15,118,110,.12)}
+
+/* ══ LEE Wealth UI Redesign ══ */
+body{background-color:var(--bg);background-image:none;display:flex;flex-direction:column;min-height:100vh}
+.brand-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px rgba(0,212,255,.55);flex-shrink:0}
+.brand-dot-lg{width:10px;height:10px}
+.sr-only-totals{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+
+/* PIN */
+.pin-overlay{position:fixed;inset:0;z-index:9999;background:#0A0F1E;flex-direction:column;align-items:center;justify-content:center}
+.pin-overlay[style*="flex"],.pin-overlay.pin-show{display:flex!important}
+.pin-shell{display:flex;flex-direction:column;align-items:center;gap:20px;max-width:320px;width:100%;padding:24px}
+.pin-brand{display:flex;align-items:center;gap:12px;align-self:flex-start}
+.pin-title{font-size:24px;font-weight:500;color:var(--text);letter-spacing:-.02em;font-family:var(--font)}
+.pin-subtitle{font-size:12px;color:var(--text3);margin-top:4px}
+.pin-hint{font-size:13px;color:var(--text3)}
+.pin-dots{display:flex;gap:14px}
+.pin-dot{width:8px;height:8px;border-radius:50%;border:1.5px solid rgba(0,212,255,.35);background:transparent;transition:background .15s,border-color .15s}
+.pin-dot.filled{background:var(--accent);border-color:var(--accent)}
+.pin-error{font-size:12px;color:var(--red);font-family:var(--mono);min-height:16px;text-align:center}
+.pin-keypad-grid{display:grid;grid-template-columns:repeat(3,56px);gap:10px}
+.pin-key{width:56px;height:56px;border-radius:12px;border:.5px solid var(--border);background:#0D1425;font-size:20px;font-weight:500;cursor:pointer;font-family:var(--mono);color:var(--text);transition:background .12s;display:flex;align-items:center;justify-content:center}
+.pin-key:hover{background:#1A2340}
+.pin-unlock-btn{width:100%;height:44px;border:none;border-radius:var(--r-btn);background:var(--accent);color:#0A0F1E;font-weight:600;font-family:var(--font);cursor:pointer}
+.pin-forgot{background:none;border:none;color:var(--text4);font-size:12px;cursor:pointer;font-family:var(--font);text-align:center}
+
+/* Layout: top tabs */
+.sidebar{position:static;width:100%;min-height:0;height:44px;flex-direction:row;flex-shrink:0;border-right:none;border-bottom:.5px solid var(--border);background:#0D1425;overflow:visible;box-shadow:none}
+.sidebar-logo,.sidebar-total,.sidebar-rail-footer,.nav-group{display:none!important}
+.sidebar-nav{display:flex;flex-direction:row;align-items:stretch;flex:1;overflow-x:auto;padding:0 12px;gap:2px;scrollbar-width:none}
+.sidebar-nav::-webkit-scrollbar{display:none}
+.nav-btn{width:auto;margin:0;padding:0 14px;height:44px;border-radius:0;gap:7px;white-space:nowrap;font-size:13px;color:var(--text3);border-bottom:2px solid transparent}
+.nav-btn:hover{background:transparent;color:var(--text2)}
+.nav-btn.active{background:transparent;color:var(--text);font-weight:500;border-bottom-color:var(--accent);box-shadow:none}
+.nav-btn.active::before{display:none}
+.nav-ico{font-size:16px;width:16px;display:inline-flex;align-items:center;justify-content:center}
+.main-wrap{margin-left:0!important;flex:1;min-height:0;display:flex;flex-direction:column;width:100%}
+.topbar{height:52px;min-height:52px;padding:0 20px;background:#0A0F1E;border-bottom:.5px solid var(--border);gap:12px}
+.topbar-brand{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.topbar-brand-name{font-size:15px;font-weight:500;color:var(--text);letter-spacing:-.01em}
+.topbar-title{font-size:13px;color:var(--text3);font-weight:400}
+.main{padding:20px;flex:1;overflow-y:auto}
+
+/* Buttons */
+.btn{border-radius:var(--r-btn);font-weight:500;font-family:var(--font)}
+.btn-primary{background:var(--accent);color:#0A0F1E;box-shadow:none}
+.btn-primary:hover{filter:brightness(1.08)}
+.btn-pill{border-radius:var(--r-pill);border:.5px solid var(--border);background:var(--bg2);color:var(--text2);height:32px;padding:0 14px;font-size:12px;gap:6px}
+.btn-pill:hover{background:var(--bg4);color:var(--text);border-color:var(--border2)}
+.btn-pill-accent{border-color:rgba(0,212,255,.25);color:var(--accent)}
+.btn-pill-accent:hover{background:rgba(0,212,255,.08)}
+.btn-pill-gold{border-color:rgba(245,183,49,.3);color:var(--gold)}
+.btn-pill-gold:hover{background:rgba(245,183,49,.08)}
+.btn-icon{width:28px;height:28px;padding:0;border-radius:var(--r-sm);border:.5px solid var(--border);background:var(--bg2);color:var(--text2);font-size:15px}
+.btn-icon:hover{background:var(--bg4);color:var(--text)}
+.btn-ghost{border:.5px solid var(--border);border-radius:var(--r-btn)}
+.btn-danger{background:rgba(255,77,106,.1);color:var(--red);border:1px solid rgba(255,77,106,.2);box-shadow:none}
+
+/* Cards */
+.card{background:var(--surface);border:.5px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:12px;box-shadow:none}
+.card:hover{background:var(--surface);border-color:var(--border2)}
+.card-title{font-size:14px;font-weight:500;gap:8px}
+.card-title .ti{color:var(--accent);font-size:16px}
+
+/* Overview layout */
+.ov-layout{display:grid;grid-template-columns:1fr;gap:12px}
+@media(min-width:1024px){.ov-layout{grid-template-columns:2fr 1fr;align-items:start}}
+.ov-layout-main,.ov-layout-side{display:flex;flex-direction:column;gap:12px;min-width:0}
+.ov-hero-card{padding:20px}
+.ov-hero-label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);font-family:var(--mono);margin-bottom:8px}
+.ov-hero-nav{font-size:40px;font-weight:500;color:var(--text);font-family:var(--mono);line-height:1.1;letter-spacing:-.03em}
+.ov-hero-fx{display:flex;flex-wrap:wrap;gap:16px 24px;margin-top:12px}
+.ov-hero-fx-item{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px;font-family:var(--mono);font-size:12px}
+.ov-hero-fx-item .lbl{color:var(--text3);font-size:11px;text-transform:uppercase}
+.ov-hero-fx-item .val{color:var(--text2)}
+.ov-hero-fx-item .sub{color:var(--text4);font-size:11px}
+.ov-hero-chart{height:60px;margin-top:16px}
+.ov-hero-range{display:flex;align-items:center;justify-content:space-between;margin-top:12px;gap:12px;flex-wrap:wrap}
+.ov-nav-lbl{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.ov-holdings-card .card-title{margin-bottom:12px}
+.ov-link-all{font-size:12px;color:var(--text3);text-decoration:none;font-weight:400;display:inline-flex;align-items:center;gap:4px}
+.ov-link-all:hover{color:var(--accent)}
+#ov-regions{display:grid;grid-template-columns:1fr;gap:8px;margin:0}
+.ov-col{background:var(--bg);border:.5px solid var(--border);border-radius:8px;margin:0}
+.ov-col:hover{transform:none;box-shadow:none}
+.ov-prod-row{background:var(--bg);border-radius:8px;margin:4px 0;border-bottom:none;padding:10px 12px}
+.ov-prod-row.crcl-warn{border-left:2px solid var(--red)}
+.ov-goal-card{padding:16px 18px}
+.ov-goal-inner{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.ov-goal-main{flex:1;min-width:180px}
+.ov-goal-hd{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.ov-goal-lbl{font-size:11px;text-transform:uppercase;color:var(--text3);font-family:var(--mono)}
+.ov-goal-pct{font-size:13px;font-weight:600;font-family:var(--mono);color:var(--text)}
+.ov-goal-track{height:8px;background:var(--bg4);border-radius:999px;overflow:hidden}
+#goal-fill{background:linear-gradient(90deg,var(--accent),var(--green))}
+.ov-goal-meta{display:flex;justify-content:space-between;margin-top:6px;font-size:12px;font-family:var(--mono);color:var(--text2)}
+.ov-goal-aside{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+.ov-goal-aside-lbl{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.ov-goal-remaining{font-size:18px;font-weight:600;font-family:var(--mono);color:var(--accent)}
+.ov-goal-eta{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.ov-region-bars{display:flex;flex-direction:column;gap:12px;margin-top:4px}
+.ov-region-bar-row{display:flex;flex-direction:column;gap:6px}
+.ov-region-bar-hd{display:flex;justify-content:space-between;align-items:center;font-size:13px}
+.ov-region-bar-hd .name{display:flex;align-items:center;gap:8px;color:var(--text)}
+.ov-region-bar-hd .amt{font-family:var(--mono);font-size:12px;color:var(--text2)}
+.ov-region-bar-track{height:4px;background:var(--bg4);border-radius:999px;overflow:hidden}
+.ov-region-bar-fill{height:100%;border-radius:999px}
+.ov-region-bar-fill.cn{background:var(--accent)}
+.ov-region-bar-fill.us{background:var(--gold)}
+.ov-region-bar-fill.au{background:var(--purple)}
+
+/* AI panel */
+.ai-pb-panel{background:var(--surface);border:.5px solid var(--border);border-radius:12px;padding:18px 20px;margin-top:0;box-shadow:none}
+.ai-pb-panel::before{display:none}
+.ai-pb-title{display:flex;align-items:center;gap:8px}
+.ai-pulse-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);animation:aiPulse 2s ease-in-out infinite}
+@keyframes aiPulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(0,212,255,.4)}50%{opacity:.7;box-shadow:0 0 0 6px rgba(0,212,255,0)}}
+.ai-pb-label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);font-weight:600}
+.ai-pb-sub{font-size:12px;color:#7A8CA8;margin-top:6px}
+.ai-pb-privacy{font-size:11px;color:var(--text4);margin-top:8px;display:flex;align-items:center;gap:6px}
+.ai-pb-body,#ai-diagnosis-output{font-size:13px;color:#7A8CA8;line-height:1.7}
+.ai-pb-chat-chip{border:.5px solid rgba(0,212,255,.2);background:transparent;color:var(--text2)}
+.ai-pb-chat-chip:hover{background:rgba(0,212,255,.06);border-color:rgba(0,212,255,.35)}
+.ai-pb-select,.ai-pb-chat-input,.ov-events-ai-input{background:var(--bg);border:.5px solid var(--border2);color:var(--text);border-radius:var(--r-sm)}
+.ai-pb-btn-ai{background:var(--accent);color:#0A0F1E;box-shadow:none;border-radius:var(--r-btn)}
+.ai-pb-btn-local{border:.5px solid var(--border);color:var(--text2);border-radius:var(--r-btn)}
+.ov-events-ai-sub{font-size:12px;font-weight:400;color:var(--text3);font-family:var(--mono)}
+
+/* Range tabs */
+.range-tabs{background:transparent;border:none;padding:0;gap:4px}
+.rt{font-size:11px;padding:4px 10px;border-radius:0;background:transparent;color:var(--text3);border-bottom:2px solid transparent}
+.rt.active{background:transparent;color:var(--text);border-bottom-color:var(--accent);box-shadow:none}
+
+/* Page headers */
+.page-header{margin-bottom:20px;padding:18px 20px;background:var(--surface);border:.5px solid var(--border);border-radius:12px}
+.ph-main{font-family:var(--mono)}
+.ph-label{display:flex;align-items:center;gap:8px}
+.ph-label .ti{color:var(--accent)}
+
+/* Account / product cards */
+.account-block{border-radius:12px;border:.5px solid var(--border)}
+.account-header{padding:14px 18px}
+.acc-ico{border-radius:8px;font-size:18px}
+.acc-ico.cn{background:rgba(0,212,255,.1);color:var(--accent)}
+.acc-ico.us{background:rgba(245,183,49,.1);color:var(--gold)}
+.acc-ico.au{background:rgba(122,92,255,.1);color:var(--purple)}
+.product-row{background:var(--bg);margin:6px 8px;border-radius:8px;border-bottom:none;padding:12px 14px}
+.product-row.hdr{background:transparent;margin:0;border-radius:0}
+
+/* History */
+#nav-chart-wrap{background:var(--surface)!important;border:.5px solid var(--border)!important;border-radius:12px!important;padding:18px 20px!important;box-shadow:none!important}
+#nav-chart-wrap [style*="height:220px"]{height:180px!important}
+.hist-table tbody tr{background:var(--bg);display:table-row}
+.hist-table tbody td:first-child{border-radius:8px 0 0 8px}
+.hist-wrap{border:none;max-height:none}
+.hist-table th{background:var(--bg2)}
+
+/* News cards */
+.news-item{display:block;padding:14px 16px;margin-bottom:8px;background:var(--bg);border:.5px solid var(--border);border-radius:8px;border-bottom:.5px solid var(--border)}
+.news-item:hover{background:var(--bg4)}
+.news-item-title{font-size:14px;font-weight:500;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.news-chip{border-radius:var(--r-pill)}
+
+/* FX / forms */
+input[type=text],input[type=number],input[type=date],select{background:var(--bg);border:.5px solid rgba(255,255,255,.1);border-radius:12px;height:40px;font-size:14px}
+input:focus,select:focus{border-color:var(--accent);box-shadow:var(--ring)}
+.fg label{font-size:11px;text-transform:uppercase;color:var(--text3)}
+.fx-input-block,.fx-reverse-block{background:var(--bg);border:.5px solid var(--border);border-radius:12px}
+.fx-big-input{background:var(--bg)!important;height:40px!important;font-size:20px!important;border-radius:12px!important}
+
+/* Modal */
+.overlay{background:rgba(0,0,0,.7)}
+.modal{background:var(--surface);border:.5px solid rgba(255,255,255,.1);border-radius:16px;max-width:480px;padding:20px 22px}
+.modal-title{font-size:16px;font-weight:500}
+.modal-x{width:28px;height:28px;border-radius:var(--r-sm);border:.5px solid var(--border);background:var(--bg);display:inline-flex;align-items:center;justify-content:center;font-size:16px;color:var(--text2)}
+
+/* Settings groups */
+#page-settings .card .card-title .ti{margin-right:6px;color:var(--accent)}
+.settings-grid-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* Footer */
+.app-footer{height:40px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 20px;background:#0A0F1E;border-top:.5px solid var(--border)}
+.app-footer-time{font-size:11px;color:var(--text4);font-family:var(--mono)}
+.app-footer-actions{display:flex;gap:8px}
+
+/* Misc */
+.topbar-btc{border-color:rgba(245,183,49,.35);background:rgba(245,183,49,.06)}
+.topbar-btc-pair{color:var(--gold)}
+.fx-chip{border-radius:var(--r-pill);border:.5px solid var(--border)}
+.ov-events-filter{border-radius:var(--r-pill)}
+.ov-dash-bento{grid-template-columns:1fr!important}
+@media(min-width:640px){.ov-dash-bento{grid-template-columns:1fr!important}}
+.nav-chart-wrap{height:60px}
+#chart-ov{max-height:60px}
+
+.card-danger{border-color:rgba(255,77,106,.2)!important}
+.ov-mile-stack{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.ov-mile-lbl{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.ov-mile-val{font-size:16px;font-weight:600;font-variant-numeric:tabular-nums;font-family:var(--mono)}
+.ov-mile-val.sm{font-size:14px}
+.ov-mile-divider{margin-top:12px;padding-top:10px;border-top:1px solid var(--border)}
+
+@media(max-width:768px){
+  .sidebar{position:fixed;top:52px;left:0;right:0;height:auto;max-height:calc(100vh - 52px);flex-direction:column;transform:translateX(-100%);opacity:1;pointer-events:none;z-index:210;border-bottom:none;width:min(300px,88vw)}
+  .sidebar.mobile-open{transform:translateX(0);pointer-events:auto;box-shadow:12px 0 48px rgba(0,0,0,.45)}
+  .sidebar-nav{flex-direction:column;padding:12px;align-items:stretch}
+  .nav-btn{height:40px;border-bottom:none;border-left:2px solid transparent;border-radius:var(--r-sm)}
+  .nav-btn.active{border-left-color:var(--accent);border-bottom-color:transparent}
+  .topbar-title{display:none}
+}
+
 </style>
 </head>
 <body>
-<div id="pin-overlay" style="display:none;position:fixed;inset:0;z-index:9999;background:var(--bg);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);flex-direction:column;align-items:center;justify-content:center;gap:24px" aria-modal="true" role="dialog" aria-labelledby="pin-overlay-title">
-  <div style="font-size:32px" aria-hidden="true">🔒</div>
-  <div id="pin-overlay-title" style="font-size:18px;font-weight:600;color:var(--text);letter-spacing:-.02em">LEE's Wealth</div>
-  <div style="font-size:13px;color:var(--text3);font-family:var(--mono)">输入 PIN 码解锁</div>
-  <div id="pin-dots" style="display:flex;gap:12px;margin:4px 0" aria-live="polite">
-    <div class="pin-dot"></div><div class="pin-dot"></div>
-    <div class="pin-dot"></div><div class="pin-dot"></div>
+<div id="pin-overlay" class="pin-overlay" style="display:none" aria-modal="true" role="dialog" aria-labelledby="pin-overlay-title">
+  <div class="pin-shell">
+    <div class="pin-brand">
+      <span class="brand-dot" aria-hidden="true"></span>
+      <div>
+        <div id="pin-overlay-title" class="pin-title">LEE's Wealth</div>
+        <div class="pin-subtitle">全球资产仪表盘</div>
+      </div>
+    </div>
+    <div class="pin-hint">输入 PIN 码解锁</div>
+    <div id="pin-dots" class="pin-dots" aria-live="polite">
+      <div class="pin-dot"></div><div class="pin-dot"></div>
+      <div class="pin-dot"></div><div class="pin-dot"></div>
+    </div>
+    <div id="pin-error" class="pin-error"></div>
+    <div class="pin-keypad-grid" id="pin-keypad"></div>
+    <button type="button" class="pin-unlock-btn" id="pin-unlock-btn" style="display:none">解锁</button>
+    <button type="button" class="pin-forgot" onclick="pinForgot()">忘记 PIN？（清除并用密码重新登录）</button>
   </div>
-  <div id="pin-error" style="font-size:12px;color:var(--red);font-family:var(--mono);height:16px;text-align:center"></div>
-  <div style="display:grid;grid-template-columns:repeat(3,72px);gap:10px" id="pin-keypad"></div>
-  <button type="button" onclick="pinForgot()" style="background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer;font-family:var(--mono);margin-top:8px">忘记PIN？（清除并用密码重新登录）</button>
 </div>
-<style>
-.pin-dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--border2);background:transparent;transition:background .15s,border-color .15s}
-.pin-dot.filled{background:var(--accent);border-color:var(--accent)}
-.pin-key{width:72px;height:72px;border-radius:50%;border:1px solid var(--border2);background:var(--surface);font-size:22px;font-weight:500;cursor:pointer;font-family:var(--mono);color:var(--text);transition:background .12s,transform .1s;display:flex;align-items:center;justify-content:center}
-.pin-key:hover{background:var(--bg3);transform:scale(1.05)}
-.pin-key:active{transform:scale(.95)}
-</style>
+<div class="sidebar-backdrop" id="sidebar-backdrop" aria-hidden="true"></div>
 
-<nav class="sidebar" id="main-sidebar" aria-label="主导航">
+<div class="main-wrap">
+  <div id="file-protocol-banner" class="alert alert-warn" role="alert" style="display:none;width:100%;flex-shrink:0;margin:0;border-radius:0;border-left:none;border-right:none;padding:14px var(--gutter-x,24px);font-size:14px;line-height:1.55;position:relative;z-index:30;box-sizing:border-box"></div>
+  <div class="topbar">
+    <button type="button" class="mobile-menu-btn" id="mobile-menu-btn" aria-label="打开导航菜单" aria-controls="main-sidebar" aria-expanded="false"><i class="ti ti-menu-2"></i></button>
+    <div class="topbar-brand"><span class="brand-dot" aria-hidden="true"></span><span class="topbar-brand-name">LEE's Wealth</span></div>
+    <div class="topbar-title" id="topbar-title">总览</div>
+    <div class="fx-strip" id="fx-strip"></div>
+    <div class="topbar-btc" id="topbar-btc" title="Bitcoin · 点击刷新" onclick="refreshBtcPrice()" role="button" tabindex="0">
+      <i class="ti ti-currency-bitcoin topbar-btc-pair" aria-hidden="true"></i>
+      <span class="topbar-btc-usd" id="btc-price-usd">—</span>
+      <span class="topbar-btc-cny" id="btc-price-cny"></span>
+      <span class="topbar-btc-chg" id="btc-change"></span>
+    </div>
+    <div class="topbar-right">
+      <button type="button" class="btn btn-icon btn-sm" id="theme-btn" onclick="toggleNight()" title="深色 / 日间主题切换" aria-label="切换深浅色主题">☀️</button>
+      <button type="button" class="btn btn-pill btn-sm" id="snap-btn" onclick="takeSnapshot()" title="写入今日 NAV 历史快照"><i class="ti ti-camera"></i> 快照</button>
+      <button type="button" class="btn btn-pill btn-sm btn-pill-accent" id="refresh-all-btn" onclick="refreshAllQuotes()" title="刷新汇率与各类行情，并写入今日快照、拉取资讯"><i class="ti ti-refresh"></i> 刷新行情</button>
+      <button type="button" class="btn btn-icon btn-sm" onclick="showPage('settings')" title="设置"><i class="ti ti-settings"></i></button>
+      <button type="button" class="btn btn-icon btn-sm" onclick="showPinOverlay()" title="锁屏"><i class="ti ti-lock"></i></button>
+      <button type="button" class="btn btn-pill btn-sm btn-pill-gold" onclick="openModal()"><i class="ti ti-plus"></i> 添加资产</button>
+    </div>
+  </div>
+  <nav class="sidebar tab-bar" id="main-sidebar" aria-label="主导航">
   <div class="sidebar-logo">
     <div class="logo-row">
-      <div class="logo-icon">💎</div>
+      <span class="brand-dot brand-dot-lg" aria-hidden="true"></span>
       <div><div class="logo-name">LEE's Wealth</div><div class="logo-sub">全球资产仪表盘</div></div>
     </div>
   </div>
@@ -841,41 +1075,20 @@ body.light .fh-mkt-badge.fh-mkt-night{color:#0f766e;background:rgba(15,118,110,.
 
   <div class="sidebar-nav">
     <div class="nav-group">主视图</div>
-    <button class="nav-btn active" id="nav-overview" onclick="showPage('overview')"><span class="nav-ico">📊</span><span>总览</span></button>
-    <button class="nav-btn" id="nav-cn" onclick="showPage('cn')"><span class="nav-ico">🇨🇳</span><span>中国境内</span><span class="nav-cnt" id="nc-cn">0</span></button>
-    <button class="nav-btn" id="nav-us" onclick="showPage('us')"><span class="nav-ico">🇺🇸</span><span>美国</span><span class="nav-cnt" id="nc-us">0</span></button>
-    <button class="nav-btn" id="nav-au" onclick="showPage('au')"><span class="nav-ico">🇦🇺</span><span>澳洲</span><span class="nav-cnt" id="nc-au">0</span></button>
+    <button class="nav-btn active" id="nav-overview" onclick="showPage('overview')"><i class="ti ti-chart-bar nav-ico"></i><span>总览</span></button>
+    <button class="nav-btn" id="nav-cn" onclick="showPage('cn')"><i class="ti ti-building-bank nav-ico"></i><span>中国境内</span><span class="nav-cnt" id="nc-cn">0</span></button>
+    <button class="nav-btn" id="nav-us" onclick="showPage('us')"><i class="ti ti-building-skyscraper nav-ico"></i><span>美国</span><span class="nav-cnt" id="nc-us">0</span></button>
+    <button class="nav-btn" id="nav-au" onclick="showPage('au')"><i class="ti ti-map-pin nav-ico"></i><span>澳洲</span><span class="nav-cnt" id="nc-au">0</span></button>
     <div class="nav-group">工具</div>
-    <button class="nav-btn" id="nav-history" onclick="showPage('history')"><span class="nav-ico">📈</span><span>NAV 历史</span></button>
-    <button class="nav-btn" id="nav-news" onclick="showPage('news')"><span class="nav-ico">📰</span><span>资讯</span></button>
-    <button class="nav-btn" id="nav-fx" onclick="showPage('fx')"><span class="nav-ico">💱</span><span>汇率设置</span></button>
-    <button class="nav-btn" id="nav-settings" onclick="showPage('settings')"><span class="nav-ico">⚙️</span><span>设置</span></button>
+    <button class="nav-btn" id="nav-history" onclick="showPage('history')"><i class="ti ti-chart-line nav-ico"></i><span>NAV 历史</span></button>
+    <button class="nav-btn" id="nav-news" onclick="showPage('news')"><i class="ti ti-news nav-ico"></i><span>资讯</span></button>
+    <button class="nav-btn" id="nav-fx" onclick="showPage('fx')"><i class="ti ti-arrows-exchange nav-ico"></i><span>汇率</span></button>
+    <button class="nav-btn" id="nav-settings" onclick="showPage('settings')"><i class="ti ti-settings nav-ico"></i><span>设置</span></button>
   </div>
   <div class="sidebar-rail-footer">
     <button type="button" class="sb-toggle" id="sidebar-toggle" onclick="toggleSidebarRail()" title="折叠 / 展开侧栏" aria-label="折叠侧栏">◀</button>
   </div>
 </nav>
-<div class="sidebar-backdrop" id="sidebar-backdrop" aria-hidden="true"></div>
-
-<div class="main-wrap">
-  <div id="file-protocol-banner" class="alert alert-warn" role="alert" style="display:none;width:100%;flex-shrink:0;margin:0;border-radius:0;border-left:none;border-right:none;padding:14px var(--gutter-x,24px);font-size:14px;line-height:1.55;position:relative;z-index:30;box-sizing:border-box"></div>
-  <div class="topbar">
-    <button type="button" class="mobile-menu-btn" id="mobile-menu-btn" aria-label="打开导航菜单" aria-controls="main-sidebar" aria-expanded="false">☰</button>
-    <div class="topbar-title" id="topbar-title">总览</div>
-    <div class="fx-strip" id="fx-strip"></div>
-    <div class="topbar-btc" id="topbar-btc" title="Bitcoin · 点击刷新" onclick="refreshBtcPrice()" role="button" tabindex="0">
-      <span class="topbar-btc-pair" aria-hidden="true">₿</span>
-      <span class="topbar-btc-usd" id="btc-price-usd">—</span>
-      <span class="topbar-btc-cny" id="btc-price-cny"></span>
-      <span class="topbar-btc-chg" id="btc-change"></span>
-    </div>
-    <div class="topbar-right">
-      <button type="button" class="btn btn-ghost btn-sm" id="theme-btn" onclick="toggleNight()" title="深色 / 日间主题切换" aria-label="切换深浅色主题">☀️</button>
-      <button type="button" class="btn btn-ghost btn-sm" id="snap-btn" onclick="takeSnapshot()" title="写入今日 NAV 历史快照">📸 快照</button>
-      <button type="button" class="btn btn-ghost btn-sm" id="refresh-all-btn" onclick="refreshAllQuotes()" title="刷新汇率与各类行情，并写入今日快照、拉取资讯">🔄 刷新</button>
-      <button type="button" class="btn btn-primary btn-sm" onclick="openModal()">＋ 添加资产</button>
-    </div>
-  </div>
   <div id="global-refresh-status" class="global-refresh-strip" aria-live="polite"></div>
 
   <div class="main">
@@ -883,49 +1096,32 @@ body.light .fh-mkt-badge.fh-mkt-night{color:#0f766e;background:rgba(15,118,110,.
     <div id="http-data-migrate-banner" class="alert alert-info" role="status" style="display:none;margin-bottom:var(--s-5);padding:var(--s-4) var(--gutter-x);border-radius:var(--r);line-height:1.55;font-size:var(--text-sm)"></div>
 
     <!-- OVERVIEW -->
-    <div class="page active space-y-4 md:space-y-6" id="page-overview">
-      <div id="goal-bar-wrap" style="margin-bottom:16px;background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);padding:12px 20px;box-shadow:var(--shadow-sm);display:flex;align-items:center;gap:24px;flex-wrap:wrap">
-        <div style="flex:1;min-width:200px">
-          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">
-            <span style="font-size:12px;color:var(--text3);font-family:var(--mono);letter-spacing:.05em;text-transform:uppercase" id="goal-label">存款目标</span>
-            <span style="font-size:13px;font-weight:600;font-family:var(--mono);color:var(--text)" id="goal-pct">—%</span>
+    <div class="page active" id="page-overview">
+      <div class="ov-layout">
+        <div class="ov-layout-main">
+          <div class="card ov-hero-card mb-0">
+            <div class="ov-hero-label">总净值 · NAV</div>
+            <div class="ov-hero-nav" id="ov-cny">¥ —</div>
+            <div class="ov-hero-fx">
+              <div class="ov-hero-fx-item"><span class="lbl">USD</span><span class="val" id="ov-usd">$ —</span><span class="sub" id="ov-usd-sub">—</span></div>
+              <div class="ov-hero-fx-item"><span class="lbl">AUD</span><span class="val" id="ov-aud">A$ —</span><span class="sub" id="ov-aud-sub">—</span></div>
+              <div class="ov-hero-fx-item"><span class="lbl">BTC</span><span class="val" id="ov-hero-btc">—</span></div>
+            </div>
+            <div id="ov-insights" class="ov-insights"></div>
+            <div class="ov-hero-chart nav-chart-wrap"><canvas id="chart-ov"></canvas></div>
+            <div class="ov-hero-range">
+              <div class="range-tabs">
+                <button class="rt active" onclick="setRange(30,this)">1M</button>
+                <button class="rt" onclick="setRange(90,this)">3M</button>
+                <button class="rt" onclick="setRange(9999,this)">ALL</button>
+              </div>
+              <span class="ov-nav-lbl" id="ov-nav-lbl">—</span>
+            </div>
           </div>
-          <div style="height:10px;background:var(--bg4);border-radius:999px;overflow:hidden">
-            <div id="goal-fill"></div>
-          </div>
-          <div style="display:flex;justify-content:space-between;margin-top:6px">
-            <span style="font-size:12px;color:var(--text2);font-family:var(--mono)" id="goal-current">¥—</span>
-            <span style="font-size:12px;color:var(--text3);font-family:var(--mono)" id="goal-target">目标 ¥1,500,000</span>
-          </div>
-        </div>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
-          <span style="font-size:11px;color:var(--text3);font-family:var(--mono)">距目标</span>
-          <span style="font-size:18px;font-weight:600;font-variant-numeric:tabular-nums" id="goal-remaining">—</span>
-          <span style="font-size:11px;color:var(--text3);font-family:var(--mono)" id="goal-eta">预计达成 —</span>
-        </div>
-        <button type="button" onclick="openGoalEdit()" style="background:none;border:1px solid var(--border2);border-radius:var(--r-sm);padding:6px 12px;font-size:12px;color:var(--text3);cursor:pointer;font-family:var(--mono);white-space:nowrap">✏️ 修改目标</button>
-      </div>
-      <div class="total-bar grid w-full min-w-0 grid-cols-1 gap-3 md:grid-cols-3 md:gap-5">
-        <div class="total-card cn">
-          <div class="tc-label">总资产 · 人民币</div>
-          <div class="tc-val cn" id="ov-cny">¥ —</div>
-          <div class="tc-sub" id="ov-cny-sub">—</div>
-        </div>
-        <div class="total-card us">
-          <div class="tc-label">总资产 · 美元</div>
-          <div class="tc-val us" id="ov-usd">$ —</div>
-          <div class="tc-sub" id="ov-usd-sub">—</div>
-        </div>
-        <div class="total-card au">
-          <div class="tc-label">总资产 · 澳元</div>
-          <div class="tc-val au" id="ov-aud">A$ —</div>
-          <div class="tc-sub" id="ov-aud-sub">—</div>
-        </div>
-      </div>
-      <div class="card ov-events-card mb-0" id="ov-events-card">
+          <div class="card ov-events-card mb-0" id="ov-events-card">
         <div class="ov-events-hd">
           <div>
-            <div class="card-title" style="margin-bottom:0">📅 大事件关注</div>
+            <div class="card-title" style="margin-bottom:0"><i class="ti ti-calendar-event"></i> 大事件关注</div>
             <div class="ov-events-sub" id="ov-events-range">近1个月已发生 + 未来12个月 · 宏观 + 持仓到期</div>
           </div>
           <div class="ov-events-filters" id="ov-events-filters">
@@ -937,7 +1133,7 @@ body.light .fh-mkt-badge.fh-mkt-night{color:#0f766e;background:rgba(15,118,110,.
         </div>
         <div class="ov-events-list" id="ov-events-list"></div>
         <div class="ov-events-ai" id="ov-events-ai">
-          <div class="ov-events-ai-hd">🤖 大事件 AI 解读 <span style="font-size:12px;font-weight:400;color:var(--text3);font-family:var(--mono)">结合日历与持仓 · 可连续追问</span></div>
+          <div class="ov-events-ai-hd"><i class="ti ti-robot"></i> 大事件 AI 解读 <span class="ov-events-ai-sub">结合日历与持仓 · 可连续追问</span></div>
           <div class="ov-events-ai-chips">
             <button type="button" class="ov-events-filter" onclick="eventsAiSuggest('未来3个月哪些大事件对我的组合影响最大？')">3个月影响</button>
             <button type="button" class="ov-events-filter" onclick="eventsAiSuggest('今天前后有什么需要我立刻关注的事项？')">今天关注什么</button>
@@ -946,17 +1142,86 @@ body.light .fh-mkt-badge.fh-mkt-night{color:#0f766e;background:rgba(15,118,110,.
           <div class="ov-events-ai-msgs" id="ov-events-ai-msgs"></div>
           <div class="ov-events-ai-compose">
             <textarea id="ov-events-ai-input" class="ov-events-ai-input" rows="2" placeholder="询问任意大事件：如「RBA 降息对我 AUD 定存有何影响？」"></textarea>
-            <button type="button" id="ov-events-ai-send" class="btn btn-primary ov-events-ai-send" onclick="sendEventsAiChat()">发送</button>
+            <button type="button" id="ov-events-ai-send" class="btn btn-primary ov-events-ai-send" onclick="sendEventsAiChat()"><i class="ti ti-send"></i></button>
           </div>
         </div>
       </div>
-      <div id="ov-dash" class="ov-dash">
-        <div id="ov-insights" class="ov-insights"></div>
-        <div class="ov-dash-toprow ov-dash-bento">
-          <div class="card ov-dash-card mb-0 md:mb-0">
-            <div class="card-title">区域配置（占净值）</div>
-            <div class="ov-donut-wrap"><canvas id="chart-alloc-region"></canvas></div>
+          <div class="card ov-holdings-card mb-0">
+            <div class="card-title"><span><i class="ti ti-chart-candle"></i> 区域持仓</span><a href="#" class="ov-link-all" onclick="showPage('us');return false">全部持仓 <i class="ti ti-chevron-right"></i></a></div>
+            <div id="ov-regions"></div>
           </div>
+          <div id="ai-advisor-wrap" class="ai-pb-panel">
+        <div class="ai-pb-head">
+          <div>
+            <div class="ai-pb-title">
+              <span class="ai-pulse-dot" aria-hidden="true"></span>
+              <span class="ai-pb-label">AI 财富诊断 · CIO</span>
+            </div>
+            <div class="ai-pb-sub">全球资产配置 · 脱敏云端分析 · 本地规则引擎</div>
+            <div class="ai-pb-privacy"><i class="ti ti-lock"></i> 云端 AI 仅接收脱敏摘要（标的代号 + 区间金额），账户名与精确持仓不上传</div>
+          </div>
+          <div class="ai-pb-actions">
+            <select id="ai-provider" class="ai-pb-select" aria-label="AI 模型">
+              <option value="gemini">Gemini Flash</option>
+              <option value="groq">Groq Llama3</option>
+              <option value="cohere">Cohere Command-R</option>
+            </select>
+            <button type="button" id="ai-advisor-btn" class="ai-pb-btn-ai" onclick="fetchAiAdvice()"><i class="ti ti-sparkles"></i> AI 诊断</button>
+            <button type="button" class="ai-pb-btn-local" onclick="runAiAdvisor()"><i class="ti ti-chart-dots"></i> 本地诊断</button>
+          </div>
+        </div>
+        <div id="ai-advisor-result" class="ai-pb-result" style="display:none">
+          <div id="ai-diagnosis-output"></div>
+          <div id="ai-chat-section" class="ai-pb-chat-section" style="display:none">
+            <div class="ai-pb-chat-head">
+              <span><i class="ti ti-message-circle"></i> 继续与 CIO 对话</span>
+              <button type="button" class="ai-pb-btn-local" style="height:28px;padding:0 10px;font-size:11px" onclick="resetAiChat()"><i class="ti ti-refresh"></i> 新对话</button>
+            </div>
+            <div id="ai-chat-messages" class="ai-pb-chat-msgs"></div>
+            <div class="ai-pb-chat-chips">
+              <button type="button" class="ai-pb-chat-chip" onclick="aiChatSuggest('如果美元相对人民币贬值 5%，对我整体净值影响大概多少？')">美元 -5% 影响</button>
+              <button type="button" class="ai-pb-chat-chip" onclick="aiChatSuggest('我的组合集中度是否过高？如何优化？')">集中度优化</button>
+              <button type="button" class="ai-pb-chat-chip" onclick="aiChatSuggest('定存到期后，现金应该如何再配置？')">定存到期配置</button>
+              <button type="button" class="ai-pb-chat-chip" onclick="aiChatSuggest('请把优先行动建议再细化成本周可执行的步骤')">细化行动步骤</button>
+            </div>
+            <div class="ai-pb-chat-compose">
+              <textarea id="ai-chat-input" class="ai-pb-chat-input" rows="2" placeholder="继续追问，例如：标的 A 要不要减仓？"></textarea>
+              <button type="button" id="ai-chat-send" class="ai-pb-btn-ai ai-pb-chat-send" onclick="sendAiChatMessage()"><i class="ti ti-send"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+        </div>
+        <div class="ov-layout-side">
+          <div class="card ov-goal-card mb-0" id="goal-bar-wrap">
+        <div class="ov-goal-inner">
+          <div class="ov-goal-main">
+            <div class="ov-goal-hd">
+              <span class="ov-goal-lbl" id="goal-label">存款目标</span>
+              <span class="ov-goal-pct" id="goal-pct">—%</span>
+            </div>
+            <div class="ov-goal-track">
+              <div id="goal-fill"></div>
+            </div>
+            <div class="ov-goal-meta">
+              <span id="goal-current">¥—</span>
+              <span id="goal-target">目标 ¥1,500,000</span>
+            </div>
+          </div>
+          <div class="ov-goal-aside">
+            <span class="ov-goal-aside-lbl">距目标</span>
+            <span class="ov-goal-remaining" id="goal-remaining">—</span>
+            <span class="ov-goal-eta" id="goal-eta">预计达成 —</span>
+          </div>
+          <button type="button" class="btn btn-icon btn-sm" onclick="openGoalEdit()" title="修改目标"><i class="ti ti-pencil"></i></button>
+        </div>
+      </div>
+          <div id="ov-dash" class="ov-dash">
+        <div class="card ov-side-card mb-0">
+          <div class="card-title"><i class="ti ti-world"></i> 区域配置</div>
+          <div class="ov-donut-wrap"><canvas id="chart-alloc-region"></canvas></div>
+        </div>
+        <div class="ov-dash-toprow ov-dash-bento">
           <div class="card ov-dash-card mb-0 md:mb-0">
             <div class="card-title">资产类别（折合人民币）</div>
             <div class="ov-donut-wrap"><canvas id="chart-alloc-type"></canvas></div>
@@ -968,14 +1233,14 @@ body.light .fh-mkt-badge.fh-mkt-night{color:#0f766e;background:rgba(15,118,110,.
           <div class="card mb-0" id="ov-mile-card">
             <div class="card-title">快照对比</div>
             <div id="ov-mile-body">
-              <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
-                <div style="font-size:11px;color:var(--text3);font-family:var(--mono)">首次快照</div>
-                <div style="font-size:16px;font-weight:600;font-variant-numeric:tabular-nums" id="mile-first-val">—</div>
-                <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:4px">相对首次</div>
-                <div style="font-size:15px;font-weight:600;font-variant-numeric:tabular-nums" id="mile-first-delta">—</div>
-                <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border)">
-                  <div style="font-size:11px;color:var(--text3);font-family:var(--mono)">较最近快照</div>
-                  <div style="font-size:14px;font-weight:600;margin-top:4px;font-variant-numeric:tabular-nums" id="mile-recent-delta">—</div>
+              <div class="ov-mile-stack">
+                <div class="ov-mile-lbl">首次快照</div>
+                <div class="ov-mile-val" id="mile-first-val">—</div>
+                <div class="ov-mile-lbl">相对首次</div>
+                <div class="ov-mile-val" id="mile-first-delta">—</div>
+                <div class="ov-mile-divider">
+                  <div class="ov-mile-lbl">较最近快照</div>
+                  <div class="ov-mile-val sm" id="mile-recent-delta">—</div>
                 </div>
               </div>
               <div class="ov-mile-foot-compact">变动含行情、汇率、申赎与新增资产，不单是盈亏。</div>
@@ -983,76 +1248,25 @@ body.light .fh-mkt-badge.fh-mkt-night{color:#0f766e;background:rgba(15,118,110,.
           </div>
         </div>
       </div>
-      <div id="ov-regions"></div>
-      <div class="card mb-0 md:mb-6" id="ov-nav-chart">
-        <div class="card-title">NAV 净值曲线
-          <div style="display:flex;align-items:center;gap:8px">
-            <span style="font-size:10px;color:var(--text3);font-family:var(--mono)" id="ov-nav-lbl">—</span>
-            <div class="range-tabs">
-              <button class="rt active" onclick="setRange(30,this)">1M</button>
-              <button class="rt" onclick="setRange(90,this)">3M</button>
-              <button class="rt" onclick="setRange(9999,this)">ALL</button>
-            </div>
-          </div>
-        </div>
-        <div class="nav-chart-wrap"><canvas id="chart-ov"></canvas></div>
-      </div>
-      <div id="ai-advisor-wrap" class="ai-pb-panel">
-        <div class="ai-pb-head">
-          <div>
-            <div class="ai-pb-title">
-              💎 AI 智能财富诊断
-              <span class="ai-pb-badge">Private Banking · CIO</span>
-            </div>
-            <div class="ai-pb-sub">全球资产配置 · 脱敏云端分析 · 本地规则引擎</div>
-            <div class="ai-pb-privacy">🔒 云端 AI 仅接收脱敏摘要（标的代号 + 区间金额），账户名与精确持仓不上传</div>
-          </div>
-          <div class="ai-pb-actions">
-            <select id="ai-provider" class="ai-pb-select" aria-label="AI 模型">
-              <option value="gemini">Gemini Flash</option>
-              <option value="groq">Groq Llama3</option>
-              <option value="cohere">Cohere Command-R</option>
-            </select>
-            <button type="button" id="ai-advisor-btn" class="ai-pb-btn-ai" onclick="fetchAiAdvice()">✨ AI 诊断</button>
-            <button type="button" class="ai-pb-btn-local" onclick="runAiAdvisor()">📊 本地诊断</button>
-          </div>
-        </div>
-        <div id="ai-advisor-result" class="ai-pb-result" style="display:none">
-          <div id="ai-diagnosis-output"></div>
-          <div id="ai-chat-section" class="ai-pb-chat-section" style="display:none">
-            <div class="ai-pb-chat-head">
-              <span>💬 继续与 CIO 对话</span>
-              <button type="button" class="ai-pb-btn-local" style="height:28px;padding:0 10px;font-size:11px" onclick="resetAiChat()">↺ 新对话</button>
-            </div>
-            <div id="ai-chat-messages" class="ai-pb-chat-msgs"></div>
-            <div class="ai-pb-chat-chips">
-              <button type="button" class="ai-pb-chat-chip" onclick="aiChatSuggest('如果美元相对人民币贬值 5%，对我整体净值影响大概多少？')">美元 -5% 影响</button>
-              <button type="button" class="ai-pb-chat-chip" onclick="aiChatSuggest('我的组合集中度是否过高？如何优化？')">集中度优化</button>
-              <button type="button" class="ai-pb-chat-chip" onclick="aiChatSuggest('定存到期后，现金应该如何再配置？')">定存到期配置</button>
-              <button type="button" class="ai-pb-chat-chip" onclick="aiChatSuggest('请把优先行动建议再细化成本周可执行的步骤')">细化行动步骤</button>
-            </div>
-            <div class="ai-pb-chat-compose">
-              <textarea id="ai-chat-input" class="ai-pb-chat-input" rows="2" placeholder="继续追问，例如：标的 A 要不要减仓？"></textarea>
-              <button type="button" id="ai-chat-send" class="ai-pb-btn-ai ai-pb-chat-send" onclick="sendAiChatMessage()">发送</button>
-            </div>
-          </div>
         </div>
       </div>
-    </div>
+      <div class="sr-only-totals" aria-hidden="true">
+        <span id="ov-cny-sub">—</span>
+      </div>
 
     <!-- CHINA -->
     <div class="page" id="page-cn">
       <div class="page-header">
         <div>
-          <div class="ph-label">🇨🇳 中国境内</div>
+          <div class="ph-label"><i class="ti ti-building-bank"></i> 中国境内</div>
           <div class="ph-main" id="cn-total">¥ —</div>
           <div class="ph-sub" id="cn-sub">—</div>
         </div>
         <div class="ph-actions">
-          <button class="btn btn-ghost btn-sm" onclick="refreshGold()">🥇 刷新金价</button>
-          <button class="btn btn-green btn-sm" onclick="refreshFunds()">🔄 刷新基金</button>
-          <button class="btn btn-ghost btn-sm" onclick="importAlipayChinaPreset()">📱 导入支付宝示例</button>
-          <button class="btn btn-primary btn-sm" onclick="openModal('cn')">＋ 添加</button>
+          <button class="btn btn-pill btn-sm" onclick="refreshGold()"><i class="ti ti-coin"></i> 刷新金价</button>
+          <button class="btn btn-pill btn-sm btn-pill-accent" onclick="refreshFunds()"><i class="ti ti-refresh"></i> 刷新基金</button>
+          <button class="btn btn-pill btn-sm" onclick="importAlipayChinaPreset()"><i class="ti ti-device-mobile"></i> 导入示例</button>
+          <button class="btn btn-pill btn-sm btn-pill-gold" onclick="openModal('cn')"><i class="ti ti-plus"></i> 添加</button>
         </div>
       </div>
       <div id="cn-blocks"></div>
@@ -1064,14 +1278,14 @@ body.light .fh-mkt-badge.fh-mkt-night{color:#0f766e;background:rgba(15,118,110,.
       <div id="us-stock-panel" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:12px;margin-bottom:20px"></div>
       <div class="page-header">
         <div>
-          <div class="ph-label">🇺🇸 美国</div>
+          <div class="ph-label"><i class="ti ti-building-skyscraper"></i> 美国</div>
           <div class="ph-main" id="us-total">$ —</div>
           <div class="ph-sub" id="us-sub">—</div>
         </div>
         <div class="ph-actions">
-          <button class="btn btn-green btn-sm" onclick="refreshStocks()">🔄 刷新美股</button>
-          <button class="btn btn-ghost btn-sm" onclick="openBatchModal()">📋 批量导入</button>
-          <button class="btn btn-primary btn-sm" onclick="openModal('us')">＋ 添加</button>
+          <button class="btn btn-pill btn-sm btn-pill-accent" onclick="refreshStocks()"><i class="ti ti-refresh"></i> 刷新美股</button>
+          <button class="btn btn-pill btn-sm" onclick="openBatchModal()"><i class="ti ti-table-import"></i> 批量导入</button>
+          <button class="btn btn-pill btn-sm btn-pill-gold" onclick="openModal('us')"><i class="ti ti-plus"></i> 添加</button>
         </div>
       </div>
       <div id="us-blocks"></div>
@@ -1082,13 +1296,13 @@ body.light .fh-mkt-badge.fh-mkt-night{color:#0f766e;background:rgba(15,118,110,.
     <div class="page" id="page-au">
       <div class="page-header">
         <div>
-          <div class="ph-label">🇦🇺 澳洲</div>
+          <div class="ph-label"><i class="ti ti-map-pin"></i> 澳洲</div>
           <div class="ph-main" id="au-total">A$ —</div>
           <div class="ph-sub" id="au-sub">—</div>
         </div>
         <div class="ph-actions">
-          <button class="btn btn-ghost btn-sm" onclick="importCbaAuPreset()">🏦 导入 CBA 示例</button>
-          <button class="btn btn-primary btn-sm" onclick="openModal('au')">＋ 添加</button>
+          <button class="btn btn-pill btn-sm" onclick="importCbaAuPreset()"><i class="ti ti-building-bank"></i> 导入示例</button>
+          <button class="btn btn-pill btn-sm btn-pill-gold" onclick="openModal('au')"><i class="ti ti-plus"></i> 添加</button>
         </div>
       </div>
       <div id="au-banner-strip" class="au-banner-strip"></div>
@@ -1099,8 +1313,8 @@ body.light .fh-mkt-badge.fh-mkt-night{color:#0f766e;background:rgba(15,118,110,.
     <!-- HISTORY -->
     <div class="page" id="page-history">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:12px">
-        <div style="font-size:15px;font-weight:700">NAV 历史快照</div>
-        <button class="btn btn-primary" onclick="takeSnapshot()">📸 记录今日快照</button>
+        <div style="font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px"><i class="ti ti-chart-line" style="color:var(--accent)"></i> NAV 历史快照</div>
+        <button class="btn btn-pill btn-pill-gold" onclick="takeSnapshot()"><i class="ti ti-camera"></i> 记录今日快照</button>
       </div>
       <div class="alert alert-info" style="display:block;margin-bottom:14px;line-height:1.7;font-size:13px">每次快照会保存<strong>当日折合人民币</strong>下的<strong>分区（中/美/澳）</strong>与<strong>资产类型</strong>（现金、国内基金、黄金、美股、定期、其它）及<strong>汇率</strong>。列表中<strong>较上一快照</strong>指时间更早的那一条（上一条历史记录）。黄金 ETF 联接若登记为「国内基金」会统计在「国内基金」而非「黄金」。</div>
       <div id="nav-chart-wrap" style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);padding:20px 24px;margin-bottom:24px;box-shadow:var(--shadow-sm)">
@@ -1109,10 +1323,10 @@ body.light .fh-mkt-badge.fh-mkt-night{color:#0f766e;background:rgba(15,118,110,.
             <div style="font-size:13px;font-weight:600;color:var(--text)">NAV 净值走势</div>
             <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px">按快照日期 · 人民币</div>
           </div>
-          <div style="display:flex;gap:6px">
-            <button type="button" onclick="setNavChartRange('3M')" id="ncr-3m" class="btn btn-ghost btn-sm">3M</button>
-            <button type="button" onclick="setNavChartRange('6M')" id="ncr-6m" class="btn btn-ghost btn-sm">6M</button>
-            <button type="button" onclick="setNavChartRange('ALL')" id="ncr-all" class="btn btn-ghost btn-sm" style="background:var(--bg4)">ALL</button>
+          <div class="range-tabs">
+            <button type="button" onclick="setNavChartRange('3M')" id="ncr-3m" class="rt">3M</button>
+            <button type="button" onclick="setNavChartRange('6M')" id="ncr-6m" class="rt">6M</button>
+            <button type="button" onclick="setNavChartRange('ALL')" id="ncr-all" class="rt active">ALL</button>
           </div>
         </div>
         <div style="height:220px;position:relative;width:100%">
@@ -1132,12 +1346,12 @@ body.light .fh-mkt-badge.fh-mkt-night{color:#0f766e;background:rgba(15,118,110,.
     <div class="page" id="page-news">
       <div class="page-header">
         <div>
-          <div class="ph-label">📰 资产相关资讯</div>
+          <div class="ph-label"><i class="ti ti-news"></i> 资产相关资讯</div>
           <div class="ph-main" style="font-size:clamp(15px,2.5vw,18px);font-weight:600">按持仓匹配关键词 · 聚合公开 RSS</div>
           <div class="ph-sub" id="news-sub">与股票代码、区域（中/美/澳）及黄金、基金、定存等类型联动</div>
         </div>
         <div class="ph-actions">
-          <button type="button" class="btn btn-primary btn-sm" id="news-refresh-btn" onclick="refreshNewsFeeds()">刷新资讯</button>
+          <button type="button" class="btn btn-pill btn-sm btn-pill-accent" id="news-refresh-btn" onclick="refreshNewsFeeds()"><i class="ti ti-refresh"></i> 刷新资讯</button>
         </div>
       </div>
       <div class="alert alert-info" style="margin-bottom:14px">以下为第三方媒体链接与摘要，本站不背书观点。刷新将通过代理拉取 BBC 等公开 RSS，并按你当前账本中的<strong>美股代码、地区与资产类型</strong>计算相关度排序。英文标题/摘要会尝试<strong>自动译成中文</strong>（免费接口，有次数限制且可能失败，译文仅供参考）。也可使用下方快捷搜索打开 Google 新闻。</div>
@@ -1161,8 +1375,8 @@ body.light .fh-mkt-badge.fh-mkt-night{color:#0f766e;background:rgba(15,118,110,.
 
       <!-- 正向汇率 -->
       <div class="card" style="margin-bottom:14px">
-        <div class="card-title" style="font-size:16px">正向汇率 <span style="font-size:12px;color:var(--text3);font-weight:400;font-family:var(--mono)">外币 → CNY</span>
-          <button class="btn btn-green btn-sm" onclick="fetchFX()">🔄 自动刷新</button>
+        <div class="card-title" style="font-size:16px"><i class="ti ti-arrows-exchange"></i> 正向汇率 <span style="font-size:12px;color:var(--text3);font-weight:400;font-family:var(--mono)">外币 → CNY</span>
+          <button class="btn btn-pill btn-sm btn-pill-accent" onclick="fetchFX()"><i class="ti ti-refresh"></i> 自动刷新</button>
         </div>
         <div class="fx-grid mb">
           <div class="fx-input-block">
@@ -1190,7 +1404,7 @@ body.light .fh-mkt-badge.fh-mkt-night{color:#0f766e;background:rgba(15,118,110,.
 
       <!-- 反向汇率（只读，自动计算） -->
       <div class="card">
-        <div class="card-title" style="font-size:16px">反向汇率 <span style="font-size:12px;color:var(--text3);font-weight:400;font-family:var(--mono)">CNY → 外币（自动计算）</span></div>
+        <div class="card-title" style="font-size:16px"><i class="ti ti-arrow-back"></i> 反向汇率 <span style="font-size:12px;color:var(--text3);font-weight:400;font-family:var(--mono)">CNY → 外币（自动计算）</span></div>
         <div class="fx-grid">
           <div class="fx-reverse-block">
             <div class="fx-input-label">🇨🇳 CNY → USD</div>
@@ -1217,7 +1431,7 @@ body.light .fh-mkt-badge.fh-mkt-night{color:#0f766e;background:rgba(15,118,110,.
     <!-- SETTINGS -->
     <div class="page" id="page-settings">
       <div class="card">
-        <div class="card-title">美股账户设置</div>
+        <div class="card-title"><i class="ti ti-chart-candle"></i> 美股账户设置</div>
         <div style="display:flex;align-items:flex-end;gap:12px">
           <div class="fg" style="margin:0;flex:1">
             <label>美股投入本金（AUD）</label>
@@ -1229,33 +1443,40 @@ body.light .fh-mkt-badge.fh-mkt-night{color:#0f766e;background:rgba(15,118,110,.
         <div id="principal-status" style="margin-top:8px"></div>
       </div>
       <div class="card">
-        <div class="card-title">数据备份</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn btn-ghost" onclick="exportData()">⬇ 导出 JSON</button>
-          <button class="btn btn-ghost" onclick="document.getElementById('fi-import').click()">⬆ 导入 JSON</button>
+        <div class="card-title"><i class="ti ti-database"></i> 数据备份</div>
+        <div class="settings-grid-btns">
+          <button class="btn btn-ghost" onclick="exportData()"><i class="ti ti-download"></i> 导出 JSON</button>
+          <button class="btn btn-ghost" onclick="document.getElementById('fi-import').click()"><i class="ti ti-upload"></i> 导入 JSON</button>
           <input type="file" id="fi-import" accept=".json" style="display:none" onchange="importData(this)">
         </div>
         <div style="font-size:12px;color:var(--text3);margin-top:10px;line-height:1.5">导入会按文件更新持仓与设置；<strong>NAV 历史</strong>会与当前浏览器里已有的快照<strong>按日期合并</strong>（同一天保留更完整的一条）。</div>
       </div>
       <div class="card">
-        <div class="card-title">访问控制</div>
+        <div class="card-title"><i class="ti ti-shield-lock"></i> 访问控制</div>
         <div style="font-size:13px;color:var(--text2);line-height:1.55;margin-bottom:10px">若部署时在 Vercel 配置了 <code style="font-size:11px;color:var(--accent2)">SITE_PASSWORD</code>，进入站点需先登录。退出将清除登录状态。</div>
         <a class="btn btn-ghost" href="/api/logout">退出登录</a>
       </div>
-      <div style="margin-bottom:24px">
-        <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:12px">🔐 PIN 锁屏</div>
+      <div class="card">
+        <div class="card-title"><i class="ti ti-lock"></i> PIN 锁屏</div>
         <div style="font-size:12px;color:var(--text3);margin-bottom:12px;font-family:var(--mono);line-height:1.6">30分钟无操作后自动锁屏，支持键盘输入。不影响 Vercel 站点密码。</div>
         <div style="display:flex;gap:10px;flex-wrap:wrap">
-          <button type="button" class="btn btn-ghost btn-sm" onclick="setupPin()">🔑 设置 / 修改 PIN</button>
-          <button type="button" class="btn btn-ghost btn-sm" onclick="clearPin()">🗑 清除 PIN</button>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="setupPin()"><i class="ti ti-key"></i> 设置 / 修改 PIN</button>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="clearPin()"><i class="ti ti-trash"></i> 清除 PIN</button>
         </div>
       </div>
-      <div class="card" style="border-color:rgba(239,68,68,.3)">
-        <div class="card-title" style="color:var(--red)">危险操作</div>
-        <button class="btn btn-danger" onclick="clearAll()">🗑 清空全部数据</button>
+      <div class="card card-danger">
+        <div class="card-title" style="color:var(--red)"><i class="ti ti-alert-triangle"></i> 危险操作</div>
+        <button class="btn btn-danger" onclick="clearAll()"><i class="ti ti-trash"></i> 清空全部数据</button>
       </div>
     </div>
 
+  <footer class="app-footer">
+    <span class="app-footer-time" id="app-footer-time">—</span>
+    <div class="app-footer-actions">
+      <button type="button" class="btn btn-icon btn-sm" onclick="exportData()" title="导出"><i class="ti ti-download"></i></button>
+      <button type="button" class="btn btn-icon btn-sm" onclick="openModal()" title="添加资产"><i class="ti ti-plus"></i></button>
+    </div>
+  </footer>
   </div>
 </div>
 
@@ -1263,8 +1484,8 @@ body.light .fh-mkt-badge.fh-mkt-night{color:#0f766e;background:rgba(15,118,110,.
 <div class="overlay" id="modal-batch">
   <div class="modal" style="max-width:720px">
     <div class="modal-title">
-      📋 批量导入美股持仓
-      <button class="modal-x" onclick="closeModal('modal-batch')">✕</button>
+      <span><i class="ti ti-table-import"></i> 批量导入美股持仓</span>
+      <button class="modal-x" onclick="closeModal('modal-batch')" aria-label="关闭"><i class="ti ti-x"></i></button>
     </div>
     <div class="alert alert-info">已预填你的 Tiger 持仓数据，确认后点「导入全部」。价格会在导入后自动刷新。</div>
     <div style="margin-bottom:14px">
@@ -1287,7 +1508,7 @@ body.light .fh-mkt-badge.fh-mkt-night{color:#0f766e;background:rgba(15,118,110,.
   <div class="modal">
     <div class="modal-title">
       <span id="m-title">添加资产</span>
-      <button class="modal-x" onclick="closeModal('modal')">✕</button>
+      <button class="modal-x" onclick="closeModal('modal')" aria-label="关闭"><i class="ti ti-x"></i></button>
     </div>
 
     <div class="fg-row c2">
