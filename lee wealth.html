@@ -265,6 +265,29 @@ body:not(.light) .news-item:hover{background:rgba(255,255,255,.04)}
 .ov-events-ai-input:focus{outline:none;box-shadow:var(--ring)}
 .ov-events-ai-send{height:42px;padding:0 16px;flex-shrink:0}
 .ov-events-ai-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+/* 主页顶部 · 比特币实时价 */
+.btc-ticker-bar{background:linear-gradient(135deg,#1a1208 0%,#0f0f0f 45%,#0d1520 100%);border:1px solid rgba(247,147,26,.28);border-radius:var(--r-lg);padding:14px 20px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;box-shadow:0 0 0 1px rgba(247,147,26,.06) inset,0 8px 32px rgba(0,0,0,.35);position:relative;overflow:hidden}
+.btc-ticker-bar::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#f7931a 30%,#ffb347 50%,#f7931a 70%,transparent)}
+.btc-ticker-bar.loading .btc-price-usd{opacity:.5}
+.btc-ticker-left{display:flex;align-items:center;gap:14px;flex-wrap:wrap;min-width:0}
+.btc-ticker-icon{width:40px;height:40px;border-radius:50%;background:linear-gradient(145deg,#f7931a,#ffab40);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#1a0f00;flex-shrink:0;box-shadow:0 4px 16px rgba(247,147,26,.35)}
+.btc-ticker-meta{display:flex;flex-direction:column;gap:2px}
+.btc-ticker-label{font-size:11px;color:rgba(255,171,64,.75);font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase}
+.btc-ticker-name{font-size:15px;font-weight:600;color:#fff;letter-spacing:-.01em}
+.btc-ticker-prices{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.btc-price-usd{font-size:clamp(22px,4vw,28px);font-weight:700;font-family:var(--mono);font-variant-numeric:tabular-nums;color:#ffb347;letter-spacing:-.02em;line-height:1.1}
+.btc-price-cny{font-size:14px;font-family:var(--mono);color:rgba(255,255,255,.55);font-variant-numeric:tabular-nums}
+.btc-change{font-size:13px;font-weight:600;font-family:var(--mono);padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.06);font-variant-numeric:tabular-nums}
+.btc-ticker-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.btc-updated{font-size:11px;color:rgba(255,255,255,.35);font-family:var(--mono);white-space:nowrap}
+.btc-refresh-btn{height:32px;padding:0 12px;border-radius:var(--r-sm);border:1px solid rgba(247,147,26,.35);background:rgba(247,147,26,.1);color:#ffb347;font-size:12px;font-weight:500;cursor:pointer;font-family:var(--mono);transition:background .12s ease}
+.btc-refresh-btn:hover{background:rgba(247,147,26,.2)}
+body.light .btc-ticker-bar{background:linear-gradient(135deg,#fff8ef 0%,#fff 50%,#f8fafc 100%);border-color:rgba(234,88,12,.25);box-shadow:0 4px 20px rgba(28,25,23,.08)}
+body.light .btc-ticker-name{color:#292524}
+body.light .btc-price-usd{color:#c2410c}
+body.light .btc-price-cny{color:#78716c}
+body.light .btc-updated{color:#a8a29e}
+body.light .btc-change{background:rgba(41,37,36,.06)}
 .ov-insight-chip{font-size:12px;padding:5px 12px;border-radius:999px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);line-height:var(--lh-snug)}
 .ov-insight-chip.warn{border-color:rgba(245,158,11,.45);color:var(--gold);background:var(--gold-bg)}
 .ov-insight-chip.info{border-color:rgba(202,138,4,.4);color:var(--accent2);background:var(--accent-soft)}
@@ -865,6 +888,24 @@ body.light .fh-mkt-badge.fh-mkt-night{color:#0f766e;background:rgba(15,118,110,.
 
     <!-- OVERVIEW -->
     <div class="page active space-y-4 md:space-y-6" id="page-overview">
+      <div class="btc-ticker-bar" id="btc-ticker-bar" title="点击刷新">
+        <div class="btc-ticker-left">
+          <div class="btc-ticker-icon" aria-hidden="true">₿</div>
+          <div class="btc-ticker-meta">
+            <span class="btc-ticker-label">Real-time · BTC/USD</span>
+            <span class="btc-ticker-name">Bitcoin 比特币</span>
+          </div>
+          <div class="btc-ticker-prices">
+            <span class="btc-price-usd" id="btc-price-usd">—</span>
+            <span class="btc-price-cny" id="btc-price-cny">—</span>
+            <span class="btc-change" id="btc-change"></span>
+          </div>
+        </div>
+        <div class="btc-ticker-right">
+          <span class="btc-updated" id="btc-updated"></span>
+          <button type="button" class="btc-refresh-btn" onclick="event.stopPropagation();refreshBtcPrice()">↻ 刷新</button>
+        </div>
+      </div>
       <div id="goal-bar-wrap" style="margin-bottom:16px;background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);padding:12px 20px;box-shadow:var(--shadow-sm);display:flex;align-items:center;gap:24px;flex-wrap:wrap">
         <div style="flex:1;min-width:200px">
           <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">
@@ -2670,9 +2711,11 @@ function renderSidebar(){
   const audUsd=usdaud!=null&&usdaud>0?(1/usdaud).toFixed(5):null;
   if(audUsd!=null)fxParts.push(`<div class="fx-chip" title="1 澳元 = ${audUsd} 美元"><span>🇦🇺🇺🇸</span><span class="fx-chip-pair">AUD/USD</span><span class="fx-chip-rate">${audUsd}</span></div>`);
   fxParts.push(`<div class="fx-chip" id="gold-price-chip" title="上海金 AU9999 · 点击刷新" onclick="refreshGoldChip()" style="cursor:pointer"><span class="fx-chip-pair">🥇 Au/g</span><span class="fx-chip-rate" id="fc-gold">—</span></div>`);
+  fxParts.push(`<div class="fx-chip" id="btc-price-chip" title="Bitcoin · 点击刷新" onclick="refreshBtcPrice()" style="cursor:pointer"><span class="fx-chip-pair">₿ BTC</span><span class="fx-chip-rate" id="fc-btc">—</span></div>`);
   fxParts.push('<div class="fx-chip" id="td-expiry-chip" style="display:none" aria-live="polite"><span class="fx-chip-pair">📅 近到期</span><span class="fx-chip-rate" id="fc-td-expiry">—</span></div>');
   document.getElementById('fx-strip').innerHTML=fxParts.join('');
   updateGoldChip();
+  updateBtcChip();
   updateTdExpiryChip();
   updateGoalBar();
 }
@@ -4093,6 +4136,98 @@ async function fetchGoldPriceViaApi(){
   }catch(e){}
   return 0;
 }
+
+async function fetchBtcPriceViaApi(){
+  if(location.protocol==='file:')return null;
+  try{
+    const r=await fetch(location.origin+'/api/btc-price',{cache:'no-store'});
+    if(!r.ok)return null;
+    const d=await r.json();
+    if(d?.usd>0)return d;
+  }catch(e){}
+  return null;
+}
+
+async function fetchBtcPriceBinanceDirect(){
+  try{
+    const r=await fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT');
+    if(!r.ok)return null;
+    const d=await r.json();
+    const usd=parseFloat(d.lastPrice);
+    const change24hPct=parseFloat(d.priceChangePercent);
+    if(usd>1000)return{usd,change24hPct:Number.isFinite(change24hPct)?change24hPct:null,source:'binance'};
+  }catch(e){}
+  return null;
+}
+
+async function fetchBtcPrice(){
+  let q=await fetchBtcPriceViaApi();
+  if(q?.usd>0)return q;
+  return await fetchBtcPriceBinanceDirect();
+}
+
+function formatBtcUsd(n){
+  if(!Number.isFinite(n))return '—';
+  if(n>=10000)return '$'+n.toLocaleString('en-US',{maximumFractionDigits:0});
+  return '$'+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+function updateBtcTicker(q){
+  const usdEl=document.getElementById('btc-price-usd');
+  const cnyEl=document.getElementById('btc-price-cny');
+  const chgEl=document.getElementById('btc-change');
+  const timeEl=document.getElementById('btc-updated');
+  if(!usdEl)return;
+  if(!q||!(q.usd>0)){
+    usdEl.textContent='—';
+    if(cnyEl)cnyEl.textContent='—';
+    if(chgEl){chgEl.textContent='';chgEl.style.color='';}
+    updateBtcChip(null);
+    return;
+  }
+  if(!D.btcQuote)D.btcQuote={};
+  Object.assign(D.btcQuote,q);
+  D.btcQuote.updatedAt=Date.now();
+  usdEl.textContent=formatBtcUsd(q.usd);
+  const fxUsd=Number(D.fx?.USD)>0?Number(D.fx.USD):7.25;
+  if(cnyEl)cnyEl.textContent='≈ ¥'+Math.round(q.usd*fxUsd).toLocaleString('zh-CN');
+  if(chgEl&&q.change24hPct!=null&&Number.isFinite(q.change24hPct)){
+    const c=q.change24hPct;
+    chgEl.textContent=(c>=0?'+':'')+c.toFixed(2)+'% · 24h';
+    chgEl.style.color=c>=0?'var(--green)':'var(--red)';
+  }else if(chgEl){chgEl.textContent='';chgEl.style.color='';}
+  if(timeEl)timeEl.textContent=new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})+' 更新';
+  updateBtcChip(q);
+}
+
+function updateBtcChip(q){
+  const el=document.getElementById('fc-btc');
+  if(!el)return;
+  const data=q||D.btcQuote;
+  if(!data?.usd){el.textContent='—';return;}
+  el.textContent=formatBtcUsd(data.usd).replace('$','');
+}
+
+async function refreshBtcPrice(){
+  const bar=document.getElementById('btc-ticker-bar');
+  if(bar)bar.classList.add('loading');
+  try{
+    const q=await fetchBtcPrice();
+    updateBtcTicker(q);
+    return q;
+  }finally{
+    if(bar)bar.classList.remove('loading');
+  }
+}
+
+let btcAutoRefreshTimer=null;
+function startBtcAutoRefresh(){
+  if(btcAutoRefreshTimer)clearInterval(btcAutoRefreshTimer);
+  btcAutoRefreshTimer=setInterval(()=>{
+    if(document.getElementById('page-overview')?.classList.contains('active'))refreshBtcPrice();
+  },60000);
+}
+
 async function fetchGoldPrice(){
   let price=await fetchGoldPriceViaApi();
   if(price>0)return price;

@@ -16,6 +16,9 @@
     "api/gold-price.js": {
       "maxDuration": 15
     },
+    "api/btc-price.js": {
+      "maxDuration": 15
+    },
     "api/fund-price.js": {
       "maxDuration": 15
     },
