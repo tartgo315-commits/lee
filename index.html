@@ -3392,6 +3392,7 @@ function renderMajorEventsWatch(){
     else if(events.every(e=>eventDaysUntil(e.date)>0))rows.unshift(todayMarkerHtml());
   }
   listEl.innerHTML=rows.join('');
+  renderEventsAiMsgs();
 }
 
 function renderOverview(){
