@@ -228,12 +228,16 @@ body.light .topbar-btc-usd{color:#c2410c}
 .ov-events-list{display:flex;flex-direction:column;gap:0;max-height:460px;overflow-y:auto;scrollbar-width:thin}
 .ov-events-list::-webkit-scrollbar{width:5px}
 .ov-events-list::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
-.ov-event-row{display:grid;grid-template-columns:88px 1fr;gap:14px;padding:14px 0;border-bottom:1px solid var(--border);align-items:start}
+.ov-event-row{display:grid;grid-template-columns:minmax(108px,128px) 1fr;gap:14px;padding:14px 0;border-bottom:1px solid var(--border);align-items:start}
 .ov-event-row:last-child{border-bottom:none}
 .ov-event-row.soon{background:rgba(234,179,8,.04);margin:0 -8px;padding:14px 8px;border-radius:var(--r-sm)}
 .ov-event-row.personal{border-left:2px solid var(--teal);padding-left:10px;margin-left:-2px}
 .ov-event-date{font-family:var(--mono);font-size:13px;color:var(--text3);line-height:1.5}
 .ov-event-date b{display:block;font-size:16px;color:var(--text);font-weight:600;margin-bottom:3px}
+.ov-event-date .tz-dual{margin-bottom:4px}
+.ov-event-date .tz-line{line-height:1.45}
+.ov-event-date .tz-line.cn{font-size:14px;font-weight:600;color:var(--text)}
+.ov-event-date .tz-line.us{font-size:12px;color:var(--text3);margin-top:2px}
 .ov-event-date .countdown{color:var(--gold);font-size:12px;margin-top:4px;font-weight:500}
 .ov-event-body{min-width:0}
 .ov-event-title{font-size:16px;font-weight:600;color:var(--text);line-height:1.45;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -3272,6 +3276,62 @@ function eventDaysUntil(dateStr){
   return Math.round((d-today)/86400000);
 }
 
+const EVENT_TZ_CN='Asia/Shanghai';
+const EVENT_TZ_US='America/New_York';
+
+function eventSourceTimeZone(ev){
+  if(ev.timeZone)return ev.timeZone;
+  const m={us:EVENT_TZ_US,cn:EVENT_TZ_CN,au:'Australia/Sydney'};
+  return m[ev.region]||'UTC';
+}
+
+function eventDefaultClock(ev){
+  if(ev.time)return ev.time;
+  if(ev.personal)return null;
+  if(ev.region==='us')return ev.cat==='monetary'?'14:00':ev.cat==='market'?'08:30':'09:00';
+  if(ev.region==='cn')return '09:00';
+  return null;
+}
+
+function dateTimeInZoneToUtc(dateStr,timeStr,tz){
+  const[y,mo,d]=dateStr.split('-').map(Number);
+  const[hh,mi]=(timeStr||'12:00').split(':').map(Number);
+  let guess=Date.UTC(y,mo-1,d,hh,mi);
+  for(let i=0;i<4;i++){
+    const parts=new Intl.DateTimeFormat('en-CA',{timeZone:tz,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(new Date(guess));
+    const got={};
+    parts.forEach(p=>{if(p.type!=='literal')got[p.type]=p.value;});
+    const gotMs=Date.UTC(+got.year,+got.month-1,+got.day,+got.hour,+got.minute);
+    guess+=Date.UTC(y,mo-1,d,hh,mi)-gotMs;
+  }
+  return new Date(guess);
+}
+
+function fmtEventInTz(utcDate,tz,withTime){
+  const opts={timeZone:tz,month:'numeric',day:'numeric'};
+  if(withTime){opts.hour='2-digit';opts.minute='2-digit';opts.hour12=false;}
+  const parts=new Intl.DateTimeFormat('zh-CN',opts).formatToParts(utcDate);
+  const m=parts.find(p=>p.type==='month')?.value;
+  const day=parts.find(p=>p.type==='day')?.value;
+  if(!withTime)return `${m}月${day}日`;
+  const h=parts.find(p=>p.type==='hour')?.value;
+  const mi=parts.find(p=>p.type==='minute')?.value;
+  return `${m}月${day}日 ${h}:${mi}`;
+}
+
+function renderEventDualTzHtml(ev){
+  const clock=eventDefaultClock(ev);
+  if(!clock){
+    const d=new Date(ev.date+'T12:00:00');
+    const lbl=`${d.getMonth()+1}月${d.getDate()}日`;
+    return `<div class="tz-dual"><div class="tz-line cn">🇨🇳 ${lbl}</div><div class="tz-line us">🇺🇸 ${lbl}</div></div>`;
+  }
+  const utc=dateTimeInZoneToUtc(ev.date,clock,eventSourceTimeZone(ev));
+  const cn=fmtEventInTz(utc,EVENT_TZ_CN,true);
+  const us=fmtEventInTz(utc,EVENT_TZ_US,true);
+  return `<div class="tz-dual"><div class="tz-line cn">🇨🇳 ${cn} 北京</div><div class="tz-line us">🇺🇸 ${us} 美东</div></div>`;
+}
+
 function navDeltaAroundDate(dateStr){
   const snaps=(D.navHistory||[]).filter(n=>n&&n.date&&n.cny!=null&&!isNaN(Number(n.cny))).sort((a,b)=>a.date.localeCompare(b.date));
   if(snaps.length<2)return null;
@@ -3506,8 +3566,7 @@ function renderMajorEventsWatch(){
       rows.push(todayMarkerHtml());
       todayMarkerInserted=true;
     }
-    const d=new Date(ev.date+'T00:00:00');
-    const dateLbl=`${d.getMonth()+1}月${d.getDate()}日`;
+    const d=new Date(ev.date+'T12:00:00');
     const yearLbl=d.getFullYear()!==today.getFullYear()?` ${d.getFullYear()}`:'';
     let countdown='';
     if(days===0)countdown='今天';
@@ -3519,7 +3578,7 @@ function renderMajorEventsWatch(){
     const soon=!isPast&&days<=14;
     const impactCls=ev.impact==='high'?'impact-high':'impact-med';
     rows.push(`<div class="ov-event-row${isToday?' today':''}${isPast?' past':''}${soon&&!isToday?' soon':''}${ev.personal?' personal':''}">
-      <div class="ov-event-date"><b>${dateLbl}</b><span>${yearLbl.trim()||'本年'}</span>${countdown?`<div class="countdown${isPast?' past-days':''}">${countdown}</div>`:''}</div>
+      <div class="ov-event-date">${renderEventDualTzHtml(ev)}<span>${yearLbl.trim()||'本年'}</span>${countdown?`<div class="countdown${isPast?' past-days':''}">${countdown}</div>`:''}</div>
       <div class="ov-event-body">
         <div class="ov-event-title">${escOvHtml(ev.title)}</div>
         ${renderEventImpactHtml(ev,isPast,isToday)}
