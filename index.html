@@ -47,12 +47,12 @@ tailwind.config={
   --shadow-sm:none;--shadow-md:0 4px 20px rgba(26,26,26,.06);--shadow-float:0 12px 40px rgba(26,26,26,.12);
   --ring:0 0 0 1px var(--text-1);--gutter-x:20px;--card-pad:18px;--section-y:16px;--list-y:10px;
   --s-1:4px;--s-2:8px;--s-3:12px;--s-4:16px;--s-5:20px;--s-6:24px;
-  --text-xs:12px;--text-sm:13.5px;--text-base:14px;--text-md:14px;--text-lg:15px;
+  --text-xs:12.5px;--text-sm:14px;--text-base:15px;--text-md:15px;--text-lg:16px;
   --lh-body:1.6;--lh-snug:1.45;--lh-tight:1.25;--track-label:.06em;--track-wide:.04em;
   /* typography scale */
-  --fs-nav:52px;--fs-core:22px;--fs-title:15px;--fs-prod-name:14px;--fs-prod-sub:12.5px;
-  --fs-amt:14px;--fs-pnl:12px;--fs-caption:12px;--fs-tab:13.5px;--fs-fx-lbl:12.5px;--fs-fx-val:13px;
-  --fs-ev-date:14px;--fs-ev-tz:11.5px;--fs-ev-body:13.5px;
+  --fs-nav:52px;--fs-core:24px;--fs-title:16px;--fs-prod-name:15px;--fs-prod-sub:13.5px;
+  --fs-amt:15px;--fs-pnl:13px;--fs-caption:13px;--fs-tab:14px;--fs-fx-lbl:13px;--fs-fx-val:13.5px;
+  --fs-ev-date:15px;--fs-ev-tz:12.5px;--fs-ev-body:14px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{height:100%;overflow-x:hidden;color-scheme:light}
@@ -180,7 +180,7 @@ body{
 .ov-events-hd{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:12px}
 .ov-events-sub{color:var(--text-4);margin-top:4px}
 .ov-events-filters,.ov-events-ai-chips{display:flex;flex-wrap:wrap;gap:6px}
-.ov-events-filter{font-size:12px;padding:5px 12px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-card);color:var(--text-2);cursor:pointer;font-family:var(--font)}
+.ov-events-filter{font-size:13px;padding:5px 12px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-card);color:var(--text-2);cursor:pointer;font-family:var(--font)}
 .ov-events-filter.active{background:var(--text-1);color:#fff;border-color:var(--text-1)}
 .ov-events-list{max-height:420px;overflow-y:auto}
 .ov-event-row{display:grid;grid-template-columns:80px 1fr;gap:12px;padding:14px 0;border-bottom:1px solid var(--border-light);align-items:start}
@@ -251,7 +251,7 @@ body{
 .ov-goal-meta{display:flex;justify-content:space-between;margin-top:10px;color:var(--text-4)}
 .ov-goal-aside{margin-top:12px;padding-top:10px;border-top:1px solid var(--border-light)}
 .ov-goal-aside-lbl{color:var(--text-4)}
-.ov-goal-remaining{display:block;font-size:var(--fs-prod-name);font-weight:500;color:var(--dn);margin-top:4px}
+.ov-goal-remaining{display:block;font-size:var(--fs-title);font-weight:500;color:var(--dn);margin-top:4px}
 .ov-goal-eta{display:block;color:var(--text-4);margin-top:4px;text-align:right}
 
 /* Side combo: alloc + liquidity */
@@ -259,7 +259,7 @@ body{
 .ov-donut-wrap{position:relative;height:80px;width:80px;flex-shrink:0}
 .ov-donut-wrap.sm{height:80px;width:80px}
 .ov-liq-row{margin-bottom:10px}
-.ov-liq-hd{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px;color:var(--text-2);margin-bottom:4px;flex-wrap:wrap}
+.ov-liq-hd{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;color:var(--text-2);margin-bottom:4px;flex-wrap:wrap}
 .ov-liq-hd b{font-size:11px;color:var(--text-3);font-weight:500;text-align:right;white-space:nowrap}
 .ov-liq-track{height:4px;background:var(--bg-hover);border-radius:2px;overflow:hidden;width:80px;margin-bottom:8px}
 .ov-liq-fill{height:100%;border-radius:2px}
