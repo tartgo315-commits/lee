@@ -4318,7 +4318,12 @@ async function refreshAllQuotes(){
     if(btn){btn.disabled=!!on;btn.style.opacity=on?'.55':'1';}
     if(snapBtn){snapBtn.disabled=!!on;snapBtn.style.opacity=on?'.55':'1';}
   };
+  if(quoteRefreshBusy){
+    showToast({message:'正在刷新中，请稍候…',type:'info',duration:2200});
+    return;
+  }
   busy(true);
+  quoteRefreshBusy=true;
   __woSyncToastId=showToast({message:'正在同步行情与快照…',type:'loading',duration:0});
   const lines=[];
   const show=msg=>{if(strip) strip.innerHTML='<div class="alert alert-info" style="margin:0">'+msg+'</div>';};
@@ -4424,8 +4429,66 @@ async function refreshAllQuotes(){
     dismissToast(__woSyncToastId);
     __woSyncToastId=null;
     busy(false);
+    quoteRefreshBusy=false;
     try{updateTdExpiryChip();}catch(e){}
   }
+}
+
+const AUTO_QUOTE_REFRESH_MS=60000;
+let autoQuoteRefreshTimer=null,quoteRefreshBusy=false;
+
+/** 每分钟静默刷新行情（不含快照与资讯；与手动「刷新行情」互斥） */
+async function autoRefreshQuotesSilent(){
+  if(quoteRefreshBusy)return;
+  quoteRefreshBusy=true;
+  try{
+    maybeRollAuWeeklyCompound();
+    try{
+      const fx=await fetchCNYRates();
+      if(fx){Object.assign(D.fx,fx);FX_RATES.syncCross();save();}
+    }catch(e){}
+    try{
+      const btc=await fetchBtcPrice();
+      if(btc?.usd>0)updateBtcTicker(btc);
+    }catch(e){}
+    const golds=D.products.filter(p=>p.type==='gold');
+    if(golds.length){
+      try{
+        const price=await fetchGoldPrice();
+        if(price>0){
+          golds.forEach(g=>{g.goldPrice=price;g.goldUpdated=today();});
+          updateGoldChip();
+        }
+      }catch(e){}
+    }
+    const stocks=D.products.filter(p=>p.type==='stock_us'&&p.ticker);
+    if(stocks.length){
+      await Promise.all(stocks.map(async s=>{
+        try{
+          const price=await fetchYahooStockPrice(s.ticker);
+          if(price){s.currentPrice=price;s.updatedAt=today();}
+        }catch(e){}
+      }));
+    }
+    const funds=D.products.filter(p=>p.type==='fund_cn'&&p.fundCode&&String(p.fundCode).trim()&&(p.fundCurrency||'CNY')==='CNY');
+    if(funds.length){
+      await Promise.all(funds.map(async f=>{
+        try{
+          const res=await fetchFundPrice(f.fundCode);
+          if(res.price>0){f.fundPrice=res.price;f.name=f.name||res.name;f.updatedAt=res.date||today();}
+        }catch(e){}
+      }));
+    }
+    save();
+    redrawAllAfterFullQuoteRefresh();
+    try{updateTdExpiryChip();}catch(e){}
+  }catch(e){console.error('autoRefreshQuotesSilent',e);}
+  finally{quoteRefreshBusy=false;}
+}
+
+function startAutoQuoteRefresh(){
+  if(autoQuoteRefreshTimer)clearInterval(autoQuoteRefreshTimer);
+  autoQuoteRefreshTimer=setInterval(()=>autoRefreshQuotesSilent(),AUTO_QUOTE_REFRESH_MS);
 }
 
 function refreshOVTotals(){
@@ -5303,6 +5366,7 @@ renderSidebar();
 updateGoldChip();
 refreshBtcPrice();
 startBtcAutoRefresh();
+startAutoQuoteRefresh();
 initFinnhubUsLive();
 
 // Live reverse rate preview as user types
