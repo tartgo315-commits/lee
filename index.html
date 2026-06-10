@@ -207,10 +207,17 @@ body{
 .ov-holdings-card .card-title{margin-bottom:10px}
 .ov-link-all{font-size:12px;color:var(--text-4);text-decoration:none;display:inline-flex;align-items:center;gap:2px;font-weight:400}
 .ov-link-all:hover{color:var(--text-1)}
-#ov-regions{display:flex;flex-direction:column;gap:8px}
-.ov-col{background:var(--bg-card);border:1px solid var(--border-light);border-radius:var(--radius-sm);overflow:hidden}
-.ov-col-header{padding:12px 14px;border-bottom:1px solid var(--border-light);background:var(--bg-muted)}
-.ov-col-body{padding:4px 8px}
+#ov-regions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:stretch}
+.ov-col{background:var(--bg-card);border:1px solid var(--border-light);border-radius:var(--radius-sm);overflow:hidden;display:flex;flex-direction:column;min-width:0;min-height:0}
+.ov-col-header{padding:12px 14px;border-bottom:1px solid var(--border-light);background:var(--bg-muted);flex-shrink:0}
+.ov-col-body{padding:4px 8px;flex:1;min-height:0;max-height:min(420px,55vh);overflow-y:auto;scrollbar-width:thin}
+.ov-col-body::-webkit-scrollbar{width:4px}
+.ov-col-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+.ov-col-name{font-size:13px;font-weight:500;color:var(--text-1)}
+.ov-col-name-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.ov-col-meta{font-size:11px;color:var(--text-4);background:var(--bg-hover);padding:2px 8px;border-radius:10px;white-space:nowrap}
+.ov-head-triple{margin-top:0}
+.ov-head-cell-val{font-size:12px}
 .ov-prod-row{display:grid;grid-template-columns:minmax(0,1fr) auto min-content;gap:10px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--border-light);background:var(--bg-card);border-radius:0;margin:0}
 .ov-prod-row:last-child{border-bottom:none}
 .ov-prod-row:hover{background:var(--bg-hover)}
@@ -221,7 +228,7 @@ body{
 .ov-prod-cny{font-size:11px;color:var(--text-4);text-align:right}
 .ov-prod-pnl{font-size:12px;text-align:right}
 .ov-prod-pnl.pos{color:var(--up)}.ov-prod-pnl.neg{color:var(--dn)}
-.ov-add-btn{padding:10px 14px;border-top:1px dashed var(--border-light)}
+.ov-add-btn{padding:10px 14px;border-top:1px dashed var(--border-light);flex-shrink:0}
 .ov-empty{padding:20px;text-align:center;color:var(--text-4);font-size:13px}
 
 /* Goal sidebar */
@@ -406,6 +413,8 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
   .c2,.c3,.c4,.fg-row.c2,.fg-row.c3,.fg-row.c4{grid-template-columns:1fr!important}
   .product-row,.product-row.hdr{grid-template-columns:1fr;gap:6px}
   .ov-layout{grid-template-columns:1fr}
+  #ov-regions{grid-template-columns:1fr}
+  .ov-col-body{max-height:none}
   .ov-event-row{grid-template-columns:1fr}
   .main{padding:12px 14px}
 }
