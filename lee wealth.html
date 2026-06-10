@@ -2517,6 +2517,48 @@ function aiBucketPct(p){
   if(v>=25)return `中等 ${v.toFixed(0)}%`;
   return `分散 ${v.toFixed(0)}%`;
 }
+function currencyToCnyRate(currency){
+  const c=String(currency||'CNY').toUpperCase();
+  if(c==='CNY')return 1;
+  if(c==='USD')return FX_RATES.USD_TO_CNY;
+  if(c==='AUD')return FX_RATES.AUD_TO_CNY;
+  return Number(D.fx?.[c])>0?Number(D.fx[c]):1;
+}
+function assetV2CnyValue(asset){
+  if(!asset||typeof asset!=='object')return 0;
+  const cur=String(asset.currency||'CNY').toUpperCase();
+  const qty=Number(asset.holding_qty)||0;
+  if(asset.asset_type==='Cash'||asset.asset_type==='Lock')return qty*currencyToCnyRate(cur);
+  const px=Number(asset.current_price);
+  const price=isFinite(px)&&px>0?px:(Number(asset.cost_price)>0?Number(asset.cost_price):0);
+  return qty*price*currencyToCnyRate(cur);
+}
+function buildRawAssetsFromProducts(){
+  return (D.products||[]).map(productToAssetV2).filter(Boolean);
+}
+/** 脱敏载荷：仅保留市场/类型/币种、占比与风控状态，抹除账户归属与精确数量 */
+function prepareSanitizedPayload(rawAssets,totalNav){
+  const TOTAL_NAV=Number(totalNav)>0?Number(totalNav):totalCNY();
+  if(!Array.isArray(rawAssets)||TOTAL_NAV<=0)return [];
+  return rawAssets.map(asset=>{
+    if(!asset||typeof asset!=='object')return null;
+    const cnyVal=assetV2CnyValue(asset);
+    const allocationPct=TOTAL_NAV>0?cnyVal/TOTAL_NAV*100:0;
+    const rp=asset.risk_profile||{};
+    const px=Number(asset.current_price);
+    const sl=Number(rp.stop_loss_price);
+    const triggered=!!rp.is_triggered||(rp.has_stop_loss&&sl>0&&px>0&&px<=sl);
+    return {
+      market:asset.market||'—',
+      asset_type:asset.asset_type||'Investment',
+      currency:String(asset.currency||'CNY').toUpperCase(),
+      allocation_percentage:Math.round(allocationPct*10)/10,
+      allocation_bucket:aiBucketPct(allocationPct),
+      notional_cny_blurred:aiRoundWan(cnyVal),
+      status:triggered?'TRIGGERED_WARNING':'NORMAL'
+    };
+  }).filter(Boolean);
+}
 function buildSanitizedPortfolio(){
   const fx=D.fx||{};
   const cny=totalCNY();
@@ -2568,6 +2610,7 @@ function buildSanitizedPortfolio(){
   const cnPct=cny>0?totalCNY('cn')/cny*100:0;
   const goalAmt=D.goal?.amount||0;
   const goalPct=goalAmt>0?(cny/goalAmt*100):null;
+  const payload=prepareSanitizedPayload(buildRawAssetsFromProducts(),cny);
   const lines=[
     `总净值（脱敏）：${aiBucketAmt(cny)}（CNY 口径，精确值已模糊）`,
     `汇率快照：USD/CNY=${fx.USD||'—'} · AUD/CNY=${fx.AUD||'—'}`,
@@ -2586,9 +2629,16 @@ function buildSanitizedPortfolio(){
     '【定存】',
     tds.length?tds.map(t=>`${t.code} · ${t.currency} · ${t.principalBucket} · ${t.ratePct}%p.a. · 距到期${t.daysToMaturity!=null?t.daysToMaturity+'天':'—'}`).join('\n'):'无',
     '',
-    `【NAV 趋势（近5条，脱敏）】${navTrend||'无'}`
+    `【NAV 趋势（近5条，脱敏）】${navTrend||'无'}`,
+    '',
+    '【资产占比矩阵（脱敏 JSON）】',
+    payload.length?payload.map(p=>`${p.market}·${p.asset_type}·${p.currency} · 占比${p.allocation_percentage}%（${p.allocation_bucket}）· 名义${aiBucketAmt(p.notional_cny_blurred)} · ${p.status}`).join('\n'):'无'
   ];
   return lines.join('\n');
+}
+function getSanitizedPortfolioPayload(){
+  const cny=totalCNY();
+  return prepareSanitizedPayload(buildRawAssetsFromProducts(),cny);
 }
 
 function runAiAdvisor(){
@@ -2855,6 +2905,7 @@ async function sendAiChatMessage(){
       body:JSON.stringify({
         mode:'chat',
         portfolio:aiChatState.portfolio,
+        portfolioPayload:getSanitizedPortfolioPayload(),
         messages:aiChatState.messages,
         provider,
         sanitized:true
@@ -2913,12 +2964,13 @@ async function fetchAiAdvice(){
   diagnosis.innerHTML='<div class="ai-pb-loading">💎 CIO 正在审阅脱敏持仓摘要，约需 5–15 秒…</div>';
 
   const portfolio=buildSanitizedPortfolio();
+  const portfolioPayload=getSanitizedPortfolioPayload();
 
   try{
     const r=await fetch('/api/ai-advisor',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({mode:'diagnose',portfolio,provider,sanitized:true})
+      body:JSON.stringify({mode:'diagnose',portfolio,portfolioPayload,provider,sanitized:true})
     });
     const data=await r.json();
     if(data.advice){
@@ -3246,12 +3298,13 @@ async function sendEventsAiChat(){
   if(sendBtn){sendBtn.disabled=true;sendBtn.textContent='…';}
 
   const portfolio=buildSanitizedPortfolio();
+  const portfolioPayload=getSanitizedPortfolioPayload();
   const eventsContext=buildEventsCalendarContext();
   try{
     const r=await fetch('/api/ai-advisor',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({mode:'events',eventsContext,portfolio,messages:eventsAiChat.messages,provider,sanitized:true})
+      body:JSON.stringify({mode:'events',eventsContext,portfolio,portfolioPayload,messages:eventsAiChat.messages,provider,sanitized:true})
     });
     const data=await r.json();
     if(data.advice){
@@ -3487,7 +3540,7 @@ function renderOverview(){
       totalAUD_us = fromCNY(rcny,'AUD');
       const totalUSD = fromCNY(rcny,'USD');
       pnlAUD = totalAUD_us - principalAUD;
-      const principalUSD = toCNY(principalAUD,'AUD') / (D.fx.USD||7.25);
+      const principalUSD = toCNY(principalAUD,'AUD') / FX_RATES.USD_TO_CNY;
       pnlUSD = totalUSD - principalUSD;
       const principalCNY = toCNY(principalAUD,'AUD');
       pnlCNY = rcny - principalCNY;
@@ -3987,7 +4040,7 @@ function updateBtcTicker(q){
   Object.assign(D.btcQuote,q);
   D.btcQuote.updatedAt=Date.now();
   usdEl.textContent=formatBtcUsd(q.usd);
-  const fxUsd=Number(D.fx?.USD)>0?Number(D.fx.USD):7.25;
+  const fxUsd=FX_RATES.USD_TO_CNY;
   if(cnyEl)cnyEl.textContent='≈¥'+Math.round(q.usd*fxUsd).toLocaleString('zh-CN');
   if(chgEl&&q.change24hPct!=null&&Number.isFinite(q.change24hPct)){
     const c=q.change24hPct;

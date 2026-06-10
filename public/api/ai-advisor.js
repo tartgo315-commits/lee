@@ -70,8 +70,12 @@ function trimMessages(messages) {
   return clean.slice(-MAX_HISTORY);
 }
 
-function portfolioContext(portfolio, sanitized) {
-  return `${sanitized ? '【脱敏持仓摘要】' : '【持仓数据】'}\n${portfolio}`;
+function portfolioContext(portfolio, sanitized, portfolioPayload) {
+  let ctx = `${sanitized ? '【脱敏持仓摘要】' : '【持仓数据】'}\n${portfolio}`;
+  if (sanitized && Array.isArray(portfolioPayload) && portfolioPayload.length) {
+    ctx += `\n\n【脱敏占比矩阵】\n${JSON.stringify(portfolioPayload)}`;
+  }
+  return ctx;
 }
 
 export default async function handler(req, res) {
@@ -97,7 +101,7 @@ export default async function handler(req, res) {
   }
 
   const body = await readJsonBody(req);
-  const { portfolio, provider, sanitized, mode = 'diagnose', messages, eventsContext } = body;
+  const { portfolio, portfolioPayload, provider, sanitized, mode = 'diagnose', messages, eventsContext } = body;
 
   const isEventsChat = mode === 'events';
   const isChat = mode === 'chat' || isEventsChat;
@@ -115,7 +119,7 @@ export default async function handler(req, res) {
   }
 
   const history = trimMessages(messages);
-  const ctx = portfolio ? portfolioContext(portfolio, sanitized) : '';
+  const ctx = portfolio ? portfolioContext(portfolio, sanitized, portfolioPayload) : '';
 
   let chatSystem = `${CHAT_PROMPT}\n\n${ctx}`;
   if (isEventsChat) {
