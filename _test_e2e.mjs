@@ -34,6 +34,7 @@ const seed = {
   goal: { amount: 1500000, currency: 'CNY', label: '存款目标' },
 };
 
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 let passed = 0;
 let failed = 0;
 function ok(c, m) {
@@ -44,7 +45,7 @@ function ok(c, m) {
 const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox'] });
 try {
   const page = await browser.newPage();
-  await page.goto(URL, { waitUntil: 'networkidle2', timeout: 30000 });
+  await page.goto(URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
 
   // seed localStorage
   await page.evaluate((key, data) => {
@@ -54,7 +55,7 @@ try {
     localStorage.setItem('wo_theme_v', '5dark');
     localStorage.removeItem('wo_light');
   }, SK, seed);
-  await page.reload({ waitUntil: 'networkidle2' });
+  await page.reload({ waitUntil: 'domcontentloaded' });
 
   // dismiss banners if any
   await page.evaluate(() => {
@@ -117,15 +118,15 @@ try {
 
   // FX page
   await page.click('#nav-fx');
-  await page.waitForTimeout(500);
+  await sleep(500);
   const fxUsd = await page.$eval('#fx-usd', (el) => el.value).catch(() => '');
   ok(fxUsd === '7.24' || fxUsd === '7.240', `汇率页 USD 默认 ${fxUsd}`);
 
   // local diagnose (no API)
   await page.click('#nav-overview');
-  await page.waitForTimeout(300);
+  await sleep(300);
   await page.evaluate(() => { if (typeof runAiAdvisor === 'function') runAiAdvisor(); });
-  await page.waitForTimeout(800);
+  await sleep(800);
   const diagHtml = await page.$eval('#ai-diagnosis-output', (el) => el.innerHTML).catch(() => '');
   ok(diagHtml.length > 50, '本地诊断有输出');
 
