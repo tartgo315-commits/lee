@@ -1617,8 +1617,31 @@ function scheduleOverviewLiveRefresh(){
     if(!__ovLiveDirty)return;
     __ovLiveDirty=false;
     if(!document.getElementById('page-overview')?.classList.contains('active'))return;
-    try{renderOverview();}catch(e){console.error('scheduleOverviewLiveRefresh',e);}
-  },280);
+    try{
+      maybeRollAuWeeklyCompound();
+      renderOverview();
+    }catch(e){console.error('scheduleOverviewLiveRefresh',e);}
+  },150);
+}
+function patchOverviewStockRow(sym,price){
+  if(!document.getElementById('page-overview')?.classList.contains('active'))return;
+  const T=String(sym||'').trim().toUpperCase();
+  const p=D.products.find(x=>x.type==='stock_us'&&String(x.ticker||'').trim().toUpperCase()===T);
+  if(!p||!(price>0))return;
+  document.querySelectorAll('#ov-regions .ov-prod-row[data-ov-ticker]').forEach(row=>{
+    if(String(row.dataset.ovTicker||'').trim().toUpperCase()!==T)return;
+    const shares=p.shares||0,cost=p.costPrice||0;
+    const mkt=shares*price,pnlUSD=shares*(price-cost),pct=cost>0?(price-cost)/cost*100:0;
+    const pxEl=row.querySelector('.ov-prod-px');
+    if(pxEl){pxEl.textContent=fmtUsdShare(price);pxEl.classList.remove('wait');}
+    const amtEl=row.querySelector('.ov-prod-amt');
+    if(amtEl)amtEl.textContent=fc(mkt,'USD',2);
+    const pnlEl=row.querySelector('.ov-prod-pnl');
+    if(pnlEl){
+      pnlEl.className='ov-prod-pnl '+(pnlUSD>=0?'pos':'neg');
+      pnlEl.innerHTML=(pnlUSD>=0?'+':'')+fc(pnlUSD,'USD',2)+' ('+(pnlUSD>=0?'+':'')+safePctFixed(pct,1)+'%)';
+    }
+  });
 }
 const finnhubSubscribed=new Set();
 function finnhubDesiredSymbols(){
@@ -1701,7 +1724,8 @@ function patchUsStockLiveRow(sym,price){
   const prev=parseFloat(p.currentPrice)||0;
   p.currentPrice=price;
   p.updatedAt=today();
-  if(prev!==price)scheduleOverviewLiveRefresh();
+  patchOverviewStockRow(T,price);
+  scheduleOverviewLiveRefresh();
   debouncedFinnhubSave();
   const row=[...document.querySelectorAll('#page-us .product-row[data-us-ticker]')].find(r=>r.dataset.usTicker===T);
   if(row){
@@ -1818,7 +1842,11 @@ function mergeYahooFinnhubPrice(yPx,fhRow,sym){
 async function pollFinnhubQuotesOnce(){
   /* 不在此用 document.hidden 直接 return：手机切后台/系统省电会导致长时间不轮询，页面上像「股价死了」。 */
   fetchCNYRates().then(fx=>{
-    if(fx){Object.assign(D.fx,fx);FX_RATES.syncCross();save();renderSidebar();scheduleOverviewLiveRefresh();}
+    if(fx){
+      const prevU=FX_RATES.USD_TO_CNY,prevA=FX_RATES.AUD_TO_CNY;
+      Object.assign(D.fx,fx);FX_RATES.syncCross();save();renderSidebar();
+      if(Math.abs(FX_RATES.USD_TO_CNY-prevU)>1e-6||Math.abs(FX_RATES.AUD_TO_CNY-prevA)>1e-6)scheduleOverviewLiveRefresh();
+    }
   }).catch(()=>{});
   const syms=[...finnhubDesiredSymbols()];
   if(!syms.length)return;
@@ -3472,11 +3500,12 @@ function renderOverview(){
   maybeRollAuWeeklyCompound();
   const cny=totalCNY(),usd=fromCNY(cny,'USD'),aud=fromCNY(cny,'AUD');
   document.getElementById('ov-cny').textContent=fc(cny,'CNY');
-  document.getElementById('ov-cny-sub').textContent=D.products.length+' 个资产项目';
   document.getElementById('ov-usd').textContent=fc(usd,'USD');
   document.getElementById('ov-usd-sub').textContent='1 USD = ¥'+FX_RATES.USD_TO_CNY;
   document.getElementById('ov-aud').textContent=fc(aud,'AUD');
   document.getElementById('ov-aud-sub').textContent='1 AUD = ¥'+FX_RATES.AUD_TO_CNY;
+  const subEl=document.getElementById('ov-cny-sub');if(subEl)subEl.textContent=D.products.length+' 个资产项目';
+  if(D.btcQuote?.usd>0){const hb=document.getElementById('ov-hero-btc');if(hb)hb.textContent=formatBtcUsd(D.btcQuote.usd);}
 
   const regions=[
     {id:'cn',flag:'🇨🇳',name:'中国境内',cur:'CNY'},
@@ -3521,7 +3550,7 @@ function renderOverview(){
           cnyStr='';
           pnl=price?`<div class="ov-prod-pnl ${pnlUSD>=0?'pos':'neg'}">${pnlUSD>=0?'+':''}${fc(pnlUSD,'USD',2)} (${pnlUSD>=0?'+':''}${safePctFixed(pct,1)}%)</div>`:'';
           const slWarn=isStopLossTriggered(p)||isStopLossNear(p)?' crcl-warn':'';
-          return `<div class="ov-prod-row${slWarn}">
+          return `<div class="ov-prod-row${slWarn}" data-ov-ticker="${escAttr(tick)}">
           <div class="ov-prod-main">
             ${nameHtml||`<div class="ov-prod-name">${escOvHtml(name)}</div>`}
             ${sub?`<div class="ov-prod-sub">${escOvHtml(sub)}</div>`:''}
@@ -4100,9 +4129,11 @@ function updateBtcTicker(q){
   const usdEl=document.getElementById('btc-price-usd');
   const cnyEl=document.getElementById('btc-price-cny');
   const chgEl=document.getElementById('btc-change');
-  if(!usdEl)return;
+  const heroBtc=document.getElementById('ov-hero-btc');
+  if(!usdEl&&!heroBtc)return;
   if(!q||!(q.usd>0)){
-    usdEl.textContent='—';
+    if(usdEl)usdEl.textContent='—';
+    if(heroBtc)heroBtc.textContent='—';
     if(cnyEl)cnyEl.textContent='';
     if(chgEl){chgEl.textContent='';chgEl.style.color='';}
     return;
@@ -4110,7 +4141,9 @@ function updateBtcTicker(q){
   if(!D.btcQuote)D.btcQuote={};
   Object.assign(D.btcQuote,q);
   D.btcQuote.updatedAt=Date.now();
-  usdEl.textContent=formatBtcUsd(q.usd);
+  const usdTxt=formatBtcUsd(q.usd);
+  if(usdEl)usdEl.textContent=usdTxt;
+  if(heroBtc)heroBtc.textContent=usdTxt;
   const fxUsd=FX_RATES.USD_TO_CNY;
   if(cnyEl)cnyEl.textContent='≈¥'+Math.round(q.usd*fxUsd).toLocaleString('zh-CN');
   if(chgEl&&q.change24hPct!=null&&Number.isFinite(q.change24hPct)){
@@ -4204,7 +4237,7 @@ async function refreshStocks(){
     }catch(e){fail.push(s.ticker);}
   }
   save();renderRegion('us');renderSidebar();
-  refreshOVTotals();
+  scheduleOverviewLiveRefresh();
   el.innerHTML=fail.length
     ?`<div class="alert alert-warn">✅ 更新 ${ok} 个 ⚠️ 失败: ${fail.join(', ')}（多源综合：Yahoo Chart / Yahoo Quote / Stooq；失败多为网络或代码无效）</div>`
     :`<div class="alert alert-ok">✅ 已更新 ${ok} 只股票（Yahoo 延长时段为主；盘中常规交易时段另有 Finnhub 逐笔）</div>`;
@@ -4396,11 +4429,14 @@ async function refreshAllQuotes(){
 }
 
 function refreshOVTotals(){
+  if(document.getElementById('page-overview')?.classList.contains('active')){
+    scheduleOverviewLiveRefresh();
+    return;
+  }
   const cny=totalCNY();
   const e1=document.getElementById('ov-cny');if(e1)e1.textContent=fc(cny,'CNY');
   const e2=document.getElementById('ov-usd');if(e2)e2.textContent=fc(fromCNY(cny,'USD'),'USD');
   const e3=document.getElementById('ov-aud');if(e3)e3.textContent=fc(fromCNY(cny,'AUD'),'AUD');
-  if(document.getElementById('page-overview')?.classList.contains('active'))renderOverviewDashboard();
   try{updateGoalBar();}catch(e){}
 }
 
