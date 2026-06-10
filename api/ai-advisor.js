@@ -17,6 +17,29 @@ async function readJsonBody(req) {
   }
 }
 
+const SYSTEM_PROMPT = `你是一位服务于高净值客户的全球私人银行首席投资官（CIO），风格克制、专业、数据驱动，类似瑞银/高盛私人银行顾问。
+用户持仓数据已经过脱敏：标的以「标的A/B/C」或「黄金A」「基金A」等代号呈现，金额为区间描述（如「约 150 万级别」），不含账户名与精确持仓。
+请基于这些脱敏摘要，用中文输出财富诊断报告。引用代号而非真实 ticker/产品名；金额用区间表述，百分比可保留。
+
+严格按以下格式输出，每部分用【】标注：
+
+【综合评估】
+对整体组合健康度做总体判断：分散程度、盈亏状况、跨境与汇率暴露。2-3 句，语气沉稳。
+
+【亮点与优势】
+指出 2-3 个结构性优势，结合代号与百分比/区间数字，避免空泛 praise。
+
+【风险与隐患】
+指出 2-3 个具体风险点（集中度、汇率、到期、止损缺失、目标进度等），必须引用摘要中的数字。
+
+【优先行动建议】
+给出 3 条可执行建议，按紧急程度排序，每条一行，动词开头。
+
+【长期配置建议】
+给出 1-2 条跨周期配置方向（区域、资产类别、流动性）。
+
+禁止：索要更多信息、免责声明堆砌、投资建议合规套话超过一句。末尾无需重复「不构成投资建议」。`;
+
 export default async function handler(req, res) {
   console.log(
     'ENV CHECK:',
@@ -39,34 +62,15 @@ export default async function handler(req, res) {
     return res.status(405).end();
   }
 
-  const { portfolio, provider } = await readJsonBody(req);
+  const { portfolio, provider, sanitized } = await readJsonBody(req);
   if (!portfolio) {
     return res.status(400).json({ error: 'missing portfolio' });
   }
 
-  const prompt = `你是一位专业的全球资产配置顾问，精通中国、美国、澳大利亚三地资产。
-请根据用户的真实持仓数据，用中文给出一份完整的理财分析报告。
+  const prompt = `${SYSTEM_PROMPT}
 
-严格按以下格式输出，每部分用【】标注：
+${sanitized ? '（以下为用户脱敏持仓摘要）' : '（以下为用户持仓数据）'}
 
-【综合评估】
-对整体组合健康度做总体判断，包括分散程度、盈亏状况、风险水平。2-3句话。
-
-【亮点与优势】
-指出当前持仓中表现好的地方，具体到标的名称和数字。
-
-【风险与隐患】
-指出2-3个具体风险点，必须结合用户的真实持仓数字。
-
-【优先行动建议】
-给出3条具体可执行的建议，按紧急程度排序。
-
-【长期配置建议】
-给出1-2条长期优化方向。
-
-语气专业简洁，数字要具体，不要泛泛而谈。
-
-用户持仓：
 ${portfolio}`;
 
   async function tryGemini() {
@@ -80,7 +84,7 @@ ${portfolio}`;
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { maxOutputTokens: 1200, temperature: 0.7 },
+          generationConfig: { maxOutputTokens: 1400, temperature: 0.55 },
         }),
       }
     );
@@ -92,7 +96,7 @@ ${portfolio}`;
     const d = await r.json();
     const text = d?.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!text) throw new Error('empty');
-    return { advice: text, model: 'Gemini 1.5 Flash' };
+    return { advice: text, model: 'Gemini 1.5 Flash · CIO' };
   }
 
   async function tryGroq() {
@@ -104,9 +108,12 @@ ${portfolio}`;
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
       body: JSON.stringify({
         model: 'llama-3.3-70b-versatile',
-        messages: [{ role: 'user', content: prompt }],
-        max_tokens: 1200,
-        temperature: 0.7,
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'user', content: portfolio },
+        ],
+        max_tokens: 1400,
+        temperature: 0.55,
       }),
     });
     if (!r.ok) {
@@ -117,7 +124,7 @@ ${portfolio}`;
     const d = await r.json();
     const text = d?.choices?.[0]?.message?.content;
     if (!text) throw new Error('empty');
-    return { advice: text, model: 'Groq Llama 3.3 70B' };
+    return { advice: text, model: 'Groq Llama 3.3 70B · CIO' };
   }
 
   async function tryCohere() {
@@ -130,8 +137,8 @@ ${portfolio}`;
       body: JSON.stringify({
         model: 'command-r',
         prompt,
-        max_tokens: 1200,
-        temperature: 0.7,
+        max_tokens: 1400,
+        temperature: 0.55,
       }),
     });
     if (!r.ok) {
@@ -142,7 +149,7 @@ ${portfolio}`;
     const d = await r.json();
     const text = d?.generations?.[0]?.text;
     if (!text) throw new Error('empty');
-    return { advice: text, model: 'Cohere Command-R' };
+    return { advice: text, model: 'Cohere Command-R · CIO' };
   }
 
   const order =

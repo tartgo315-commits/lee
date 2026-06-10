@@ -147,6 +147,28 @@ body:not(.light) .news-item:hover{background:rgba(255,255,255,.04)}
 .btn-green{background:linear-gradient(180deg,#34d399 0%,#059669 100%);color:#fff;box-shadow:0 2px 12px rgba(16,185,129,.3)}.btn-green:hover{filter:brightness(1.06)}
 .btn-sm{height:34px;padding:0 var(--s-4);font-size:var(--text-sm)}
 
+/* AI 财富诊断 · 私人银行墨黑翡翠皮肤 */
+.ai-pb-panel{background:linear-gradient(145deg,#0a0f0d 0%,#0d1411 50%,#0a120e 100%);border:1px solid rgba(16,185,129,.22);border-radius:var(--r-lg);padding:24px 26px;margin-top:24px;box-shadow:0 0 0 1px rgba(16,185,129,.06) inset,0 16px 48px rgba(0,0,0,.45);position:relative;overflow:hidden}
+.ai-pb-panel::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(16,185,129,.55) 30%,rgba(52,211,153,.85) 50%,rgba(16,185,129,.55) 70%,transparent)}
+.ai-pb-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;flex-wrap:wrap;gap:14px}
+.ai-pb-title{font-size:16px;font-weight:600;color:#ecfdf5;display:flex;align-items:center;gap:10px;letter-spacing:-.01em;flex-wrap:wrap}
+.ai-pb-badge{font-size:10px;font-family:var(--mono);color:#6ee7b7;background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.28);padding:3px 10px;border-radius:999px}
+.ai-pb-sub{font-size:12px;color:rgba(167,243,208,.55);font-family:var(--mono);margin-top:6px}
+.ai-pb-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.ai-pb-select{height:34px;padding:0 12px;border:1px solid rgba(16,185,129,.25);border-radius:var(--r-sm);background:rgba(10,15,13,.85);color:#ecfdf5;font-size:13px;font-family:var(--mono)}
+.ai-pb-btn-ai{height:34px;padding:0 16px;border:none;border-radius:var(--r-sm);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);background:linear-gradient(135deg,#059669,#10b981);color:#022c22;box-shadow:0 2px 12px rgba(16,185,129,.35);transition:filter .15s ease,transform .15s ease}
+.ai-pb-btn-ai:hover{filter:brightness(1.08)}
+.ai-pb-btn-ai:disabled{opacity:.55;cursor:not-allowed;transform:none}
+.ai-pb-btn-local{height:34px;padding:0 14px;border:1px solid rgba(16,185,129,.3);border-radius:var(--r-sm);background:transparent;color:#6ee7b7;font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font)}
+.ai-pb-btn-local:hover{background:rgba(16,185,129,.08)}
+.ai-pb-result{border-top:1px solid rgba(16,185,129,.15);padding-top:18px;margin-top:4px}
+.ai-pb-privacy{font-size:11px;color:rgba(167,243,208,.45);font-family:var(--mono);margin-top:12px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.ai-pb-section-title{font-weight:700;color:#34d399;margin:16px 0 8px;font-size:14px;padding-bottom:5px;border-bottom:1px solid rgba(16,185,129,.2)}
+.ai-pb-loading{text-align:center;padding:28px;color:rgba(167,243,208,.6);font-family:var(--mono);font-size:13px}
+.ai-pb-meta{font-size:11px;color:rgba(167,243,208,.55);font-family:var(--mono);margin-bottom:12px;padding:6px 10px;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.15);border-radius:var(--r-sm);display:inline-block}
+.ai-pb-body{font-size:13px;color:#d1fae5;line-height:1.75}
+.ai-pb-disclaimer{margin-top:14px;padding-top:10px;border-top:1px dashed rgba(16,185,129,.18);font-size:11px;color:rgba(167,243,208,.4);font-family:var(--mono)}
+
 /* Total bar（列数由 Tailwind grid 控制，见 #page-overview .total-bar） */
 .total-bar{display:grid;gap:16px;margin-bottom:16px;min-width:0;width:100%}
 #page-overview .total-bar{gap:16px}
@@ -850,26 +872,27 @@ body.light .fh-mkt-badge.fh-mkt-night{color:#0f766e;background:rgba(15,118,110,.
         </div>
         <div class="nav-chart-wrap"><canvas id="chart-ov"></canvas></div>
       </div>
-      <div id="ai-advisor-wrap" style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);padding:22px 24px;margin-top:24px;box-shadow:var(--shadow-sm)">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px">
+      <div id="ai-advisor-wrap" class="ai-pb-panel">
+        <div class="ai-pb-head">
           <div>
-            <div style="font-size:15px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:8px">
-              🤖 智能理财分析
-              <span style="font-size:10px;font-family:var(--mono);color:var(--text3);background:var(--bg4);padding:2px 8px;border-radius:999px">本地分析 · 完全免费</span>
+            <div class="ai-pb-title">
+              💎 AI 智能财富诊断
+              <span class="ai-pb-badge">Private Banking · CIO</span>
             </div>
-            <div style="font-size:12px;color:var(--text3);font-family:var(--mono);margin-top:4px">基于实时持仓数据自动分析</div>
+            <div class="ai-pb-sub">全球资产配置 · 脱敏云端分析 · 本地规则引擎</div>
+            <div class="ai-pb-privacy">🔒 云端 AI 仅接收脱敏摘要（标的代号 + 区间金额），账户名与精确持仓不上传</div>
           </div>
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-            <select id="ai-provider" style="height:34px;padding:0 10px;border:1px solid var(--border2);border-radius:var(--r-sm);background:var(--surface);color:var(--text);font-size:13px;font-family:var(--mono)">
+          <div class="ai-pb-actions">
+            <select id="ai-provider" class="ai-pb-select" aria-label="AI 模型">
               <option value="gemini">Gemini Flash</option>
               <option value="groq">Groq Llama3</option>
               <option value="cohere">Cohere Command-R</option>
             </select>
-            <button type="button" id="ai-advisor-btn" class="btn btn-primary btn-sm" onclick="fetchAiAdvice()">✨ AI 分析</button>
-            <button type="button" class="btn btn-ghost btn-sm" onclick="runAiAdvisor()">📊 本地分析</button>
+            <button type="button" id="ai-advisor-btn" class="ai-pb-btn-ai" onclick="fetchAiAdvice()">✨ AI 诊断</button>
+            <button type="button" class="ai-pb-btn-local" onclick="runAiAdvisor()">📊 本地诊断</button>
           </div>
         </div>
-        <div id="ai-advisor-result" style="display:none;border-top:1px solid var(--border);padding-top:16px"></div>
+        <div id="ai-advisor-result" class="ai-pb-result" style="display:none"></div>
       </div>
     </div>
 
@@ -2582,6 +2605,99 @@ function openGoalEdit(){
   updateGoalBar();
 }
 
+function aiRoundWan(n){
+  const v=Number(n);
+  if(!isFinite(v))return 0;
+  return Math.round(v/10000)*10000;
+}
+function aiBucketAmt(n){
+  const w=aiRoundWan(n);
+  if(w>=1000000)return `约 ${(w/10000).toFixed(0)} 万级别`;
+  if(w>=100000)return `约 ${Math.round(w/10000)} 万级别`;
+  if(w>=10000)return `约 ${(w/1000).toFixed(0)} 千级别`;
+  return '小额';
+}
+function aiBucketPct(p){
+  const v=Number(p);
+  if(!isFinite(v))return '—';
+  if(v>=45)return `高集中 ${v.toFixed(0)}%`;
+  if(v>=25)return `中等 ${v.toFixed(0)}%`;
+  return `分散 ${v.toFixed(0)}%`;
+}
+function buildSanitizedPortfolio(){
+  const fx=D.fx||{};
+  const cny=totalCNY();
+  const stockPs=D.products.filter(p=>p.type==='stock_us'&&p.ticker);
+  const totalUs=stockPs.reduce((s,p)=>s+(p.currentPrice||0)*(p.shares||0),0);
+  const stocks=stockPs.map((p,i)=>{
+    const val=(p.currentPrice||0)*(p.shares||0);
+    const wt=totalUs>0?val/totalUs*100:0;
+    const pct=p.currentPrice&&p.costPrice?((p.currentPrice-p.costPrice)/p.costPrice*100):null;
+    return {
+      code:`标的${String.fromCharCode(65+i)}`,
+      assetClass:'美股',
+      weightPct:wt,
+      pnlPct:pct,
+      hasStopLoss:p.stopLoss!=null&&isFinite(Number(p.stopLoss))&&Number(p.stopLoss)>0,
+      notionalUsd:aiRoundWan(val)
+    };
+  });
+  const golds=D.products.filter(p=>p.type==='gold').map((p,i)=>{
+    const gp=p.goldPrice||0,gc=p.goldCost||0,grams=p.grams||0;
+    const val=grams*gp;
+    return {
+      code:`黄金${String.fromCharCode(65+i)}`,
+      gramsBucket:grams>=100?'100克以上':grams>=50?'50–100克':'50克以下',
+      pnlPct:gc>0&&gp?((gp-gc)/gc*100):null,
+      notionalCny:aiRoundWan(val)
+    };
+  });
+  const funds=D.products.filter(p=>p.type==='fund_cn').map((p,i)=>({
+    code:`基金${String.fromCharCode(65+i)}`,
+    notionalCny:aiRoundWan((p.fundPrice||0)*(p.fundShares||0)),
+    pnlPct:p.fundCost>0&&p.fundPrice?((p.fundPrice-p.fundCost)/p.fundCost*100):null
+  }));
+  const tds=D.products.filter(p=>p.type==='term_deposit').map((p,i)=>{
+    const end=p.tdContractEnd||p.tdEnd;
+    const days=end?Math.round((new Date(end+'T12:00:00')-new Date())/86400000):null;
+    return {
+      code:`定存${String.fromCharCode(65+i)}`,
+      currency:p.tdCur||p.currency||'AUD',
+      principalBucket:aiBucketAmt(toCNY(p.principal||0,p.tdCur||p.currency||'AUD')),
+      ratePct:p.rate||0,
+      daysToMaturity:days
+    };
+  });
+  const snaps=[...(D.navHistory||[])].filter(n=>n&&n.date&&n.cny!=null).sort((a,b)=>a.date.localeCompare(b.date));
+  const navTrend=snaps.slice(-5).map(s=>`${s.date} ${aiBucketAmt(Number(s.cny))}`).join(' → ');
+  const usPct=cny>0?totalCNY('us')/cny*100:0;
+  const auPct=cny>0?totalCNY('au')/cny*100:0;
+  const cnPct=cny>0?totalCNY('cn')/cny*100:0;
+  const goalAmt=D.goal?.amount||0;
+  const goalPct=goalAmt>0?(cny/goalAmt*100):null;
+  const lines=[
+    `总净值（脱敏）：${aiBucketAmt(cny)}（CNY 口径，精确值已模糊）`,
+    `汇率快照：USD/CNY=${fx.USD||'—'} · AUD/CNY=${fx.AUD||'—'}`,
+    `区域配置：中国 ${aiBucketPct(cnPct)} · 美国 ${aiBucketPct(usPct)} · 澳洲 ${aiBucketPct(auPct)}`,
+    goalAmt>0?`财富目标：${aiBucketAmt(goalAmt)} · 进度 ${goalPct!=null?goalPct.toFixed(0)+'%':'—'}`:'财富目标：未设定',
+    '',
+    '【美股持仓（代号化）】',
+    stocks.length?stocks.map(s=>`${s.code} · ${s.assetClass} · 仓位${s.weightPct.toFixed(0)}% · 盈亏${s.pnlPct!=null?(s.pnlPct>=0?'+':'')+s.pnlPct.toFixed(1)+'%':'—'} · 名义约$${(s.notionalUsd/10000).toFixed(0)}万 · 止损${s.hasStopLoss?'已设':'未设'}`).join('\n'):'无',
+    '',
+    '【黄金】',
+    golds.length?golds.map(g=>`${g.code} · ${g.gramsBucket} · 盈亏${g.pnlPct!=null?g.pnlPct.toFixed(1)+'%':'—'} · ${aiBucketAmt(g.notionalCny)}`).join('\n'):'无',
+    '',
+    '【基金】',
+    funds.length?funds.map(f=>`${f.code} · ${aiBucketAmt(f.notionalCny)} · 盈亏${f.pnlPct!=null?f.pnlPct.toFixed(1)+'%':'—'}`).join('\n'):'无',
+    '',
+    '【定存】',
+    tds.length?tds.map(t=>`${t.code} · ${t.currency} · ${t.principalBucket} · ${t.ratePct}%p.a. · 距到期${t.daysToMaturity!=null?t.daysToMaturity+'天':'—'}`).join('\n'):'无',
+    '',
+    `【NAV 趋势（近5条，脱敏）】${navTrend||'无'}`
+  ];
+  return lines.join('\n');
+}
+
 function runAiAdvisor(){
   const el=document.getElementById('ai-advisor-result');
   if(!el)return;
@@ -2731,41 +2847,39 @@ function runAiAdvisor(){
   }
   const topActions=actions.slice(0,3);
   summaryHtml.push(`
-<div style="background:linear-gradient(135deg,var(--surface-muted),var(--bg3));border:1.5px solid var(--border2);border-radius:var(--r);padding:18px 20px;margin-bottom:16px">
+<div style="background:linear-gradient(135deg,rgba(16,185,129,.06),rgba(10,15,13,.9));border:1.5px solid rgba(16,185,129,.22);border-radius:var(--r);padding:18px 20px;margin-bottom:16px">
   <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;flex-wrap:wrap">
     <div style="text-align:center;flex-shrink:0">
-      <div style="font-size:36px;font-weight:700;color:${scoreColor};font-family:var(--mono);line-height:1">${score}</div>
-      <div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:2px">组合健康度</div>
+      <div class="ai-pb-score-ring" style="color:${scoreColor}">${score}</div>
+      <div style="font-size:10px;color:rgba(167,243,208,.5);font-family:var(--mono);margin-top:2px">组合健康度</div>
       <div style="font-size:12px;font-weight:600;color:${scoreColor}">${scoreLabel}</div>
     </div>
     <div style="flex:1;min-width:200px">
-      <div style="height:8px;background:var(--bg4);border-radius:999px;overflow:hidden;margin-bottom:8px">
+      <div style="height:8px;background:rgba(16,185,129,.12);border-radius:999px;overflow:hidden;margin-bottom:8px">
         <div style="height:100%;width:${score}%;background:${scoreColor};border-radius:999px;transition:width .6s ease"></div>
       </div>
-      <div style="font-size:12px;color:var(--text2);line-height:1.6">
-        美股平均盈亏 <b style="color:${avgStockPnl>=0?'var(--green)':'var(--red)'}">${stocks.length?(avgStockPnl>=0?'+':'')+avgStockPnl.toFixed(1)+'%':'—'}</b> ·
+      <div style="font-size:12px;color:#a7f3d0;line-height:1.6">
+        美股平均盈亏 <b style="color:${avgStockPnl>=0?'#34d399':'#f87171'}">${stocks.length?(avgStockPnl>=0?'+':'')+avgStockPnl.toFixed(1)+'%':'—'}</b> ·
         美+澳占比 <b>${usAuPct2.toFixed(0)}%</b> ·
-        目标进度 <b style="color:var(--accent)">${goal&&goal.amount>0?(cny/goal.amount*100).toFixed(1)+'%':'未设'}</b>
+        目标进度 <b style="color:#6ee7b7">${goal&&goal.amount>0?(cny/goal.amount*100).toFixed(1)+'%':'未设'}</b>
       </div>
     </div>
   </div>
   <div style="margin-bottom:14px">
-    <div style="font-size:11px;font-weight:700;color:var(--text3);font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px">⚡ 主要风险</div>
-    ${risksShow.map(r=>`<div style="font-size:12px;color:var(--text2);line-height:1.6;padding:3px 0;border-bottom:1px dashed var(--border)">• ${r}</div>`).join('')}
+    <div style="font-size:11px;font-weight:700;color:rgba(167,243,208,.55);font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px">⚡ 主要风险</div>
+    ${risksShow.map(r=>`<div style="font-size:12px;color:#d1fae5;line-height:1.6;padding:3px 0;border-bottom:1px dashed rgba(16,185,129,.15)">• ${r}</div>`).join('')}
   </div>
   <div>
-    <div style="font-size:11px;font-weight:700;color:var(--text3);font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px">🎯 优先行动清单</div>
-    ${topActions.length?topActions.map((a,i)=>`<div style="font-size:13px;color:var(--text);line-height:1.7;margin-bottom:6px;padding:8px 12px;background:var(--surface);border-radius:var(--r-sm);border-left:3px solid ${i===0?'var(--red)':i===1?'var(--gold)':'var(--green)'}">${a}</div>`).join(''):`<div style="font-size:13px;color:var(--text3);line-height:1.7;padding:8px 12px;background:var(--surface);border-radius:var(--r-sm)">暂无需额外优先行动，保持观察即可。</div>`}
+    <div style="font-size:11px;font-weight:700;color:rgba(167,243,208,.55);font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px">🎯 优先行动清单</div>
+    ${topActions.length?topActions.map((a,i)=>`<div style="font-size:13px;color:#ecfdf5;line-height:1.7;margin-bottom:6px;padding:8px 12px;background:rgba(16,185,129,.06);border-radius:var(--r-sm);border-left:3px solid ${i===0?'#f87171':i===1?'#fbbf24':'#34d399'}">${a}</div>`).join(''):`<div style="font-size:13px;color:rgba(167,243,208,.5);line-height:1.7;padding:8px 12px;background:rgba(16,185,129,.04);border-radius:var(--r-sm)">暂无需额外优先行动，保持观察即可。</div>`}
   </div>
 </div>`);
   const sectionsHtml=sections.map(s=>`<div style="margin-bottom:18px">
-      <div style="font-size:13px;font-weight:700;color:var(--accent);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)">${s.title}</div>
-      ${s.lines.map(l=>`<div style="font-size:13px;color:var(--text);line-height:1.7;margin-bottom:5px;padding-left:4px">${l}</div>`).join('')}
+      <div class="ai-pb-section-title">${s.title}</div>
+      ${s.lines.map(l=>`<div class="ai-pb-body" style="margin-bottom:5px;padding-left:4px">${l}</div>`).join('')}
     </div>`).join('');
   el.innerHTML=summaryHtml.join('')+sectionsHtml+
-    `<div style="margin-top:8px;padding-top:10px;border-top:1px dashed var(--border);font-size:11px;color:var(--text3);font-family:var(--mono)">
-    📊 分析时间：${ts} · 基于本地持仓数据自动生成 · 仅供参考，不构成投资建议
-  </div>`;
+    `<div class="ai-pb-disclaimer">📊 分析时间：${ts} · 本地规则引擎 · 使用真实持仓 · 仅供参考，不构成投资建议</div>`;
 }
 
 async function fetchAiAdvice(){
@@ -2774,62 +2888,36 @@ async function fetchAiAdvice(){
   const provider=document.getElementById('ai-provider')?.value||'gemini';
   if(!btn||!result)return;
 
-  btn.disabled=true;btn.textContent='🔄 分析中…';
+  btn.disabled=true;btn.textContent='🔄 诊断中…';
   result.style.display='block';
-  result.innerHTML='<div style="text-align:center;padding:24px;color:var(--text3);font-family:var(--mono);font-size:13px">🤖 AI 正在分析你的持仓，约需 5-15 秒…</div>';
+  result.innerHTML='<div class="ai-pb-loading">💎 CIO 正在审阅脱敏持仓摘要，约需 5–15 秒…</div>';
 
-  const fx=D.fx||{};
-  const cny=totalCNY();
-  const stocks=D.products.filter(p=>p.type==='stock_us'&&p.ticker).map(p=>{
-    const pct=p.currentPrice&&p.costPrice?((p.currentPrice-p.costPrice)/p.costPrice*100).toFixed(1):'—';
-    return `${p.ticker} ${p.shares}股 成本$${p.costPrice} 现价$${p.currentPrice||'—'} 盈亏${pct}%${p.stopLoss?' 止损$'+p.stopLoss:''}`;
-  }).join('\n');
-  const golds=D.products.filter(p=>p.type==='gold').map(p=>{
-    const gp=p.goldPrice,gc=p.goldCost;
-    const pnl=gp!=null&&gc>0?((gp-gc)/gc*100).toFixed(1)+'%':'—';
-    return `黄金${p.grams}克 均价¥${p.goldCost}/克 现价¥${gp||'—'}/克 盈亏${pnl}`;
-  }).join('\n');
-  const funds=D.products.filter(p=>p.type==='fund_cn').map(p=>`${p.name} ${p.fundShares?.toFixed(0)||'—'}份 净值¥${p.fundPrice||'—'} 成本¥${p.fundCost||'—'}`).join('\n');
-  const tds=D.products.filter(p=>p.type==='term_deposit').map(p=>`定存${p.tdCur||p.currency||'AUD'} ${p.principal} ${p.rate}%p.a. 到期${p.tdContractEnd||p.tdEnd||'—'}`).join('\n');
-  const snaps=[...(D.navHistory||[])].sort((a,b)=>a.date>b.date?1:-1);
-  const navTrend=snaps.slice(-5).map(s=>`${s.date} ¥${s.cny}`).join(' → ');
-  const usPct=cny>0?(totalCNY('us')/cny*100).toFixed(1):'0.0';
-  const auPct=cny>0?(totalCNY('au')/cny*100).toFixed(1):'0.0';
-  const cnPct=cny>0?(totalCNY('cn')/cny*100).toFixed(1):'0.0';
-
-  const portfolio=`总净值：¥${Math.round(cny).toLocaleString()} / $${Math.round(cny/(fx.USD||7)).toLocaleString()} / A$${Math.round(cny/(fx.AUD||4.75)).toLocaleString()}
-汇率：USD/CNY=${fx.USD||'—'} AUD/CNY=${fx.AUD||'—'}
-区域分布：中国${cnPct}% 美国${usPct}% 澳洲${auPct}%
-目标：¥${D.goal?.amount?.toLocaleString()||'未设'} 进度${D.goal?.amount?(cny/D.goal.amount*100).toFixed(1)+'%':'—'}
-
-【美股】\n${stocks||'无'}
-【黄金】\n${golds||'无'}
-【基金】\n${funds||'无'}
-【定存】\n${tds||'无'}
-【NAV历史（近5条）】${navTrend||'无'}`;
+  const portfolio=buildSanitizedPortfolio();
 
   try{
     const r=await fetch('/api/ai-advisor',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({portfolio,provider})
+      body:JSON.stringify({portfolio,provider,sanitized:true})
     });
     const data=await r.json();
     if(data.advice){
       const safe=escOvHtml(data.advice);
       result.innerHTML=
-        `<div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:12px;padding:6px 10px;background:var(--bg3);border-radius:var(--r-sm);display:inline-block">🤖 ${escOvHtml(String(data.model||''))} · ${new Date().toLocaleTimeString('zh-CN')}</div>`+
+        `<div class="ai-pb-meta">🤖 ${escOvHtml(String(data.model||''))} · 脱敏传输 · ${new Date().toLocaleTimeString('zh-CN')}</div>`+
+        `<div class="ai-pb-body">`+
         safe
-          .replace(/【(.+?)】/g,'<div style="font-weight:700;color:var(--accent);margin:14px 0 6px;font-size:14px;padding-bottom:4px;border-bottom:1px solid var(--border)">【$1】</div>')
+          .replace(/【(.+?)】/g,'</div><div class="ai-pb-section-title">【$1】</div><div class="ai-pb-body">')
           .replace(/\n/g,'<br>')+
-        `<div style="margin-top:14px;padding-top:10px;border-top:1px dashed var(--border);font-size:11px;color:var(--text3);font-family:var(--mono)">⚠️ 仅供参考，不构成投资建议</div>`;
+        `</div>`+
+        `<div class="ai-pb-disclaimer">🔒 本次分析基于脱敏摘要 · 仅供参考，不构成投资建议</div>`;
     }else{
-      result.innerHTML=`<span style="color:var(--red)">失败：${escOvHtml(String(data.error||'未知'))}</span>`;
+      result.innerHTML=`<span style="color:#f87171">失败：${escOvHtml(String(data.error||'未知'))}</span>`;
     }
   }catch(e){
-    result.innerHTML=`<span style="color:var(--red)">网络错误：${escOvHtml(String(e.message||''))}</span>`;
+    result.innerHTML=`<span style="color:#f87171">网络错误：${escOvHtml(String(e.message||''))}</span>`;
   }finally{
-    btn.disabled=false;btn.textContent='✨ AI 分析';
+    btn.disabled=false;btn.textContent='✨ AI 诊断';
   }
 }
 
