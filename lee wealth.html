@@ -1005,7 +1005,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
 
     <!-- Gold -->
     <div id="f-gold" style="display:none">
-      <div class="alert alert-info" style="margin-bottom:12px">🥇 自动拉取<strong>上金所 Au99.99 / AU9999</strong>现货参考价（交易日 9:00–15:30、夜盘 20:00–02:30）。<strong>休市后行情源常停在收盘价</strong>，与建行积存金 App 的银行报价可能仍有 1–2 元/克差异。</div>
+      <div class="alert alert-info" style="margin-bottom:12px">🥇 交易日自动拉取<strong>AU9999</strong>；<strong>休市后自动改用国际金价×汇率折算</strong>（无需手填），与建行积存金通常差 1–3 元/克。</div>
       <div class="fg-row c3">
         <div class="fg"><label>持有克数</label><input type="number" id="m-grams" placeholder="18.0000" step="any"></div>
         <div class="fg"><label>持仓均价（元/克）</label><input type="number" id="m-gcost" placeholder="796.3783" step="any"></div>
@@ -4235,7 +4235,10 @@ function startBtcAutoRefresh(){
   btcAutoRefreshTimer=setInterval(()=>{refreshBtcPrice();},60000);
 }
 
-async function fetchGoldPrice(){
+const TROY_OZ_GRAMS=31.1034768;
+let __goldQuoteMeta={source:'',label:''};
+/** 国内 AU9999（上金所口径） */
+async function fetchGoldPriceDomestic(){
   let price=await fetchGoldPriceViaApi();
   if(price>0)return price;
   price=await fetchGoldPriceSinaJsonp();
@@ -4246,6 +4249,64 @@ async function fetchGoldPrice(){
   }catch(e){}
   if(price>0)return price;
   return await fetchGoldPriceEastmoney();
+}
+/** 国际金价 USD/盎司 → 人民币元/克（休市时与建行积存金更接近的自动兜底） */
+async function fetchIntlGoldUsdPerOz(){
+  const syms=['XAUUSD=X','GC=F'];
+  try{
+    const map=await fetchYahooV7QuotePriceMap(syms,{skipTwelve:true});
+    for(const sym of syms){
+      const px=map.get(sym);
+      if(px>800&&px<20000&&isFinite(px))return px;
+    }
+  }catch(e){}
+  for(const sym of syms){
+    try{
+      const px=await fetchYahooStockPrice(sym);
+      if(px>800&&px<20000&&isFinite(px))return px;
+    }catch(e){}
+  }
+  try{
+    const raw=await fetchTextCrossOrigin('https://query1.finance.yahoo.com/v8/finance/chart/GC=F?interval=1m&range=1d&includePrePost=true');
+    const px=parseYahooChartPrice(raw);
+    if(px>800&&px<20000&&isFinite(px))return px;
+  }catch(e){}
+  return 0;
+}
+async function fetchIntlGoldCnyPerGram(){
+  const usdOz=await fetchIntlGoldUsdPerOz();
+  if(!(usdOz>0))return 0;
+  FX_RATES.syncCross();
+  const cny=usdOz*FX_RATES.USD_TO_CNY/TROY_OZ_GRAMS;
+  return cny>=30&&cny<=15000?Math.round(cny*100)/100:0;
+}
+/**
+ * 日/夜盘优先 AU9999；休市或国内源失败时用国际金价×USD/CNY 折算，无需手填。
+ */
+async function fetchGoldPrice(){
+  const sess=sgeGoldSessionLabel();
+  if(sess.open){
+    const dom=await fetchGoldPriceDomestic();
+    if(dom>0){
+      __goldQuoteMeta={source:'sge',label:'AU9999'};
+      return dom;
+    }
+  }
+  const intl=await fetchIntlGoldCnyPerGram();
+  if(intl>0){
+    __goldQuoteMeta={
+      source:'intl',
+      label:sess.open?'国际金价折算（国内源暂不可用）':`休市·国际金价×汇率折算（≈建行积存金）`
+    };
+    return intl;
+  }
+  const dom=await fetchGoldPriceDomestic();
+  if(dom>0){
+    __goldQuoteMeta={source:'sge_stale',label:'AU9999收盘价'};
+    return dom;
+  }
+  __goldQuoteMeta={source:'',label:''};
+  return 0;
 }
 /** 上金所 Au99.99 大致交易窗（本地北京时间）；休市时段行情源通常停在最近收盘价 */
 function sgeGoldSessionLabel(now=new Date()){
@@ -4262,16 +4323,18 @@ function updateGoldChip(){
   const g=D.products.find(p=>p.type==='gold'&&p.goldPrice>0);
   const sess=sgeGoldSessionLabel();
   if(g){
-    el.textContent='¥'+Number(g.goldPrice).toFixed(2)+'/g';
+    const intl=__goldQuoteMeta.source==='intl';
+    el.textContent=(intl?'~':'')+'¥'+Number(g.goldPrice).toFixed(2)+'/g';
     if(chip){
-      const upd=g.goldUpdated?` · 本地更新 ${g.goldUpdated}`:'';
-      chip.title=sess.open
-        ?`上海金 AU9999 · ${sess.label}交易中${upd}。与建行积存金通常相差约 1–2 元/克。点击刷新`
-        :`上海金 AU9999 · ${sess.label}（行情源多为最近收盘价，故数字不变）${upd}。建行积存金为银行自有报价，休市后仍可能随国际金价微调。点击刷新`;
+      const upd=g.goldUpdated?` · 更新 ${g.goldUpdated}`:'';
+      const src=__goldQuoteMeta.label||(__goldQuoteMeta.source==='sge'?'AU9999':intl?'国际金价折算':'AU9999');
+      chip.title=sess.open&&!intl
+        ?`${src} · ${sess.label}交易中${upd}。与建行积存金通常相差约 1–2 元/克。点击刷新`
+        :`${src}${upd}。休市时按 COMEX/现货美元金价×汇率自动折算，无需手填；与建行可能差 1–3 元/克。点击刷新`;
     }
     return;
   }
-  if(chip)chip.title='上海金 AU9999 · 点击刷新';
+  if(chip)chip.title='金价自动：日盘 AU9999，休市国际金价折算。点击刷新';
   el.textContent='—';
 }
 async function refreshGoldChip(){
@@ -4299,7 +4362,8 @@ async function refreshGold(){
     golds.forEach(g=>{g.goldPrice=price;g.goldUpdated=today();});
     save();renderRegion('cn');renderSidebar();renderOverview();
     updateGoldChip();
-    el.innerHTML=`<div class="alert alert-ok">✅ 金价 ¥${price}/克（上海金 AU9999 口径），已更新 ${golds.length} 个黄金积存（建行积存金报价与此接近）</div>`;
+    const srcLbl=__goldQuoteMeta.label||'AU9999';
+    el.innerHTML=`<div class="alert alert-ok">✅ 金价 ¥${price}/克（${srcLbl}），已更新 ${golds.length} 个黄金积存</div>`;
   }else{
     el.innerHTML='<div class="alert alert-warn">⚠️ 自动获取失败。请在「编辑」中<strong>手动填写当前金价（元/克）</strong>；若浏览器拦截跨域，可部署带 /proxy 的环境或换网络后再试。</div>';
   }
