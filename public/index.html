@@ -69,6 +69,10 @@ body{
   font-variant-numeric:tabular-nums;
 }
 #ov-cny,.ov-hero-nav{font-size:var(--fs-nav);font-weight:700;letter-spacing:-.025em;line-height:1.1;color:var(--text-1)}
+.ov-hero-delta{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px;align-items:baseline}
+.ov-hero-delta .ov-nav-lbl{font-size:15px;font-weight:600;color:var(--text-3);margin:0}
+.ov-hero-delta .ov-nav-baseline{font-size:12px;font-weight:500;color:var(--text-4)}
+.ov-hero-range .ov-nav-lbl{display:none}
 .ph-main,.ov-goal-pct,.ov-head-cell-val{font-size:var(--fs-core);font-weight:600;letter-spacing:-.02em;color:var(--text-1)}
 .card-title,.ov-col-name,.ph-label,.ov-events-card>.ov-events-hd .card-title{font-size:var(--text-lg);font-weight:600;letter-spacing:.025em;color:var(--text-2)}
 .ov-prod-name,.pr-name,.acc-name{font-size:var(--fs-prod-name);font-weight:500;color:var(--text-2)}
@@ -498,6 +502,10 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
           <div class="card ov-hero-card mb-0">
             <div class="ov-hero-label">总净值 · NAV</div>
             <div class="ov-hero-nav" id="ov-cny">¥ —</div>
+            <div class="ov-hero-delta">
+              <span class="ov-nav-lbl" id="ov-nav-lbl">—</span>
+              <span class="ov-nav-baseline" id="ov-nav-baseline"></span>
+            </div>
             <div class="ov-hero-fx">
               <div class="ov-hero-fx-item"><span class="lbl">USD</span><span class="val" id="ov-usd">$ —</span><span class="sub" id="ov-usd-sub">—</span></div>
               <div class="ov-hero-fx-item"><span class="lbl">AUD</span><span class="val" id="ov-aud">A$ —</span><span class="sub" id="ov-aud-sub">—</span></div>
@@ -511,7 +519,6 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
                 <button class="rt" onclick="setRange(90,this)">3M</button>
                 <button class="rt" onclick="setRange(9999,this)">ALL</button>
               </div>
-              <span class="ov-nav-lbl" id="ov-nav-lbl">—</span>
             </div>
           </div>
           <div class="card ov-holdings-card mb-0">
@@ -3637,7 +3644,12 @@ function renderNavMiniChart(days){
   const lbls=hist.map(n=>n.date),vals=hist.map(n=>n.cny);
   const latest=vals[vals.length-1]||0,first=vals[0]||0,chg=latest-first;
   const lbl=document.getElementById('ov-nav-lbl');
-  if(lbl)lbl.textContent=fc(latest,'CNY')+(chg>=0?' ↑':' ↓')+fc(Math.abs(chg),'CNY');
+  if(lbl){
+    const pct=first>0?chg/first*100:0;
+    const sign=chg>=0?'+':'';
+    lbl.textContent=vals.length>1&&chg!==0?sign+fc(chg,'CNY')+'  '+sign+Math.abs(pct).toFixed(1)+'%':'';
+    lbl.style.color=chg>=0?'var(--up-soft)':chg<0?'var(--dn-soft)':'var(--text-4)';
+  }
   if(ovChart)ovChart.destroy();
   const ctx=document.getElementById('chart-ov');if(!ctx)return;
   const isDark=!document.body.classList.contains('light');
@@ -4455,13 +4467,20 @@ function renderOverviewDashboard(){
   const snapsSorted=(D.navHistory||[]).filter(n=>n&&n.date&&n.cny!=null&&!isNaN(Number(n.cny))).sort((a,b)=>a.date.localeCompare(b.date));
   const oldest=snapsSorted[0]||null;
   const lastSnap=snapsSorted.length?snapsSorted[snapsSorted.length-1]:null;
+  const baseEl=document.getElementById('ov-nav-baseline');
   if(oldest&&oldest.date&&cny>0){
     mileFirst.textContent=fc(oldest.cny,'CNY',0)+' · '+oldest.date;
     const d=cny-oldest.cny;
+    const bp=oldest.cny>0?(d/oldest.cny*100):0;
     mileDelta.textContent=(d>=0?'+':'')+fc(d,'CNY',0);
     mileDelta.className=d<0?'mile-delta-neg':'mile-delta-pos';
     mileDelta.style.color=d<0?'var(--red)':d>0?'var(--green)':'';
+    if(baseEl){
+      baseEl.textContent=`较首次快照 ${fc(oldest.cny,'CNY',0)}（${oldest.date}）→ ${d>=0?'+':''}${fc(d,'CNY',0)}（${d>=0?'+':''}${bp.toFixed(1)}%）`;
+      baseEl.style.color=d>=0?'var(--up-soft)':d<0?'var(--dn-soft)':'var(--text-4)';
+    }
   }else{
+    if(baseEl){baseEl.textContent='记录快照后可对比首次变动';baseEl.style.color='var(--text-4)';}
     mileFirst.textContent='—';
     mileDelta.textContent='—';
     mileDelta.className='';
