@@ -238,6 +238,22 @@ body:not(.light) .news-item:hover{background:rgba(255,255,255,.04)}
 .ov-event-tag.impact-high{background:var(--red-bg);border-color:rgba(239,68,68,.25);color:var(--red)}
 .ov-event-tag.impact-med{background:var(--gold-bg);border-color:rgba(234,179,8,.25);color:var(--gold)}
 .ov-events-empty{font-size:15px;color:var(--text3);padding:20px 0;text-align:center;font-family:var(--mono)}
+.ov-event-row.today{background:rgba(16,185,129,.08);margin:0 -8px;padding:14px 8px;border-radius:var(--r-sm);border:1px solid rgba(16,185,129,.22)}
+.ov-event-row.past{opacity:.72}
+.ov-event-row.past .ov-event-title{color:var(--text2)}
+.ov-event-date .countdown.past-days{color:var(--text3)}
+.ov-events-today-marker{text-align:center;font-size:13px;font-weight:600;color:#6ee7b7;font-family:var(--mono);padding:10px 0;margin:6px 0;border-top:1px dashed rgba(16,185,129,.25);border-bottom:1px dashed rgba(16,185,129,.25);background:rgba(16,185,129,.04);border-radius:var(--r-sm)}
+.ov-events-ai{margin-top:18px;padding-top:18px;border-top:1px solid var(--border)}
+.ov-events-ai-hd{font-size:14px;font-weight:600;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ov-events-ai-msgs{display:flex;flex-direction:column;gap:8px;max-height:280px;overflow-y:auto;margin-bottom:10px;scrollbar-width:thin}
+.ov-events-ai-msg{max-width:94%;padding:10px 12px;border-radius:10px;font-size:14px;line-height:1.6;word-break:break-word}
+.ov-events-ai-msg.user{align-self:flex-end;background:var(--accent-soft);border:1px solid rgba(99,102,241,.25);color:var(--text)}
+.ov-events-ai-msg.bot{align-self:flex-start;background:var(--bg3);border:1px solid var(--border2);color:var(--text2)}
+.ov-events-ai-compose{display:flex;gap:8px;align-items:flex-end}
+.ov-events-ai-input{flex:1;min-height:42px;max-height:100px;padding:10px 12px;border:1px solid var(--border2);border-radius:var(--r-sm);background:var(--surface);color:var(--text);font-size:14px;font-family:var(--font);resize:vertical;line-height:1.5}
+.ov-events-ai-input:focus{outline:none;box-shadow:var(--ring)}
+.ov-events-ai-send{height:42px;padding:0 16px;flex-shrink:0}
+.ov-events-ai-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
 .ov-insight-chip{font-size:12px;padding:5px 12px;border-radius:999px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);line-height:var(--lh-snug)}
 .ov-insight-chip.warn{border-color:rgba(245,158,11,.45);color:var(--gold);background:var(--gold-bg)}
 .ov-insight-chip.info{border-color:rgba(202,138,4,.4);color:var(--accent2);background:var(--accent-soft)}
@@ -880,7 +896,7 @@ body.light .fh-mkt-badge.fh-mkt-night{color:#0f766e;background:rgba(15,118,110,.
         <div class="ov-events-hd">
           <div>
             <div class="card-title" style="margin-bottom:0">📅 大事件关注</div>
-            <div class="ov-events-sub" id="ov-events-range">未来 12 个月 · 宏观日历 + 持仓到期</div>
+            <div class="ov-events-sub" id="ov-events-range">近1个月已发生 + 未来12个月 · 宏观 + 持仓到期</div>
           </div>
           <div class="ov-events-filters" id="ov-events-filters">
             <button type="button" class="ov-events-filter active" data-ev-filter="all" onclick="setEventsFilter('all',this)">全部</button>
@@ -890,6 +906,19 @@ body.light .fh-mkt-badge.fh-mkt-night{color:#0f766e;background:rgba(15,118,110,.
           </div>
         </div>
         <div class="ov-events-list" id="ov-events-list"></div>
+        <div class="ov-events-ai" id="ov-events-ai">
+          <div class="ov-events-ai-hd">🤖 大事件 AI 解读 <span style="font-size:12px;font-weight:400;color:var(--text3);font-family:var(--mono)">结合日历与持仓 · 可连续追问</span></div>
+          <div class="ov-events-ai-chips">
+            <button type="button" class="ov-events-filter" onclick="eventsAiSuggest('未来3个月哪些大事件对我的组合影响最大？')">3个月影响</button>
+            <button type="button" class="ov-events-filter" onclick="eventsAiSuggest('今天前后有什么需要我立刻关注的事项？')">今天关注什么</button>
+            <button type="button" class="ov-events-filter" onclick="eventsAiSuggest('已发生的FOMC/CPI对我当前配置意味着什么？')">回顾已发生事件</button>
+          </div>
+          <div class="ov-events-ai-msgs" id="ov-events-ai-msgs"></div>
+          <div class="ov-events-ai-compose">
+            <textarea id="ov-events-ai-input" class="ov-events-ai-input" rows="2" placeholder="询问任意大事件：如「RBA 降息对我 AUD 定存有何影响？」"></textarea>
+            <button type="button" id="ov-events-ai-send" class="btn btn-primary ov-events-ai-send" onclick="sendEventsAiChat()">发送</button>
+          </div>
+        </div>
       </div>
       <div id="ov-dash" class="ov-dash">
         <div id="ov-insights" class="ov-insights"></div>
@@ -3082,6 +3111,14 @@ document.addEventListener('DOMContentLoaded',()=>{
       sendAiChatMessage();
     }
   });
+  const evInput=document.getElementById('ov-events-ai-input');
+  evInput?.addEventListener('keydown',e=>{
+    if(e.key==='Enter'&&!e.shiftKey){
+      e.preventDefault();
+      sendEventsAiChat();
+    }
+  });
+  renderEventsAiMsgs();
 });
 
 async function fetchAiAdvice(){
@@ -3126,6 +3163,13 @@ let ovChart=null,ovDashChartRegion=null,ovDashChartType=null,ovRange=30;
 let ovEventsFilter='all';
 
 const MACRO_EVENTS_WATCH=[
+  {date:'2026-05-07',title:'FOMC 利率决议',region:'us',cat:'monetary',impact:'high',desc:'5月议息结果已公布，可对照声明措辞回顾对美股、美元的影响。'},
+  {date:'2026-05-13',title:'美国 4 月 CPI 通胀数据',region:'us',cat:'market',impact:'high',desc:'通胀读数影响 Fed 路径预期，可复盘当时美债收益率与成长股反应。'},
+  {date:'2026-05-13',title:'澳大利亚联邦预算案（2026-27）',region:'au',cat:'policy',impact:'high',desc:'预算案影响 AUD、本地利率与税收预期，定存与现金配置可对照调整。'},
+  {date:'2026-05-31',title:'5 月收官 · 资金再平衡',region:'global',cat:'market',impact:'medium',desc:'月末/季前机构调仓窗口，流动性与波动率常阶段性放大。'},
+  {date:'2026-06-02',title:'RBA 利率决议',region:'au',cat:'monetary',impact:'high',desc:'澳洲联储 6 月决议已落地，关注 AUD 与本地定存利率路径。'},
+  {date:'2026-06-06',title:'美国 5 月非农就业数据',region:'us',cat:'market',impact:'high',desc:'就业数据影响 Fed 降息预期，与 CPI 一并决定美元强弱。'},
+  {date:'2026-06-10',title:'中国 5 月 CPI / PPI 公布',region:'cn',cat:'market',impact:'high',desc:'物价数据影响国内政策预期与人民币资产情绪，今日重点关注。'},
   {date:'2026-06-17',title:'FOMC 利率决议',region:'us',cat:'monetary',impact:'high',desc:'美联储公布利率决定及点阵图摘要，影响美元、美股与全球风险偏好。'},
   {date:'2026-06-30',title:'二季度末 · 机构再平衡窗口',region:'global',cat:'market',impact:'medium',desc:'季末/半年末常见指数调仓与资金再配置，短期波动可能放大。'},
   {date:'2026-07-15',title:'美国 CPI 通胀数据',region:'us',cat:'market',impact:'high',desc:'核心通胀走势直接影响 Fed 降息/加息预期与美债收益率。'},
@@ -3148,50 +3192,134 @@ const MACRO_EVENTS_WATCH=[
   {date:'2027-06-08',title:'FOMC 利率决议',region:'us',cat:'monetary',impact:'high',desc:'年中议息，评估上半年通胀回落与就业韧性。'}
 ];
 
+function localTodayISO(){
+  const t=new Date();
+  return `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;
+}
+
 function eventDaysUntil(dateStr){
-  const today=new Date();
-  today.setHours(0,0,0,0);
-  const d=new Date(dateStr+'T12:00:00');
+  const today=new Date(localTodayISO()+'T00:00:00');
+  const d=new Date(dateStr+'T00:00:00');
   return Math.round((d-today)/86400000);
 }
 
 function collectPersonalWatchEvents(){
   const out=[];
-  const now=new Date();now.setHours(0,0,0,0);
-  const horizon=new Date(now);horizon.setDate(horizon.getDate()+365);
+  const today=new Date(localTodayISO()+'T00:00:00');
+  const past=new Date(today);past.setDate(past.getDate()-30);
+  const horizon=new Date(today);horizon.setDate(horizon.getDate()+365);
   (D.products||[]).forEach(p=>{
     if(p.type!=='term_deposit')return;
     const end=p.tdContractEnd||p.tdEnd;
     if(!end)return;
-    const d=new Date(end+'T12:00:00');
-    if(d<now||d>horizon)return;
+    const d=new Date(end+'T00:00:00');
+    if(d<past||d>horizon)return;
     const days=eventDaysUntil(end);
     const cur=p.tdCur||p.currency||'AUD';
     const val=tdCurVal(p);
     const region=p.region||'au';
+    const pastEv=days<0;
     out.push({
       date:end,
-      title:`定存到期 · ${p.name||'定期存款'}`,
+      title:`定存${pastEv?'已到期':'到期'} · ${p.name||'定期存款'}`,
       region,
       cat:'personal',
-      impact:days<=30?'high':days<=90?'medium':'medium',
+      impact:Math.abs(days)<=30?'high':Math.abs(days)<=90?'medium':'medium',
       personal:true,
-      desc:`${cur} ${fc(val,cur,2)} · ${p.rate||0}% p.a. · 到期后需决定续存、转投或调回现金。`
+      desc:`${cur} ${fc(val,cur,2)} · ${p.rate||0}% p.a. · ${pastEv?'已到期，确认是否续存或转投。':'到期后需决定续存、转投或调回现金。'}`
     });
   });
   return out;
 }
 
 function mergeWatchEvents(){
-  const today=new Date();today.setHours(0,0,0,0);
+  const today=new Date(localTodayISO()+'T00:00:00');
+  const past=new Date(today);past.setDate(past.getDate()-30);
   const horizon=new Date(today);horizon.setDate(horizon.getDate()+365);
   const all=[...MACRO_EVENTS_WATCH.map(e=>({...e,personal:false})),...collectPersonalWatchEvents()];
   return all
     .filter(e=>{
-      const d=new Date(e.date+'T12:00:00');
-      return d>=today&&d<=horizon;
+      const d=new Date(e.date+'T00:00:00');
+      return d>=past&&d<=horizon;
     })
     .sort((a,b)=>a.date.localeCompare(b.date)||(a.personal===b.personal?0:a.personal?1:-1));
+}
+
+function buildEventsCalendarContext(){
+  const events=mergeWatchEvents();
+  const today=localTodayISO();
+  const lines=[`今日日期：${today}`,`时间窗口：过去30天 + 未来365天`,`共 ${events.length} 项`,''];
+  events.forEach(ev=>{
+    const days=eventDaysUntil(ev.date);
+    let when='';
+    if(days===0)when='【今天】';
+    else if(days>0)when=`${days}天后`;
+    else when=`${Math.abs(days)}天前（已发生）`;
+    lines.push(`- ${ev.date} ${when} · ${ev.title} · ${ev.region} · ${ev.impact==='high'?'高影响':'中影响'}${ev.personal?' · 个人持仓':''}`);
+    if(ev.desc)lines.push(`  ${ev.desc}`);
+  });
+  return lines.join('\n');
+}
+
+let eventsAiChat={messages:[]};
+
+function renderEventsAiMsgs(){
+  const box=document.getElementById('ov-events-ai-msgs');
+  if(!box)return;
+  if(!eventsAiChat.messages.length){
+    box.innerHTML='<div style="font-size:13px;color:var(--text3);padding:8px 2px;font-family:var(--mono)">输入问题，AI 将结合上方大事件日历与你的脱敏持仓解读。</div>';
+    return;
+  }
+  box.innerHTML=eventsAiChat.messages.map(m=>`<div class="ov-events-ai-msg ${m.role==='user'?'user':'bot'}">${m.role==='user'?escOvHtml(m.content).replace(/\n/g,'<br>'):escOvHtml(m.content).replace(/\n/g,'<br>')}</div>`).join('');
+  box.scrollTop=box.scrollHeight;
+}
+
+function eventsAiSuggest(text){
+  const input=document.getElementById('ov-events-ai-input');
+  if(input){input.value=text;input.focus();}
+}
+
+async function sendEventsAiChat(){
+  const input=document.getElementById('ov-events-ai-input');
+  const sendBtn=document.getElementById('ov-events-ai-send');
+  const text=(input?.value||'').trim();
+  if(!text)return;
+  const provider=document.getElementById('ai-provider')?.value||'gemini';
+  eventsAiChat.messages.push({role:'user',content:text});
+  if(input)input.value='';
+  renderEventsAiMsgs();
+  if(sendBtn){sendBtn.disabled=true;sendBtn.textContent='…';}
+
+  const portfolio=buildSanitizedPortfolio();
+  const eventsContext=buildEventsCalendarContext();
+  try{
+    const r=await fetch('/api/ai-advisor',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({mode:'events',eventsContext,portfolio,messages:eventsAiChat.messages,provider,sanitized:true})
+    });
+    const data=await r.json();
+    if(data.advice){
+      eventsAiChat.messages.push({role:'assistant',content:data.advice});
+      renderEventsAiMsgs();
+    }else{
+      eventsAiChat.messages.pop();
+      renderEventsAiMsgs();
+      alert('回复失败：'+(data.error||'未知'));
+    }
+  }catch(e){
+    eventsAiChat.messages.pop();
+    renderEventsAiMsgs();
+    alert('网络错误：'+(e.message||''));
+  }finally{
+    if(sendBtn){sendBtn.disabled=false;sendBtn.textContent='发送';}
+    input?.focus();
+  }
+}
+
+function todayMarkerHtml(){
+  const t=new Date();
+  return `<div class="ov-events-today-marker">📍 今天 · ${t.getFullYear()}年${t.getMonth()+1}月${t.getDate()}日</div>`;
 }
 
 function setEventsFilter(filter,btn){
@@ -3209,32 +3337,42 @@ function renderMajorEventsWatch(){
   else if(ovEventsFilter==='personal')events=events.filter(e=>e.personal);
   else if(ovEventsFilter==='high')events=events.filter(e=>e.impact==='high');
 
-  const today=new Date();today.setHours(0,0,0,0);
+  const today=new Date(localTodayISO()+'T00:00:00');
+  const past=new Date(today);past.setDate(past.getDate()-30);
   const end=new Date(today);end.setDate(end.getDate()+365);
   const fmtR=d=>`${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
-  if(rangeEl)rangeEl.textContent=`${fmtR(today)} — ${fmtR(end)} · 共 ${events.length} 项`;
+  if(rangeEl)rangeEl.textContent=`${fmtR(past)} — ${fmtR(end)} · 共 ${events.length} 项`;
 
   if(!events.length){
-    listEl.innerHTML='<div class="ov-events-empty">该筛选下暂无 upcoming 事件</div>';
+    listEl.innerHTML='<div class="ov-events-empty">该筛选下暂无事件</div>';
     return;
   }
 
   const regionLabel={cn:'🇨🇳 中国',us:'🇺🇸 美国',au:'🇦🇺 澳洲',global:'🌐 全球'};
   const catLabel={monetary:'央行',policy:'政策',market:'市场',personal:'持仓',geopolitical:'地缘'};
-  listEl.innerHTML=events.map(ev=>{
+  const rows=[];
+  let todayMarkerInserted=false;
+  events.forEach((ev,i)=>{
     const days=eventDaysUntil(ev.date);
-    const d=new Date(ev.date+'T12:00:00');
+    const prevDays=i>0?eventDaysUntil(events[i-1].date):null;
+    if(!todayMarkerInserted&&(prevDays!==null&&prevDays<0&&days>=0||days===0&&prevDays!==null&&prevDays<0)){
+      rows.push(todayMarkerHtml());
+      todayMarkerInserted=true;
+    }
+    const d=new Date(ev.date+'T00:00:00');
     const dateLbl=`${d.getMonth()+1}月${d.getDate()}日`;
     const yearLbl=d.getFullYear()!==today.getFullYear()?` ${d.getFullYear()}`:'';
     let countdown='';
     if(days===0)countdown='今天';
     else if(days===1)countdown='明天';
     else if(days>0&&days<=60)countdown=`${days} 天后`;
-    else if(days<0)countdown='已过期';
-    const soon=days>=0&&days<=14;
+    else if(days<0)countdown=`${Math.abs(days)} 天前`;
+    const isToday=days===0;
+    const isPast=days<0;
+    const soon=!isPast&&days<=14;
     const impactCls=ev.impact==='high'?'impact-high':'impact-med';
-    return `<div class="ov-event-row${soon?' soon':''}${ev.personal?' personal':''}">
-      <div class="ov-event-date"><b>${dateLbl}</b><span>${yearLbl.trim()||'本年'}</span>${countdown?`<div class="countdown">${countdown}</div>`:''}</div>
+    rows.push(`<div class="ov-event-row${isToday?' today':''}${isPast?' past':''}${soon&&!isToday?' soon':''}${ev.personal?' personal':''}">
+      <div class="ov-event-date"><b>${dateLbl}</b><span>${yearLbl.trim()||'本年'}</span>${countdown?`<div class="countdown${isPast?' past-days':''}">${countdown}</div>`:''}</div>
       <div class="ov-event-body">
         <div class="ov-event-title">${escOvHtml(ev.title)}</div>
         <div class="ov-event-desc">${escOvHtml(ev.desc||'')}</div>
@@ -3242,11 +3380,18 @@ function renderMajorEventsWatch(){
           <span class="ov-event-tag region-${ev.region||'global'}">${regionLabel[ev.region]||regionLabel.global}</span>
           <span class="ov-event-tag">${catLabel[ev.cat]||ev.cat||'—'}</span>
           <span class="ov-event-tag ${impactCls}">${ev.impact==='high'?'高影响':'中影响'}</span>
+          ${isToday?'<span class="ov-event-tag impact-high">📍 今天</span>':''}
+          ${isPast?'<span class="ov-event-tag">已发生</span>':''}
           ${ev.personal?'<span class="ov-event-tag">📌 自动同步</span>':''}
         </div>
       </div>
-    </div>`;
-  }).join('');
+    </div>`);
+  });
+  if(!todayMarkerInserted){
+    if(events.every(e=>eventDaysUntil(e.date)<0))rows.push(todayMarkerHtml());
+    else if(events.every(e=>eventDaysUntil(e.date)>0))rows.unshift(todayMarkerHtml());
+  }
+  listEl.innerHTML=rows.join('');
 }
 
 function renderOverview(){
