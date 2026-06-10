@@ -888,7 +888,7 @@ body.light .fh-mkt-badge.fh-mkt-night{color:#0f766e;background:rgba(15,118,110,.
 
     <!-- OVERVIEW -->
     <div class="page active space-y-4 md:space-y-6" id="page-overview">
-      <div class="btc-ticker-bar" id="btc-ticker-bar" title="点击刷新">
+      <div class="btc-ticker-bar" id="btc-ticker-bar" title="点击刷新" onclick="refreshBtcPrice()">
         <div class="btc-ticker-left">
           <div class="btc-ticker-icon" aria-hidden="true">₿</div>
           <div class="btc-ticker-meta">
@@ -4396,6 +4396,15 @@ async function refreshAllQuotes(){
       }else lines.push('汇率失败');
     }catch(e){lines.push('汇率失败');}
 
+    show('🔄 正在刷新比特币…');
+    try{
+      const btc=await fetchBtcPrice();
+      if(btc?.usd>0){
+        updateBtcTicker(btc);
+        lines.push('BTC');
+      }else lines.push('BTC失败');
+    }catch(e){lines.push('BTC失败');}
+
     const golds=D.products.filter(p=>p.type==='gold');
     if(golds.length){
       show('🔄 正在刷新金价（Au99.99）…');
@@ -5335,6 +5344,8 @@ function importCbaAuPreset(){
 renderOverview();
 renderSidebar();
 updateGoldChip();
+refreshBtcPrice();
+startBtcAutoRefresh();
 initFinnhubUsLive();
 
 // Live reverse rate preview as user types
