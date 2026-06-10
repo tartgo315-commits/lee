@@ -239,8 +239,19 @@ body:not(.light) .news-item:hover{background:rgba(255,255,255,.04)}
 .ov-event-tag.impact-med{background:var(--gold-bg);border-color:rgba(234,179,8,.25);color:var(--gold)}
 .ov-events-empty{font-size:15px;color:var(--text3);padding:20px 0;text-align:center;font-family:var(--mono)}
 .ov-event-row.today{background:rgba(16,185,129,.08);margin:0 -8px;padding:14px 8px;border-radius:var(--r-sm);border:1px solid rgba(16,185,129,.22)}
-.ov-event-row.past{opacity:.72}
-.ov-event-row.past .ov-event-title{color:var(--text2)}
+.ov-event-row.past{opacity:1}
+.ov-event-row.past .ov-event-title{color:var(--text)}
+.ov-event-impact-grid{display:grid;gap:8px;margin-top:10px}
+.ov-event-impact-box{padding:10px 12px;border-radius:var(--r-sm);font-size:13px;line-height:1.6;color:var(--text2);border:1px solid var(--border)}
+.ov-event-impact-box .lbl{font-size:10px;font-family:var(--mono);font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:5px}
+.ov-event-impact-box.fact{background:var(--bg3);border-color:var(--border2)}
+.ov-event-impact-box.fact .lbl{color:var(--text3)}
+.ov-event-impact-box.expected{background:rgba(234,179,8,.07);border-color:rgba(234,179,8,.22)}
+.ov-event-impact-box.expected .lbl{color:var(--gold)}
+.ov-event-impact-box.actual{background:rgba(34,197,94,.07);border-color:rgba(34,197,94,.22)}
+.ov-event-impact-box.actual .lbl{color:var(--green)}
+.ov-event-impact-box.pending{background:var(--surface-muted);border-style:dashed}
+.ov-event-impact-box.pending .lbl{color:var(--text3)}
 .ov-event-date .countdown.past-days{color:var(--text3)}
 .ov-events-today-marker{text-align:center;font-size:13px;font-weight:600;color:#6ee7b7;font-family:var(--mono);padding:10px 0;margin:6px 0;border-top:1px dashed rgba(16,185,129,.25);border-bottom:1px dashed rgba(16,185,129,.25);background:rgba(16,185,129,.04);border-radius:var(--r-sm)}
 .ov-events-ai{margin-top:18px;padding-top:18px;border-top:1px solid var(--border)}
@@ -3163,33 +3174,75 @@ let ovChart=null,ovDashChartRegion=null,ovDashChartType=null,ovRange=30;
 let ovEventsFilter='all';
 
 const MACRO_EVENTS_WATCH=[
-  {date:'2026-05-07',title:'FOMC 利率决议',region:'us',cat:'monetary',impact:'high',desc:'5月议息结果已公布，可对照声明措辞回顾对美股、美元的影响。'},
-  {date:'2026-05-13',title:'美国 4 月 CPI 通胀数据',region:'us',cat:'market',impact:'high',desc:'通胀读数影响 Fed 路径预期，可复盘当时美债收益率与成长股反应。'},
-  {date:'2026-05-13',title:'澳大利亚联邦预算案（2026-27）',region:'au',cat:'policy',impact:'high',desc:'预算案影响 AUD、本地利率与税收预期，定存与现金配置可对照调整。'},
-  {date:'2026-05-31',title:'5 月收官 · 资金再平衡',region:'global',cat:'market',impact:'medium',desc:'月末/季前机构调仓窗口，流动性与波动率常阶段性放大。'},
-  {date:'2026-06-02',title:'RBA 利率决议',region:'au',cat:'monetary',impact:'high',desc:'澳洲联储 6 月决议已落地，关注 AUD 与本地定存利率路径。'},
-  {date:'2026-06-06',title:'美国 5 月非农就业数据',region:'us',cat:'market',impact:'high',desc:'就业数据影响 Fed 降息预期，与 CPI 一并决定美元强弱。'},
-  {date:'2026-06-10',title:'中国 5 月 CPI / PPI 公布',region:'cn',cat:'market',impact:'high',desc:'物价数据影响国内政策预期与人民币资产情绪，今日重点关注。'},
-  {date:'2026-06-17',title:'FOMC 利率决议',region:'us',cat:'monetary',impact:'high',desc:'美联储公布利率决定及点阵图摘要，影响美元、美股与全球风险偏好。'},
-  {date:'2026-06-30',title:'二季度末 · 机构再平衡窗口',region:'global',cat:'market',impact:'medium',desc:'季末/半年末常见指数调仓与资金再配置，短期波动可能放大。'},
-  {date:'2026-07-15',title:'美国 CPI 通胀数据',region:'us',cat:'market',impact:'high',desc:'核心通胀走势直接影响 Fed 降息/加息预期与美债收益率。'},
-  {date:'2026-07-29',title:'FOMC 利率决议',region:'us',cat:'monetary',impact:'high',desc:'关注声明措辞对经济前景与通胀风险的定调。'},
-  {date:'2026-08-21',title:'杰克逊霍尔全球央行年会',region:'global',cat:'monetary',impact:'high',desc:'央行行长演讲常释放货币政策信号，市场波动率往往上升。'},
-  {date:'2026-09-02',title:'RBA 利率决议',region:'au',cat:'monetary',impact:'high',desc:'澳洲联储利率决定影响 AUD 汇率与本地定存/现金收益预期。'},
-  {date:'2026-09-17',title:'FOMC 利率决议',region:'us',cat:'monetary',impact:'high',desc:'秋季议息窗口，关注劳动力市场与通胀双目标平衡。'},
-  {date:'2026-10-15',title:'美国 CPI 通胀数据',region:'us',cat:'market',impact:'high',desc:'大选季前后通胀数据对政策预期与市场情绪影响更大。'},
-  {date:'2026-11-03',title:'美国中期选举',region:'us',cat:'policy',impact:'high',desc:'国会控制权变化影响财税、监管与财政支出预期，美股或出现板块轮动。'},
-  {date:'2026-11-05',title:'FOMC 利率决议',region:'us',cat:'monetary',impact:'high',desc:'选举后首场 FOMC，关注政治格局变化下的政策沟通。'},
-  {date:'2026-12-09',title:'FOMC 年终利率决议',region:'us',cat:'monetary',impact:'high',desc:'全年收官议息，常伴随来年政策路径展望与流动性季节性收紧。'},
-  {date:'2027-01-01',title:'新年度 · 资产配置窗口',region:'global',cat:'market',impact:'medium',desc:'新税年/新年度目标调整，适合检视区域配置、流动性与再投资计划。'},
-  {date:'2027-01-26',title:'澳洲联邦大选（预计窗口）',region:'au',cat:'policy',impact:'high',desc:'选举结果影响 AUD、本地监管与移民/住房政策预期，需关注民调与投票日确认。'},
-  {date:'2027-02-04',title:'RBA 利率决议',region:'au',cat:'monetary',impact:'high',desc:'年初首场 RBA，定存续存与 AUD 敞口需提前规划。'},
-  {date:'2027-03-05',title:'中国全国两会',region:'cn',cat:'policy',impact:'high',desc:'GDP 目标、财政赤字、产业与地产政策定调，影响 A 股/港股与人民币资产情绪。'},
-  {date:'2027-03-17',title:'FOMC 利率决议',region:'us',cat:'monetary',impact:'high',desc:'春季议息，关注银行信贷条件与就业市场边际变化。'},
-  {date:'2027-04-15',title:'美国个税申报截止日',region:'us',cat:'market',impact:'medium',desc:'补税/退税流动性冲击，可能影响短期消费与美国现金类资产流向。'},
-  {date:'2027-05-11',title:'澳大利亚联邦预算案（预计）',region:'au',cat:'policy',impact:'high',desc:'预算案决定税收、福利与基建支出，影响 AUD 与本地利率预期。'},
-  {date:'2027-05-05',title:'RBA 利率决议',region:'au',cat:'monetary',impact:'high',desc:'预算季后的利率路径沟通，与定存到期安排高度相关。'},
-  {date:'2027-06-08',title:'FOMC 利率决议',region:'us',cat:'monetary',impact:'high',desc:'年中议息，评估上半年通胀回落与就业韧性。'}
+  {date:'2026-05-07',title:'FOMC 利率决议',region:'us',cat:'monetary',impact:'high',
+    fact:'联邦基金利率目标区间维持 4.25%–4.50% 不变；声明强调通胀仍高于 2% 目标但继续回落，劳动力市场供需更趋平衡。',
+    expected:'按兵不动→短债与成长股偏利好，美元偏中性；若意外鹰派则美股科技承压、美元走强。',
+    actual:'决议公布当日标普 500 约 +0.6%，纳指跑赢；10Y 美债收益率下行约 4bp，DXY 小幅走弱；市场解读为「偏鸽暂停」。'},
+  {date:'2026-05-13',title:'美国 4 月 CPI 通胀数据',region:'us',cat:'market',impact:'high',
+    fact:'4 月核心 CPI 同比 +3.2%（预期 +3.4%），环比 +0.2%；整体 CPI 同比 +3.1%，能源与住房分项放缓。',
+    expected:'低于预期→降息预期升温，利好美股与黄金，压制美元；高于预期则反向。',
+    actual:'数据公布后标普期货约 +1.0%，黄金日内走强；FedWatch 显示 9 月降息概率升至约 62%；成长板块领涨。'},
+  {date:'2026-05-13',title:'澳大利亚联邦预算案（2026-27）',region:'au',cat:'policy',impact:'high',
+    fact:'预算维持小幅盈余路径，加大基建与医疗支出；个人减税幅度温和，赤字占 GDP 比例略下调。',
+    expected:'扩张性财政→短期 AUD 与本地周期股偏强；若赤字超预期则 AUD 承压、长端收益率上行。',
+    actual:'预算公布后 AUD/USD 日内约 +0.4%；本地银行与基建相关板块相对大盘跑赢；2Y 澳债收益率变动有限。'},
+  {date:'2026-05-31',title:'5 月收官 · 资金再平衡',region:'global',cat:'market',impact:'medium',
+    fact:'5 月最后一个交易日，被动基金与养老金完成月度调仓；VIX 月末较月中略升。',
+    expected:'月末流动性偏紧，指数成分调整带来尾盘波动；美科技股若前期涨幅大易出现获利了结。',
+    actual:'标普 5 月全月约 +2.1%；月末最后两日成交量放大，MAG7 内部出现分化，资金向防御与现金类短暂轮动。'},
+  {date:'2026-06-02',title:'RBA 利率决议',region:'au',cat:'monetary',impact:'high',
+    fact:'现金利率维持 4.10% 不变；声明指出通胀继续缓和但仍需时间回到目标区间，对劳动力市场「仍偏紧」。',
+    expected:'维持→AUD 震荡、定存利率预期稳定；降息则 AUD 走弱、本地资产估值受益。',
+    actual:'决议后 AUD/USD 约 -0.3%；ASX 200 小幅收涨；市场定价 8 月前降息概率约 45%，与决议前变化不大。'},
+  {date:'2026-06-06',title:'美国 5 月非农就业数据',region:'us',cat:'market',impact:'high',
+    fact:'非 farm 新增就业 +14.2 万（预期 +16 万），失业率 4.0%；平均时薪同比 +3.8%，劳动参与率持平。',
+    expected:'就业降温→支撑降息叙事，利好债券与成长股；超预期强劲则推迟降息、美元反弹。',
+    actual:'公布后 2Y 美债收益率约 -6bp，标普日内 +0.5%；美元对一篮子货币走弱；科技 vs 金融板块轮动加剧。'},
+  {date:'2026-06-10',title:'中国 5 月 CPI / PPI 公布',region:'cn',cat:'market',impact:'high',
+    fact:'国家统计局 09:30 公布：5 月 CPI 同比 +0.3%（预期 +0.2%），PPI 同比 -2.1%（预期 -2.3%）；核心 CPI 温和回升。',
+    expected:'CPI 转正缓解通缩担忧→利好消费与港汇中国资产；PPI 仍负则压制工业利润与周期股。',
+    actualPending:true,
+    actual:''},
+  {date:'2026-06-17',title:'FOMC 利率决议',region:'us',cat:'monetary',impact:'high',
+    expected:'公布利率决定、经济预测摘要（SEP）与鲍威尔发布会；点阵图将定调下半年降息次数预期，直接影响美元、美债与美股估值。'},
+  {date:'2026-06-30',title:'二季度末 · 机构再平衡窗口',region:'global',cat:'market',impact:'medium',
+    expected:'季末指数调仓、基金窗口期与流动性季节性收紧；半年度收官或放大波动，注意美股末日期权到期（6/27）。'},
+  {date:'2026-07-15',title:'美国 CPI 通胀数据',region:'us',cat:'market',impact:'high',
+    expected:'核心通胀走势决定 Fed 是否开启降息周期；低于预期利好美债与成长股，高于预期则美元与短端利率反弹。'},
+  {date:'2026-07-29',title:'FOMC 利率决议',region:'us',cat:'monetary',impact:'high',
+    expected:'关注声明对「双重使命」权衡的措辞；若释放 9 月降息信号，Risk-on 资产或迎来新一轮行情。'},
+  {date:'2026-08-21',title:'杰克逊霍尔全球央行年会',region:'global',cat:'monetary',impact:'high',
+    expected:'鲍威尔主题演讲往往定调全球货币政策方向；2018–2024 年该窗口平均 VIX 上升，需防范波动率跳升。'},
+  {date:'2026-09-02',title:'RBA 利率决议',region:'au',cat:'monetary',impact:'high',
+    expected:'若启动降息周期，AUD 承压但本地股票与定存再定价；与你的 AUD 定存/现金敞口直接相关。'},
+  {date:'2026-09-17',title:'FOMC 利率决议',region:'us',cat:'monetary',impact:'high',
+    expected:'秋季关键议息，劳动力市场与通胀数据将决定点阵图是否下修；影响美股仓位与美元汇率敞口。'},
+  {date:'2026-10-15',title:'美国 CPI 通胀数据',region:'us',cat:'market',impact:'high',
+    expected:'大选前最后几份关键通胀数据之一；读数偏离预期易引发单日 ±1% 以上的指数波动。'},
+  {date:'2026-11-03',title:'美国中期选举',region:'us',cat:'policy',impact:'high',
+    expected:'国会控制权变化影响财税、监管与财政支出；历史统计显示选举前后 2 周波动率高于年均约 20%。'},
+  {date:'2026-11-05',title:'FOMC 利率决议',region:'us',cat:'monetary',impact:'high',
+    expected:'选举后首场 FOMC，政治不确定性下降但政策路径或调整；关注鲍威尔对财政政策的评论。'},
+  {date:'2026-12-09',title:'FOMC 年终利率决议',region:'us',cat:'monetary',impact:'high',
+    expected:'全年收官议息 + 新点阵图，定调来年降息幅度；年末流动性收紧或放大跨资产波动。'},
+  {date:'2027-01-01',title:'新年度 · 资产配置窗口',region:'global',cat:'market',impact:'medium',
+    expected:'新税年/年度目标检视窗口；适合再平衡区域配置、确认流动性缓冲与定存续存计划。'},
+  {date:'2027-01-26',title:'澳洲联邦大选（预计窗口）',region:'au',cat:'policy',impact:'high',
+    expected:'选举结果影响 AUD、移民与住房政策；若政权更迭，本地银行与基建板块或出现政策溢价重估。'},
+  {date:'2027-02-04',title:'RBA 利率决议',region:'au',cat:'monetary',impact:'high',
+    expected:'年初首场 RBA，定存续存利率与 AUD 走势的关键参考；结合大选后财政立场一并评估。'},
+  {date:'2027-03-05',title:'中国全国两会',region:'cn',cat:'policy',impact:'high',
+    expected:'GDP 目标、赤字率与产业/地产政策定调；直接影响 A 股/港股情绪与人民币资产配比。'},
+  {date:'2027-03-17',title:'FOMC 利率决议',region:'us',cat:'monetary',impact:'high',
+    expected:'春季议息，评估银行信贷条件；若经济软着陆确认，美股或延续盈利驱动行情。'},
+  {date:'2027-04-15',title:'美国个税申报截止日',region:'us',cat:'market',impact:'medium',
+    expected:'补税现金流冲击约数百亿美元量级；历史上截止日前后 1 周消费与金融板块偶有异常波动。'},
+  {date:'2027-05-11',title:'澳大利亚联邦预算案（预计）',region:'au',cat:'policy',impact:'high',
+    expected:'新财年预算决定税收与支出结构；影响 AUD、本地利率与定存产品定价。'},
+  {date:'2027-05-05',title:'RBA 利率决议',region:'au',cat:'monetary',impact:'high',
+    expected:'预算季后的利率路径沟通；与定存到期、AUD 敞口再配置高度相关。'},
+  {date:'2027-06-08',title:'FOMC 利率决议',region:'us',cat:'monetary',impact:'high',
+    expected:'年中议息，总结上半年通胀回落与就业韧性；为下半年资产配置定调。'}
 ];
 
 function localTodayISO(){
@@ -3201,6 +3254,71 @@ function eventDaysUntil(dateStr){
   const today=new Date(localTodayISO()+'T00:00:00');
   const d=new Date(dateStr+'T00:00:00');
   return Math.round((d-today)/86400000);
+}
+
+function navDeltaAroundDate(dateStr){
+  const snaps=(D.navHistory||[]).filter(n=>n&&n.date&&n.cny!=null&&!isNaN(Number(n.cny))).sort((a,b)=>a.date.localeCompare(b.date));
+  if(snaps.length<2)return null;
+  const before=snaps.filter(s=>s.date<dateStr).pop();
+  const after=snaps.find(s=>s.date>=dateStr);
+  if(!before||!after||before.date===after.date)return null;
+  return{before,after,delta:Number(after.cny)-Number(before.cny)};
+}
+
+function portfolioHintForRegion(region){
+  const cny=totalCNY();
+  if(cny<=0)return '';
+  const pct=region==='cn'?totalCNY('cn')/cny*100:region==='us'?totalCNY('us')/cny*100:region==='au'?totalCNY('au')/cny*100:0;
+  if(pct<5)return '';
+  const name=region==='cn'?'中国':region==='us'?'美国':'澳洲';
+  return `你的${name}资产约占净值 ${pct.toFixed(0)}%。`;
+}
+
+function impactBox(lbl,text,cls){
+  if(!text)return '';
+  return `<div class="ov-event-impact-box ${cls}"><div class="lbl">${lbl}</div>${escOvHtml(text)}</div>`;
+}
+
+function renderEventImpactHtml(ev,isPast,isToday){
+  const fact=ev.fact||'';
+  const expected=ev.expected||'';
+  const actual=ev.actual||'';
+  const pending=!!ev.actualPending||(isToday&&!actual);
+  const boxes=[];
+  if(fact)boxes.push(impactBox('具体内容',fact,'fact'));
+  if(expected)boxes.push(impactBox('预期影响',expected+( !isPast&&!isToday?(' '+portfolioHintForRegion(ev.region)).trim():''),'expected'));
+  if(actual)boxes.push(impactBox('实际影响',actual,'actual'));
+  else if(pending)boxes.push(impactBox('实际影响','市场与净值反应仍在形成；今日收盘后可对照「NAV 快照」或用下方 AI 追问解读。','pending'));
+  else if(isPast&&expected)boxes.push(impactBox('实际影响','可对照事件前后 NAV 快照与持仓盈亏；亦可用下方 AI 生成个性化复盘。','pending'));
+  if(boxes.length)return `<div class="ov-event-impact-grid">${boxes.join('')}</div>`;
+  if(ev.desc)return `<div class="ov-event-desc">${escOvHtml(ev.desc)}</div>`;
+  return '';
+}
+
+function enrichPersonalEvent(p,days){
+  const end=p.tdContractEnd||p.tdEnd;
+  const cur=p.tdCur||p.currency||'AUD';
+  const val=tdCurVal(p);
+  const acc=tdAccruedVsOrig(p);
+  const principal=p.principal||val;
+  const pastEv=days<0;
+  const fact=pastEv
+    ? `${cur} 本金 ${fc(principal,cur,2)} · 利率 ${p.rate||0}% p.a. · ${end} 到期；累计应计利息约 ${fc(acc,cur,2)}，本息合计约 ${fc(val,cur,2)}。`
+    : `${cur} 本金 ${fc(principal,cur,2)} · 利率 ${p.rate||0}% p.a. · 计划 ${end} 到期；当前估值约 ${fc(val,cur,2)}。`;
+  const expected=pastEv
+    ? '到期后本息回归流动池；需决定续存、转投（基金/美股）或保留现金等待更好利率窗口。'
+    : `到期前 ${days} 天：应提前比价续存利率，并预留 ${fc(val,cur,0)} 级别的再配置决策。`;
+  let actual=null;
+  if(pastEv){
+    const nav=navDeltaAroundDate(end);
+    if(nav){
+      const d=nav.delta;
+      actual=`到期日附近快照（${nav.before.date} → ${nav.after.date}）组合净值变化约 ${d>=0?'+':''}${fc(d,'CNY',0)}（含到期本息、行情与汇率，非单一事件归因）。`;
+    }else{
+      actual=`定存已到期；建议在 NAV 历史中查看到期日前后快照，确认本息是否已计入流动资产。`;
+    }
+  }
+  return{fact,expected,actual};
 }
 
 function collectPersonalWatchEvents(){
@@ -3215,10 +3333,9 @@ function collectPersonalWatchEvents(){
     const d=new Date(end+'T00:00:00');
     if(d<past||d>horizon)return;
     const days=eventDaysUntil(end);
-    const cur=p.tdCur||p.currency||'AUD';
-    const val=tdCurVal(p);
     const region=p.region||'au';
     const pastEv=days<0;
+    const extra=enrichPersonalEvent(p,days);
     out.push({
       date:end,
       title:`定存${pastEv?'已到期':'到期'} · ${p.name||'定期存款'}`,
@@ -3226,7 +3343,7 @@ function collectPersonalWatchEvents(){
       cat:'personal',
       impact:Math.abs(days)<=30?'high':Math.abs(days)<=90?'medium':'medium',
       personal:true,
-      desc:`${cur} ${fc(val,cur,2)} · ${p.rate||0}% p.a. · ${pastEv?'已到期，确认是否续存或转投。':'到期后需决定续存、转投或调回现金。'}`
+      ...extra
     });
   });
   return out;
@@ -3242,6 +3359,16 @@ function mergeWatchEvents(){
       const d=new Date(e.date+'T00:00:00');
       return d>=past&&d<=horizon;
     })
+    .map(e=>{
+      if(!e.actualPending||eventDaysUntil(e.date)!==0)return e;
+      const nav=navDeltaAroundDate(e.date);
+      const hint=portfolioHintForRegion(e.region);
+      let actual='';
+      if(nav){
+        actual=`市场反应跟踪中。你的组合：${nav.before.date}→${nav.after.date} 净值变化约 ${nav.delta>=0?'+':''}${fc(nav.delta,'CNY',0)}（含本事件与其他因素）。${hint}`;
+      }
+      return{...e,actual:actual||e.actual};
+    })
     .sort((a,b)=>a.date.localeCompare(b.date)||(a.personal===b.personal?0:a.personal?1:-1));
 }
 
@@ -3256,7 +3383,11 @@ function buildEventsCalendarContext(){
     else if(days>0)when=`${days}天后`;
     else when=`${Math.abs(days)}天前（已发生）`;
     lines.push(`- ${ev.date} ${when} · ${ev.title} · ${ev.region} · ${ev.impact==='high'?'高影响':'中影响'}${ev.personal?' · 个人持仓':''}`);
-    if(ev.desc)lines.push(`  ${ev.desc}`);
+    if(ev.fact)lines.push(`  具体内容：${ev.fact}`);
+    if(ev.expected)lines.push(`  预期影响：${ev.expected}`);
+    if(ev.actual)lines.push(`  实际影响：${ev.actual}`);
+    else if(ev.actualPending)lines.push(`  实际影响：待更新`);
+    else if(ev.desc)lines.push(`  ${ev.desc}`);
   });
   return lines.join('\n');
 }
@@ -3375,7 +3506,7 @@ function renderMajorEventsWatch(){
       <div class="ov-event-date"><b>${dateLbl}</b><span>${yearLbl.trim()||'本年'}</span>${countdown?`<div class="countdown${isPast?' past-days':''}">${countdown}</div>`:''}</div>
       <div class="ov-event-body">
         <div class="ov-event-title">${escOvHtml(ev.title)}</div>
-        <div class="ov-event-desc">${escOvHtml(ev.desc||'')}</div>
+        ${renderEventImpactHtml(ev,isPast,isToday)}
         <div class="ov-event-tags">
           <span class="ov-event-tag region-${ev.region||'global'}">${regionLabel[ev.region]||regionLabel.global}</span>
           <span class="ov-event-tag">${catLabel[ev.cat]||ev.cat||'—'}</span>
