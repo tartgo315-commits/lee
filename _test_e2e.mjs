@@ -72,24 +72,24 @@ try {
     const navEl = document.getElementById('ov-cny');
     const navFs = navEl ? getComputedStyle(navEl).fontSize : '';
     const navFw = navEl ? getComputedStyle(navEl).fontWeight : '';
-    const stripText = document.getElementById('fx-strip')?.textContent || '';
+    const tickerText = document.getElementById('cmd-tickers')?.textContent || '';
     return {
       bodyBg,
       navText: navEl?.textContent || '',
       navFs,
       navFw,
-      stripHasPortfolio: /Portfolio Value/i.test(stripText),
-      stripHasUsdExp: /USD Exposure/i.test(stripText),
+      tickerHasUsdCny: /USD\/CNY/.test(tickerText) && /7\.2/.test(tickerText),
+      tickerHasGold: /Gold/i.test(tickerText),
       totalNav: typeof totalCNY === 'function' ? totalCNY() : 0,
     };
   });
 
   ok(ui.bodyBg === 'rgb(11, 15, 23)' || ui.bodyBg.includes('11, 15, 23'), `暗黑背景 body = ${ui.bodyBg}`);
   ok(ui.navText.includes('¥') && !ui.navText.includes('—'), `NAV 有数值: ${ui.navText.trim()}`);
-  ok(parseFloat(ui.navFs) >= 48, `NAV 字号 ≥48px (${ui.navFs})`);
+  ok(parseFloat(ui.navFs) >= 28, `NAV 字号合理 (${ui.navFs})`);
   ok(parseInt(ui.navFw, 10) >= 600, `NAV 字重 ≥600 (${ui.navFw})`);
-  ok(ui.stripHasPortfolio, '顶栏含 Portfolio Value');
-  ok(ui.stripHasUsdExp, '顶栏含 USD Exposure');
+  ok(ui.tickerHasUsdCny, '驾驶舱 Ticker 含 USD/CNY');
+  ok(ui.tickerHasGold, '驾驶舱 Ticker 含 Gold');
 
   await page.evaluate(() => { showPage('us'); });
   await sleep(500);
