@@ -1005,7 +1005,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
 
     <!-- Gold -->
     <div id="f-gold" style="display:none">
-      <div class="alert alert-info" style="margin-bottom:12px">🥇 黄金价格将自动拉取 Au99.99 现货价（≈ 建行积存金报价，误差约 1-2 元/克）</div>
+      <div class="alert alert-info" style="margin-bottom:12px">🥇 自动拉取<strong>上金所 Au99.99 / AU9999</strong>现货参考价（交易日 9:00–15:30、夜盘 20:00–02:30）。<strong>休市后行情源常停在收盘价</strong>，与建行积存金 App 的银行报价可能仍有 1–2 元/克差异。</div>
       <div class="fg-row c3">
         <div class="fg"><label>持有克数</label><input type="number" id="m-grams" placeholder="18.0000" step="any"></div>
         <div class="fg"><label>持仓均价（元/克）</label><input type="number" id="m-gcost" placeholder="796.3783" step="any"></div>
@@ -4247,11 +4247,31 @@ async function fetchGoldPrice(){
   if(price>0)return price;
   return await fetchGoldPriceEastmoney();
 }
+/** 上金所 Au99.99 大致交易窗（本地北京时间）；休市时段行情源通常停在最近收盘价 */
+function sgeGoldSessionLabel(now=new Date()){
+  const d=now.getDay(),mins=now.getHours()*60+now.getMinutes();
+  if(d>=1&&d<=5&&mins>=9*60&&mins<15*60+30)return{open:true,label:'日盘'};
+  if(d>=1&&d<=4&&mins>=20*60)return{open:true,label:'夜盘'};
+  if(d>=2&&d<=5&&mins<2*60+30)return{open:true,label:'夜盘'};
+  return{open:false,label:'休市'};
+}
 function updateGoldChip(){
   const el=document.getElementById('fc-gold');
+  const chip=document.getElementById('gold-price-chip');
   if(!el)return;
   const g=D.products.find(p=>p.type==='gold'&&p.goldPrice>0);
-  if(g){el.textContent='¥'+Number(g.goldPrice).toFixed(2)+'/g';return;}
+  const sess=sgeGoldSessionLabel();
+  if(g){
+    el.textContent='¥'+Number(g.goldPrice).toFixed(2)+'/g';
+    if(chip){
+      const upd=g.goldUpdated?` · 本地更新 ${g.goldUpdated}`:'';
+      chip.title=sess.open
+        ?`上海金 AU9999 · ${sess.label}交易中${upd}。与建行积存金通常相差约 1–2 元/克。点击刷新`
+        :`上海金 AU9999 · ${sess.label}（行情源多为最近收盘价，故数字不变）${upd}。建行积存金为银行自有报价，休市后仍可能随国际金价微调。点击刷新`;
+    }
+    return;
+  }
+  if(chip)chip.title='上海金 AU9999 · 点击刷新';
   el.textContent='—';
 }
 async function refreshGoldChip(){
