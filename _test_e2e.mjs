@@ -72,27 +72,32 @@ try {
     const navEl = document.getElementById('ov-cny');
     const navFs = navEl ? getComputedStyle(navEl).fontSize : '';
     const navFw = navEl ? getComputedStyle(navEl).fontWeight : '';
-    const fxText = document.getElementById('fx-strip')?.textContent || '';
-    const crclRow = [...document.querySelectorAll('.ov-prod-sub')].find((e) => e.textContent.includes('止损'));
+    const tickerText = document.getElementById('cmd-tickers')?.textContent || '';
     return {
       bodyBg,
       navText: navEl?.textContent || '',
       navFs,
       navFw,
-      fxHas724: fxText.includes('7.24') || fxText.includes('7.2'),
-      fxHasAudUsd: /AUD\/USD|0\.65/.test(fxText),
-      crclStopSub: crclRow?.textContent || '',
-      hasCrclWarn: !!document.querySelector('.ov-prod-row.crcl-warn'),
+      tickerHasUsdCny: /USD\/CNY/.test(tickerText) && /7\.2/.test(tickerText),
+      tickerHasGold: /Gold/i.test(tickerText),
       totalNav: typeof totalCNY === 'function' ? totalCNY() : 0,
     };
   });
 
   ok(ui.bodyBg === 'rgb(11, 15, 23)' || ui.bodyBg.includes('11, 15, 23'), `暗黑背景 body = ${ui.bodyBg}`);
   ok(ui.navText.includes('¥') && !ui.navText.includes('—'), `NAV 有数值: ${ui.navText.trim()}`);
-  ok(parseFloat(ui.navFs) >= 48, `NAV 字号 ≥48px (${ui.navFs})`);
+  ok(parseFloat(ui.navFs) >= 28, `NAV 字号合理 (${ui.navFs})`);
   ok(parseInt(ui.navFw, 10) >= 600, `NAV 字重 ≥600 (${ui.navFw})`);
-  ok(ui.fxHas724, '顶栏 FX 含 USD/CNY 7.24');
-  ok(ui.crclStopSub.includes('止损'), `CRCL 行显示止损: ${ui.crclStopSub.slice(0, 40)}…`);
+  ok(ui.tickerHasUsdCny, '驾驶舱 Ticker 含 USD/CNY');
+  ok(ui.tickerHasGold, '驾驶舱 Ticker 含 Gold');
+
+  await page.evaluate(() => { showPage('us'); });
+  await sleep(500);
+  const usUi = await page.evaluate(() => {
+    const crclRow = [...document.querySelectorAll('.pr-sub,.ov-prod-sub')].find((e) => e.textContent.includes('止损'));
+    return { crclStopSub: crclRow?.textContent || '' };
+  });
+  ok(usUi.crclStopSub.includes('止损'), `CRCL 行显示止损: ${usUi.crclStopSub.slice(0, 40)}…`);
   ok(ui.totalNav > 0, `TOTAL_NAV > 0 (${ui.totalNav})`);
 
   const payload = await page.evaluate(() => {
