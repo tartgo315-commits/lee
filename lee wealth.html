@@ -1564,6 +1564,18 @@ const FINNHUB_WATCH_SYMBOLS=['NVDA','TSLA','PLTR','VOO','CRCL'];
 const FINNHUB_QUOTE_POLL_MS=110000;
 const FH_QUOTE_STAGGER_MS=700;
 let finnhubWs=null,finnhubReconnectTimer=null,finnhubCloseIntent=false,finnhubSaveTimer=null,finnhubAggTimer=null,finnhubQuotePollTimer=null;
+let __ovLiveDirty=false,__ovLiveFlushTimer=null;
+function scheduleOverviewLiveRefresh(){
+  __ovLiveDirty=true;
+  clearTimeout(__ovLiveFlushTimer);
+  __ovLiveFlushTimer=setTimeout(()=>{
+    __ovLiveFlushTimer=null;
+    if(!__ovLiveDirty)return;
+    __ovLiveDirty=false;
+    if(!document.getElementById('page-overview')?.classList.contains('active'))return;
+    try{renderOverview();}catch(e){console.error('scheduleOverviewLiveRefresh',e);}
+  },280);
+}
 const finnhubSubscribed=new Set();
 function finnhubDesiredSymbols(){
   const s=new Set(FINNHUB_WATCH_SYMBOLS.map(x=>String(x).toUpperCase()));
@@ -1645,6 +1657,7 @@ function patchUsStockLiveRow(sym,price){
   const prev=parseFloat(p.currentPrice)||0;
   p.currentPrice=price;
   p.updatedAt=today();
+  if(prev!==price)scheduleOverviewLiveRefresh();
   debouncedFinnhubSave();
   const row=[...document.querySelectorAll('#page-us .product-row[data-us-ticker]')].find(r=>r.dataset.usTicker===T);
   if(row){
@@ -1761,7 +1774,7 @@ function mergeYahooFinnhubPrice(yPx,fhRow,sym){
 async function pollFinnhubQuotesOnce(){
   /* 不在此用 document.hidden 直接 return：手机切后台/系统省电会导致长时间不轮询，页面上像「股价死了」。 */
   fetchCNYRates().then(fx=>{
-    if(fx){Object.assign(D.fx,fx);FX_RATES.syncCross();save();renderSidebar();}
+    if(fx){Object.assign(D.fx,fx);FX_RATES.syncCross();save();renderSidebar();scheduleOverviewLiveRefresh();}
   }).catch(()=>{});
   const syms=[...finnhubDesiredSymbols()];
   if(!syms.length)return;
@@ -1803,6 +1816,7 @@ async function pollFinnhubQuotesOnce(){
     const m=mergeYahooFinnhubPrice(yPx,fhRow,sym);
     if(m)patchUsStockLiveRow(sym,m);
   }
+  scheduleOverviewLiveRefresh();
 }
 function startFinnhubQuotePolling(){
   if(finnhubQuotePollTimer)clearInterval(finnhubQuotePollTimer);

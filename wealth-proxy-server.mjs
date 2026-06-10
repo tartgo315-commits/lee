@@ -117,7 +117,9 @@ const server = http.createServer((req, res) => {
         res.end('read error');
         return;
       }
-      res.writeHead(200, { 'Content-Type': ctype(full) });
+      const headers = { 'Content-Type': ctype(full) };
+      if (/\.html?$/i.test(full)) headers['Cache-Control'] = 'no-store, must-revalidate';
+      res.writeHead(200, headers);
       res.end(data);
     });
   })().catch((e) => {
