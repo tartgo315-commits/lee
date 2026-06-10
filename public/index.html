@@ -168,6 +168,27 @@ body:not(.light) .news-item:hover{background:rgba(255,255,255,.04)}
 .ai-pb-meta{font-size:11px;color:rgba(167,243,208,.55);font-family:var(--mono);margin-bottom:12px;padding:6px 10px;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.15);border-radius:var(--r-sm);display:inline-block}
 .ai-pb-body{font-size:13px;color:#d1fae5;line-height:1.75}
 .ai-pb-disclaimer{margin-top:14px;padding-top:10px;border-top:1px dashed rgba(16,185,129,.18);font-size:11px;color:rgba(167,243,208,.4);font-family:var(--mono)}
+.ai-pb-chat-section{margin-top:20px;padding-top:18px;border-top:1px solid rgba(16,185,129,.2)}
+.ai-pb-chat-head{font-size:12px;font-weight:600;color:#6ee7b7;font-family:var(--mono);letter-spacing:.04em;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.ai-pb-chat-msgs{display:flex;flex-direction:column;gap:10px;max-height:360px;overflow-y:auto;padding:4px 2px 12px;scrollbar-width:thin}
+.ai-pb-chat-msgs::-webkit-scrollbar{width:5px}
+.ai-pb-chat-msgs::-webkit-scrollbar-thumb{background:rgba(16,185,129,.25);border-radius:4px}
+.ai-pb-msg{max-width:92%;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.65;word-break:break-word}
+.ai-pb-msg.user{align-self:flex-end;background:rgba(16,185,129,.18);border:1px solid rgba(16,185,129,.28);color:#ecfdf5;border-bottom-right-radius:4px}
+.ai-pb-msg.assistant{align-self:flex-start;background:rgba(10,15,13,.75);border:1px solid rgba(16,185,129,.15);color:#d1fae5;border-bottom-left-radius:4px}
+.ai-pb-msg.assistant .ai-pb-section-title{margin-top:10px}
+.ai-pb-msg.assistant .ai-pb-section-title:first-child{margin-top:0}
+.ai-pb-msg-label{font-size:10px;font-family:var(--mono);color:rgba(167,243,208,.45);margin-bottom:4px}
+.ai-pb-chat-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.ai-pb-chat-chip{font-size:11px;padding:5px 10px;border-radius:999px;border:1px solid rgba(16,185,129,.25);background:rgba(16,185,129,.06);color:#a7f3d0;cursor:pointer;font-family:var(--mono);transition:background .12s ease}
+.ai-pb-chat-chip:hover{background:rgba(16,185,129,.14)}
+.ai-pb-chat-compose{display:flex;gap:8px;align-items:flex-end;margin-top:8px}
+.ai-pb-chat-input{flex:1;min-height:44px;max-height:120px;padding:10px 12px;border:1px solid rgba(16,185,129,.25);border-radius:var(--r-sm);background:rgba(10,15,13,.85);color:#ecfdf5;font-size:13px;font-family:var(--font);line-height:1.5;resize:vertical}
+.ai-pb-chat-input:focus{outline:none;border-color:rgba(52,211,153,.55);box-shadow:0 0 0 2px rgba(16,185,129,.15)}
+.ai-pb-chat-input::placeholder{color:rgba(167,243,208,.35)}
+.ai-pb-chat-send{flex-shrink:0;height:44px;padding:0 18px}
+.ai-pb-chat-foot{display:flex;justify-content:flex-end;margin-top:8px}
+.ai-pb-msg-loading{align-self:flex-start;font-size:12px;color:rgba(167,243,208,.5);font-family:var(--mono);padding:8px 0}
 
 /* Total bar（列数由 Tailwind grid 控制，见 #page-overview .total-bar） */
 .total-bar{display:grid;gap:16px;margin-bottom:16px;min-width:0;width:100%}
@@ -892,7 +913,26 @@ body.light .fh-mkt-badge.fh-mkt-night{color:#0f766e;background:rgba(15,118,110,.
             <button type="button" class="ai-pb-btn-local" onclick="runAiAdvisor()">📊 本地诊断</button>
           </div>
         </div>
-        <div id="ai-advisor-result" class="ai-pb-result" style="display:none"></div>
+        <div id="ai-advisor-result" class="ai-pb-result" style="display:none">
+          <div id="ai-diagnosis-output"></div>
+          <div id="ai-chat-section" class="ai-pb-chat-section" style="display:none">
+            <div class="ai-pb-chat-head">
+              <span>💬 继续与 CIO 对话</span>
+              <button type="button" class="ai-pb-btn-local" style="height:28px;padding:0 10px;font-size:11px" onclick="resetAiChat()">↺ 新对话</button>
+            </div>
+            <div id="ai-chat-messages" class="ai-pb-chat-msgs"></div>
+            <div class="ai-pb-chat-chips">
+              <button type="button" class="ai-pb-chat-chip" onclick="aiChatSuggest('如果美元相对人民币贬值 5%，对我整体净值影响大概多少？')">美元 -5% 影响</button>
+              <button type="button" class="ai-pb-chat-chip" onclick="aiChatSuggest('我的组合集中度是否过高？如何优化？')">集中度优化</button>
+              <button type="button" class="ai-pb-chat-chip" onclick="aiChatSuggest('定存到期后，现金应该如何再配置？')">定存到期配置</button>
+              <button type="button" class="ai-pb-chat-chip" onclick="aiChatSuggest('请把优先行动建议再细化成本周可执行的步骤')">细化行动步骤</button>
+            </div>
+            <div class="ai-pb-chat-compose">
+              <textarea id="ai-chat-input" class="ai-pb-chat-input" rows="2" placeholder="继续追问，例如：标的 A 要不要减仓？"></textarea>
+              <button type="button" id="ai-chat-send" class="ai-pb-btn-ai ai-pb-chat-send" onclick="sendAiChatMessage()">发送</button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -2699,9 +2739,11 @@ function buildSanitizedPortfolio(){
 }
 
 function runAiAdvisor(){
-  const el=document.getElementById('ai-advisor-result');
-  if(!el)return;
-  el.style.display='block';
+  const result=document.getElementById('ai-advisor-result');
+  const el=document.getElementById('ai-diagnosis-output');
+  if(!result||!el)return;
+  resetAiChat();
+  result.style.display='block';
   const fx=D.fx||{};
   const cny=totalCNY();
   const stocks=D.products.filter(p=>p.type==='stock_us'&&p.ticker&&p.currentPrice>0&&p.costPrice>0);
@@ -2882,15 +2924,132 @@ function runAiAdvisor(){
     `<div class="ai-pb-disclaimer">📊 分析时间：${ts} · 本地规则引擎 · 使用真实持仓 · 仅供参考，不构成投资建议</div>`;
 }
 
+let aiChatState={active:false,portfolio:'',provider:'gemini',model:'',messages:[]};
+
+function formatAiAdviceHtml(text){
+  const safe=escOvHtml(String(text||''));
+  return safe
+    .replace(/【(.+?)】/g,'</div><div class="ai-pb-section-title">【$1】</div><div class="ai-pb-body">')
+    .replace(/\n/g,'<br>');
+}
+
+function renderAiChatMessages(){
+  const box=document.getElementById('ai-chat-messages');
+  if(!box)return;
+  box.innerHTML=aiChatState.messages.map(m=>{
+    const isUser=m.role==='user';
+    const body=isUser?escOvHtml(m.content).replace(/\n/g,'<br>'):formatAiAdviceHtml(m.content);
+    return `<div class="ai-pb-msg ${isUser?'user':'assistant'}"><div class="ai-pb-msg-label">${isUser?'你':'CIO'}</div>${isUser?body:`<div class="ai-pb-body">${body}</div>`}</div>`;
+  }).join('');
+  box.scrollTop=box.scrollHeight;
+}
+
+function showAiChatSection(show){
+  const sec=document.getElementById('ai-chat-section');
+  if(sec)sec.style.display=show?'block':'none';
+}
+
+function initAiChatSession(portfolio,provider,model,initialAdvice){
+  aiChatState={active:true,portfolio,provider,model,messages:[{role:'assistant',content:initialAdvice}]};
+  showAiChatSection(true);
+  renderAiChatMessages();
+  const input=document.getElementById('ai-chat-input');
+  if(input){input.value='';input.focus();}
+}
+
+function resetAiChat(){
+  aiChatState={active:false,portfolio:'',provider:'gemini',model:'',messages:[]};
+  showAiChatSection(false);
+  const box=document.getElementById('ai-chat-messages');
+  if(box)box.innerHTML='';
+  const input=document.getElementById('ai-chat-input');
+  if(input)input.value='';
+}
+
+function aiChatSuggest(text){
+  const input=document.getElementById('ai-chat-input');
+  if(input){input.value=text;input.focus();}
+}
+
+async function sendAiChatMessage(){
+  if(!aiChatState.active||!aiChatState.portfolio){
+    alert('请先运行「AI 诊断」开启对话');
+    return;
+  }
+  const input=document.getElementById('ai-chat-input');
+  const sendBtn=document.getElementById('ai-chat-send');
+  const text=(input?.value||'').trim();
+  if(!text)return;
+
+  const provider=document.getElementById('ai-provider')?.value||aiChatState.provider||'gemini';
+  aiChatState.provider=provider;
+  aiChatState.messages.push({role:'user',content:text});
+  if(input)input.value='';
+  renderAiChatMessages();
+
+  const box=document.getElementById('ai-chat-messages');
+  const loadingEl=document.createElement('div');
+  loadingEl.className='ai-pb-msg-loading';
+  loadingEl.textContent='CIO 正在回复…';
+  box?.appendChild(loadingEl);
+  box.scrollTop=box.scrollHeight;
+  if(sendBtn){sendBtn.disabled=true;}
+
+  try{
+    const r=await fetch('/api/ai-advisor',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        mode:'chat',
+        portfolio:aiChatState.portfolio,
+        messages:aiChatState.messages,
+        provider,
+        sanitized:true
+      })
+    });
+    const data=await r.json();
+    loadingEl.remove();
+    if(data.advice){
+      aiChatState.messages.push({role:'assistant',content:data.advice});
+      if(data.model)aiChatState.model=data.model;
+      renderAiChatMessages();
+    }else{
+      aiChatState.messages.pop();
+      renderAiChatMessages();
+      alert('回复失败：'+(data.error||'未知错误'));
+    }
+  }catch(e){
+    loadingEl.remove();
+    aiChatState.messages.pop();
+    renderAiChatMessages();
+    alert('网络错误：'+(e.message||''));
+  }finally{
+    if(sendBtn){sendBtn.disabled=false;}
+    input?.focus();
+  }
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  const chatInput=document.getElementById('ai-chat-input');
+  chatInput?.addEventListener('keydown',e=>{
+    if(e.key==='Enter'&&!e.shiftKey){
+      e.preventDefault();
+      sendAiChatMessage();
+    }
+  });
+});
+
 async function fetchAiAdvice(){
   const btn=document.getElementById('ai-advisor-btn');
   const result=document.getElementById('ai-advisor-result');
+  const diagnosis=document.getElementById('ai-diagnosis-output');
   const provider=document.getElementById('ai-provider')?.value||'gemini';
-  if(!btn||!result)return;
+  if(!btn||!result||!diagnosis)return;
 
+  resetAiChat();
   btn.disabled=true;btn.textContent='🔄 诊断中…';
   result.style.display='block';
-  result.innerHTML='<div class="ai-pb-loading">💎 CIO 正在审阅脱敏持仓摘要，约需 5–15 秒…</div>';
+  diagnosis.innerHTML='<div class="ai-pb-loading">💎 CIO 正在审阅脱敏持仓摘要，约需 5–15 秒…</div>';
 
   const portfolio=buildSanitizedPortfolio();
 
@@ -2898,24 +3057,20 @@ async function fetchAiAdvice(){
     const r=await fetch('/api/ai-advisor',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({portfolio,provider,sanitized:true})
+      body:JSON.stringify({mode:'diagnose',portfolio,provider,sanitized:true})
     });
     const data=await r.json();
     if(data.advice){
-      const safe=escOvHtml(data.advice);
-      result.innerHTML=
+      diagnosis.innerHTML=
         `<div class="ai-pb-meta">🤖 ${escOvHtml(String(data.model||''))} · 脱敏传输 · ${new Date().toLocaleTimeString('zh-CN')}</div>`+
-        `<div class="ai-pb-body">`+
-        safe
-          .replace(/【(.+?)】/g,'</div><div class="ai-pb-section-title">【$1】</div><div class="ai-pb-body">')
-          .replace(/\n/g,'<br>')+
-        `</div>`+
-        `<div class="ai-pb-disclaimer">🔒 本次分析基于脱敏摘要 · 仅供参考，不构成投资建议</div>`;
+        `<div class="ai-pb-body">${formatAiAdviceHtml(data.advice)}</div>`+
+        `<div class="ai-pb-disclaimer">🔒 本次分析基于脱敏摘要 · 可在下方继续追问 · 仅供参考，不构成投资建议</div>`;
+      initAiChatSession(portfolio,provider,data.model||'',data.advice);
     }else{
-      result.innerHTML=`<span style="color:#f87171">失败：${escOvHtml(String(data.error||'未知'))}</span>`;
+      diagnosis.innerHTML=`<span style="color:#f87171">失败：${escOvHtml(String(data.error||'未知'))}</span>`;
     }
   }catch(e){
-    result.innerHTML=`<span style="color:#f87171">网络错误：${escOvHtml(String(e.message||''))}</span>`;
+    diagnosis.innerHTML=`<span style="color:#f87171">网络错误：${escOvHtml(String(e.message||''))}</span>`;
   }finally{
     btn.disabled=false;btn.textContent='✨ AI 诊断';
   }
