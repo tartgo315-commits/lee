@@ -90,6 +90,12 @@ console.log('\n=== renderOverview 仍渲染 ov-regions ===');
 const ro = (html.match(/function renderOverview\(\)[\s\S]*?^}/m) || [''])[0];
 ok(ro.includes('ov-regions'), 'renderOverview 写入 #ov-regions');
 
+console.log('\n=== page-overview 不与其它 page 嵌套 ===');
+ok(
+  /<div class="page active" id="page-overview">[\s\S]*?<\/div>\s*<!-- CHINA -->\s*<div class="page" id="page-cn">/.test(html),
+  'page-cn 在 page-overview 闭合之后（导航可切换）'
+);
+
 console.log(`\n${'='.repeat(44)}`);
 console.log(`逻辑契约检查：通过 ${passed} · 失败 ${failed}`);
 process.exit(failed > 0 ? 1 : 0);
