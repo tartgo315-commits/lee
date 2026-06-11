@@ -177,47 +177,41 @@ body{
 .ov-col-events .ov-events-list{flex:1;min-height:0;max-height:none!important;height:auto;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-gutter:stable;-webkit-overflow-scrolling:touch;padding-right:2px}
 .ov-col-events .ov-event-row{grid-template-columns:1fr;gap:8px;padding:10px 0;font-size:12px}
 .ov-cockpit-3col .ov-col-assets{display:flex;flex-direction:column;gap:0;overflow:hidden}
-.ov-cockpit-3col .ov-hero-head{flex:1;min-height:0;display:flex;flex-direction:column;gap:8px}
-.ov-cockpit-3col .ov-hero-chart-mini{display:flex;flex-direction:column;gap:6px;min-width:0}
-.ov-hero-chart-mini .nav-chart-wrap{height:72px}
-.ov-hero-chart-mini #chart-ov{max-height:72px;height:72px!important}
-.ov-hero-chart-mini .ov-hero-range{margin-top:8px;justify-content:flex-end}
+.ov-cockpit-3col .ov-hero-head{flex:1;min-height:0;display:flex;flex-direction:column;gap:10px}
+.ov-assets-chart{display:flex;flex-direction:column;gap:0;min-width:0;flex-shrink:0}
+.ov-assets-chart .nav-chart-wrap{height:56px;margin-top:0}
+.ov-assets-chart #chart-ov{height:56px!important;max-height:56px}
+.ov-assets-chart-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px}
+.ov-assets-chart-lbl{font-size:10px;font-weight:500;color:var(--text-4);letter-spacing:.04em;white-space:nowrap}
+.ov-assets-chart-foot .ov-hero-range{margin-top:0;flex-shrink:0}
 @media(min-width:1280px){
-  .ov-cockpit-3col .ov-col-assets{padding:12px 14px}
-  .ov-cockpit-3col .ov-hero-head{
-    display:grid;
-    grid-template-columns:minmax(0,1.02fr) minmax(0,0.98fr);
-    grid-template-areas:"main goal" "main chart" "dash dash";
-    gap:6px 10px;
-    align-content:start;
-    align-items:start;
-  }
-  .ov-cockpit-3col .ov-hero-main{grid-area:main;grid-row:1 / span 2;min-width:0;align-self:stretch}
-  .ov-cockpit-3col #goal-bar-wrap{grid-area:goal;align-self:start;width:100%}
-  .ov-cockpit-3col .ov-hero-chart-mini{grid-area:chart;align-self:end;justify-content:flex-end}
-  .ov-cockpit-3col #ov-dash{grid-area:dash}
+  .ov-cockpit-3col .ov-col-assets{padding:14px 16px}
+  .ov-cockpit-3col .ov-hero-head{gap:8px}
+  .ov-cockpit-3col .ov-hero-main{flex-shrink:0}
   .ov-cockpit-3col .ov-col-assets .ov-hero-label{margin-bottom:4px}
-  .ov-cockpit-3col .ov-col-assets #ov-cny,.ov-cockpit-3col .ov-col-assets .ov-hero-nav{font-size:38px;line-height:1.05}
-  .ov-cockpit-3col .ov-col-assets .ov-hero-delta{font-size:11px;line-height:1.4}
+  .ov-cockpit-3col .ov-col-assets #ov-cny,.ov-cockpit-3col .ov-col-assets .ov-hero-nav{font-size:40px;line-height:1.05}
+  .ov-cockpit-3col .ov-col-assets .ov-hero-delta{font-size:11px;line-height:1.4;margin-top:2px}
   .ov-cockpit-3col .ov-col-assets .ov-nav-baseline{display:block;font-size:10px;line-height:1.35;margin-top:2px}
-  .ov-cockpit-3col .ov-col-assets .ov-hero-fx{margin-top:6px;gap:6px 10px;font-size:11px}
+  .ov-cockpit-3col .ov-col-assets .ov-hero-fx{margin-top:8px;gap:8px 12px;font-size:11px}
   .ov-cockpit-3col .ov-col-assets .ov-hero-fx-item .val{font-size:12px}
-  .ov-cockpit-3col .ov-col-assets .ov-insights{margin-top:6px;gap:4px}
-  .ov-cockpit-3col .ov-col-assets .ov-insight-chip{font-size:10px;padding:3px 7px;line-height:1.35;max-width:100%}
-  .ov-cockpit-3col .ov-col-assets .ov-hero-chart-mini .nav-chart-wrap,.ov-cockpit-3col .ov-col-assets #chart-ov{height:48px!important;max-height:48px}
-  .ov-cockpit-3col .ov-col-assets .ov-hero-range{margin-top:0}
-  .ov-cockpit-3col .ov-col-assets .ov-hero-goal-top{margin-top:0;padding:6px 8px}
-  .ov-cockpit-3col .ov-col-assets .ov-hero-goal-top .ov-goal-pct{font-size:15px}
-  .ov-cockpit-3col .ov-col-assets .ov-hero-goal-top .ov-goal-hd{margin-bottom:2px}
-  .ov-cockpit-3col .ov-col-assets .ov-hero-goal-top .ov-goal-track{margin-top:4px}
-  .ov-cockpit-3col .ov-col-assets .ov-goal-aside{display:none}
-  .ov-cockpit-3col .ov-col-assets .ov-goal-meta{margin-top:3px;font-size:9px;gap:4px}
-  .ov-cockpit-3col .ov-col-assets .ov-hero-alloc-compact{margin-top:0;padding:8px 10px}
-  .ov-cockpit-3col .ov-col-assets .ov-hero-alloc-compact .card-title{font-size:11px;margin-bottom:4px}
-  .ov-cockpit-3col .ov-col-assets .ov-hero-alloc-compact .ov-pie-canvas{height:88px;max-width:120px}
-  .ov-cockpit-3col .ov-col-assets .ov-pie-lbl{font-size:10px;margin-bottom:4px}
-  .ov-cockpit-3col .ov-col-assets .ov-pie-leg-row{font-size:9px;gap:3px 4px}
-  .ov-cockpit-3col .ov-col-assets .ov-pie-legend{gap:3px;margin-top:4px}
+  .ov-cockpit-3col .ov-col-assets .ov-insights{margin-top:8px;gap:4px}
+  .ov-cockpit-3col .ov-col-assets .ov-insight-chip{font-size:10px;padding:3px 7px;line-height:1.35}
+  .ov-cockpit-3col .ov-assets-chart .nav-chart-wrap,.ov-cockpit-3col .ov-assets-chart #chart-ov{height:52px!important;max-height:52px}
+  .ov-cockpit-3col .ov-hero-goal-bottom{margin-top:0;padding:8px 10px;flex-shrink:0}
+  .ov-cockpit-3col .ov-hero-goal-bottom .ov-goal-inner{display:grid;grid-template-columns:1fr auto;grid-template-rows:auto auto auto;gap:2px 10px;align-items:center}
+  .ov-cockpit-3col .ov-hero-goal-bottom .ov-goal-hd{grid-column:1;grid-row:1;margin:0}
+  .ov-cockpit-3col .ov-hero-goal-bottom .ov-goal-pct{grid-column:2;grid-row:1;font-size:16px}
+  .ov-cockpit-3col .ov-hero-goal-bottom .ov-goal-track{grid-column:1 / -1;grid-row:2;margin-top:4px}
+  .ov-cockpit-3col .ov-hero-goal-bottom .ov-goal-meta{grid-column:1 / -1;grid-row:3;margin-top:2px;font-size:10px}
+  .ov-cockpit-3col .ov-hero-goal-bottom .ov-goal-aside{display:none}
+  .ov-cockpit-3col .ov-hero-goal-bottom .ov-goal-edit{top:6px;right:6px}
+  .ov-cockpit-3col #ov-dash{flex:1;min-height:0;margin-top:0;padding:8px 10px;display:flex;flex-direction:column}
+  .ov-cockpit-3col #ov-dash .card-title{font-size:11px;margin-bottom:4px;flex-shrink:0}
+  .ov-cockpit-3col #ov-dash .ov-pie-split{flex:1;min-height:0;align-items:start}
+  .ov-cockpit-3col #ov-dash .ov-pie-canvas{height:84px;max-width:118px}
+  .ov-cockpit-3col #ov-dash .ov-pie-lbl{font-size:10px;margin-bottom:4px}
+  .ov-cockpit-3col #ov-dash .ov-pie-leg-row{font-size:9px;gap:3px 4px}
+  .ov-cockpit-3col #ov-dash .ov-pie-legend{gap:3px;margin-top:4px}
 }
 .ov-copilot-tabs{display:flex;gap:6px;margin-bottom:12px;flex-shrink:0}
 .ov-copilot-tab{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:8px 10px;border:1px solid var(--border);background:var(--bg-card);border-radius:var(--radius-md);font-size:12px;font-weight:500;cursor:pointer;color:var(--text-3);font-family:var(--font);transition:all var(--ease-lux)}
@@ -666,7 +660,20 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
                   </div>
                   <div id="ov-insights" class="ov-insights"></div>
                 </div>
-                <div class="ov-hero-goal-compact ov-hero-goal-top" id="goal-bar-wrap">
+                <div class="ov-assets-chart">
+                  <div class="ov-hero-chart nav-chart-wrap"><canvas id="chart-ov"></canvas></div>
+                  <div class="ov-assets-chart-foot">
+                    <span class="ov-assets-chart-lbl">净值走势</span>
+                    <div class="ov-hero-range">
+                      <div class="range-tabs">
+                        <button class="rt active" onclick="setRange(30,this)">1M</button>
+                        <button class="rt" onclick="setRange(90,this)">3M</button>
+                        <button class="rt" onclick="setRange(9999,this)">ALL</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="ov-hero-goal-compact ov-hero-goal-bottom" id="goal-bar-wrap">
                   <div class="ov-goal-inner">
                     <div class="ov-goal-hd">
                       <span class="ov-goal-lbl" id="goal-label">存款目标</span>
@@ -682,16 +689,6 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
                       <span class="ov-goal-eta" id="goal-eta">预计达成 —</span>
                     </div>
                     <button type="button" class="btn btn-icon btn-sm ov-goal-edit" onclick="openGoalEdit()" title="修改目标"><i class="ti ti-pencil"></i></button>
-                  </div>
-                </div>
-                <div class="ov-hero-chart-mini">
-                  <div class="ov-hero-chart nav-chart-wrap"><canvas id="chart-ov"></canvas></div>
-                  <div class="ov-hero-range">
-                    <div class="range-tabs">
-                      <button class="rt active" onclick="setRange(30,this)">1M</button>
-                      <button class="rt" onclick="setRange(90,this)">3M</button>
-                      <button class="rt" onclick="setRange(9999,this)">ALL</button>
-                    </div>
                   </div>
                 </div>
                 <div class="card ov-side-combo ov-hero-alloc-compact mb-0" id="ov-dash">
