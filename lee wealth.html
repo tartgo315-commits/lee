@@ -176,9 +176,24 @@ body{
 .ov-col-events .ov-events-filter{font-size:11px;padding:4px 10px}
 .ov-col-events .ov-events-list{flex:1;min-height:0;max-height:none!important;height:auto;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-gutter:stable;-webkit-overflow-scrolling:touch;padding-right:2px}
 .ov-col-events .ov-event-row{grid-template-columns:1fr;gap:8px;padding:10px 0;font-size:12px}
-.ov-cockpit-3col .ov-col-assets{display:flex;flex-direction:column;gap:12px;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
-.ov-cockpit-3col .ov-hero-head{display:flex;flex-direction:column;gap:12px}
-.ov-cockpit-3col .ov-hero-chart-block{flex:none;max-width:none;width:100%;align-self:stretch}
+.ov-cockpit-3col .ov-col-assets{display:flex;flex-direction:column;gap:0;overflow:hidden}
+.ov-cockpit-3col .ov-hero-head{flex:1;min-height:0;display:flex;flex-direction:column;gap:8px;overflow:hidden}
+.ov-cockpit-3col .ov-hero-main{flex-shrink:0}
+.ov-cockpit-3col .ov-hero-chart-block{flex:1;min-height:0;max-width:none;width:100%;align-self:stretch;overflow:hidden;display:flex;flex-direction:column;gap:6px;justify-content:flex-start}
+@media(min-width:1280px){
+  .ov-cockpit-3col .ov-col-assets{padding:14px 16px}
+  .ov-cockpit-3col .ov-col-assets .ov-hero-label{margin-bottom:6px}
+  .ov-cockpit-3col .ov-col-assets #ov-cny,.ov-cockpit-3col .ov-col-assets .ov-hero-nav{font-size:42px}
+  .ov-cockpit-3col .ov-col-assets .ov-hero-fx{margin-top:8px;gap:8px 14px}
+  .ov-cockpit-3col .ov-col-assets .ov-insights{margin-top:8px;gap:5px;max-height:48px;overflow:hidden}
+  .ov-cockpit-3col .ov-col-assets .ov-hero-chart-block .nav-chart-wrap,.ov-cockpit-3col .ov-col-assets #chart-ov{height:52px!important;max-height:52px}
+  .ov-cockpit-3col .ov-col-assets .ov-hero-goal-compact{margin-top:4px;padding:8px 10px}
+  .ov-cockpit-3col .ov-col-assets .ov-hero-alloc-compact{margin-top:0;padding:10px 12px}
+  .ov-cockpit-3col .ov-col-assets .ov-hero-alloc-compact .card-title{font-size:12px;margin-bottom:6px}
+  .ov-cockpit-3col .ov-col-assets .ov-hero-alloc-compact .ov-pie-canvas{height:100px;max-width:128px}
+  .ov-cockpit-3col .ov-col-assets .ov-pie-leg-row{font-size:9px;gap:4px 5px}
+  .ov-cockpit-3col .ov-col-assets #ov-dash{flex-shrink:1;min-height:0}
+}
 .ov-copilot-tabs{display:flex;gap:6px;margin-bottom:12px;flex-shrink:0}
 .ov-copilot-tab{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:8px 10px;border:1px solid var(--border);background:var(--bg-card);border-radius:var(--radius-md);font-size:12px;font-weight:500;cursor:pointer;color:var(--text-3);font-family:var(--font);transition:all var(--ease-lux)}
 .ov-copilot-tab:hover{border-color:var(--border-hover);color:var(--text-2)}
