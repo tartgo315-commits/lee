@@ -187,14 +187,14 @@ body{
   .ov-cockpit-3col .ov-hero-head{
     display:grid;
     grid-template-columns:minmax(0,1.02fr) minmax(0,0.98fr);
-    grid-template-areas:"main chart" "goal goal" "dash dash";
+    grid-template-areas:"main goal" "main chart" "dash dash";
     gap:6px 10px;
     align-content:start;
     align-items:start;
   }
-  .ov-cockpit-3col .ov-hero-main{grid-area:main;min-width:0}
-  .ov-cockpit-3col .ov-hero-chart-mini{grid-area:chart;align-self:stretch;justify-content:flex-end}
-  .ov-cockpit-3col #goal-bar-wrap{grid-area:goal}
+  .ov-cockpit-3col .ov-hero-main{grid-area:main;grid-row:1 / span 2;min-width:0;align-self:stretch}
+  .ov-cockpit-3col #goal-bar-wrap{grid-area:goal;align-self:start;width:100%}
+  .ov-cockpit-3col .ov-hero-chart-mini{grid-area:chart;align-self:end;justify-content:flex-end}
   .ov-cockpit-3col #ov-dash{grid-area:dash}
   .ov-cockpit-3col .ov-col-assets .ov-hero-label{margin-bottom:4px}
   .ov-cockpit-3col .ov-col-assets #ov-cny,.ov-cockpit-3col .ov-col-assets .ov-hero-nav{font-size:38px;line-height:1.05}
@@ -206,9 +206,12 @@ body{
   .ov-cockpit-3col .ov-col-assets .ov-insight-chip{font-size:10px;padding:3px 7px;line-height:1.35;max-width:100%}
   .ov-cockpit-3col .ov-col-assets .ov-hero-chart-mini .nav-chart-wrap,.ov-cockpit-3col .ov-col-assets #chart-ov{height:48px!important;max-height:48px}
   .ov-cockpit-3col .ov-col-assets .ov-hero-range{margin-top:0}
-  .ov-cockpit-3col .ov-col-assets .ov-hero-goal-compact{margin-top:0;padding:7px 10px}
+  .ov-cockpit-3col .ov-col-assets .ov-hero-goal-top{margin-top:0;padding:6px 8px}
+  .ov-cockpit-3col .ov-col-assets .ov-hero-goal-top .ov-goal-pct{font-size:15px}
+  .ov-cockpit-3col .ov-col-assets .ov-hero-goal-top .ov-goal-hd{margin-bottom:2px}
+  .ov-cockpit-3col .ov-col-assets .ov-hero-goal-top .ov-goal-track{margin-top:4px}
   .ov-cockpit-3col .ov-col-assets .ov-goal-aside{display:none}
-  .ov-cockpit-3col .ov-col-assets .ov-goal-meta{margin-top:4px;font-size:10px}
+  .ov-cockpit-3col .ov-col-assets .ov-goal-meta{margin-top:3px;font-size:9px;gap:4px}
   .ov-cockpit-3col .ov-col-assets .ov-hero-alloc-compact{margin-top:0;padding:8px 10px}
   .ov-cockpit-3col .ov-col-assets .ov-hero-alloc-compact .card-title{font-size:11px;margin-bottom:4px}
   .ov-cockpit-3col .ov-col-assets .ov-hero-alloc-compact .ov-pie-canvas{height:88px;max-width:120px}
@@ -663,6 +666,24 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
                   </div>
                   <div id="ov-insights" class="ov-insights"></div>
                 </div>
+                <div class="ov-hero-goal-compact ov-hero-goal-top" id="goal-bar-wrap">
+                  <div class="ov-goal-inner">
+                    <div class="ov-goal-hd">
+                      <span class="ov-goal-lbl" id="goal-label">存款目标</span>
+                      <span class="ov-goal-pct" id="goal-pct">—%</span>
+                    </div>
+                    <div class="ov-goal-track"><div id="goal-fill"></div></div>
+                    <div class="ov-goal-meta">
+                      <span id="goal-current">¥—</span>
+                      <span id="goal-target">目标 ¥1,500,000</span>
+                    </div>
+                    <div class="ov-goal-aside">
+                      <span class="ov-goal-aside-lbl">还差 <span class="ov-goal-remaining" id="goal-remaining">—</span></span>
+                      <span class="ov-goal-eta" id="goal-eta">预计达成 —</span>
+                    </div>
+                    <button type="button" class="btn btn-icon btn-sm ov-goal-edit" onclick="openGoalEdit()" title="修改目标"><i class="ti ti-pencil"></i></button>
+                  </div>
+                </div>
                 <div class="ov-hero-chart-mini">
                   <div class="ov-hero-chart nav-chart-wrap"><canvas id="chart-ov"></canvas></div>
                   <div class="ov-hero-range">
@@ -673,25 +694,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
                     </div>
                   </div>
                 </div>
-                  <div class="ov-hero-goal-compact" id="goal-bar-wrap">
-                    <div class="ov-goal-inner">
-                      <div class="ov-goal-hd">
-                        <span class="ov-goal-lbl" id="goal-label">存款目标</span>
-                        <span class="ov-goal-pct" id="goal-pct">—%</span>
-                      </div>
-                      <div class="ov-goal-track"><div id="goal-fill"></div></div>
-                      <div class="ov-goal-meta">
-                        <span id="goal-current">¥—</span>
-                        <span id="goal-target">目标 ¥1,500,000</span>
-                      </div>
-                      <div class="ov-goal-aside">
-                        <span class="ov-goal-aside-lbl">还差 <span class="ov-goal-remaining" id="goal-remaining">—</span></span>
-                        <span class="ov-goal-eta" id="goal-eta">预计达成 —</span>
-                      </div>
-                      <button type="button" class="btn btn-icon btn-sm ov-goal-edit" onclick="openGoalEdit()" title="修改目标"><i class="ti ti-pencil"></i></button>
-                    </div>
-                  </div>
-                  <div class="card ov-side-combo ov-hero-alloc-compact mb-0" id="ov-dash">
+                <div class="card ov-side-combo ov-hero-alloc-compact mb-0" id="ov-dash">
                     <div class="card-title"><i class="ti ti-chart-pie"></i> 区域配置 · 流动性</div>
                     <div class="ov-pie-split">
                       <div class="ov-pie-panel">
