@@ -177,22 +177,44 @@ body{
 .ov-col-events .ov-events-list{flex:1;min-height:0;max-height:none!important;height:auto;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-gutter:stable;-webkit-overflow-scrolling:touch;padding-right:2px}
 .ov-col-events .ov-event-row{grid-template-columns:1fr;gap:8px;padding:10px 0;font-size:12px}
 .ov-cockpit-3col .ov-col-assets{display:flex;flex-direction:column;gap:0;overflow:hidden}
-.ov-cockpit-3col .ov-hero-head{flex:1;min-height:0;display:flex;flex-direction:column;gap:8px;overflow:hidden}
-.ov-cockpit-3col .ov-hero-main{flex-shrink:0}
-.ov-cockpit-3col .ov-hero-chart-block{flex:1;min-height:0;max-width:none;width:100%;align-self:stretch;overflow:hidden;display:flex;flex-direction:column;gap:6px;justify-content:flex-start}
+.ov-cockpit-3col .ov-hero-head{flex:1;min-height:0;display:flex;flex-direction:column;gap:8px}
+.ov-cockpit-3col .ov-hero-chart-mini{display:flex;flex-direction:column;gap:6px;min-width:0}
+.ov-hero-chart-mini .nav-chart-wrap{height:72px}
+.ov-hero-chart-mini #chart-ov{max-height:72px;height:72px!important}
+.ov-hero-chart-mini .ov-hero-range{margin-top:8px;justify-content:flex-end}
 @media(min-width:1280px){
-  .ov-cockpit-3col .ov-col-assets{padding:14px 16px}
-  .ov-cockpit-3col .ov-col-assets .ov-hero-label{margin-bottom:6px}
-  .ov-cockpit-3col .ov-col-assets #ov-cny,.ov-cockpit-3col .ov-col-assets .ov-hero-nav{font-size:42px}
-  .ov-cockpit-3col .ov-col-assets .ov-hero-fx{margin-top:8px;gap:8px 14px}
-  .ov-cockpit-3col .ov-col-assets .ov-insights{margin-top:8px;gap:5px;max-height:48px;overflow:hidden}
-  .ov-cockpit-3col .ov-col-assets .ov-hero-chart-block .nav-chart-wrap,.ov-cockpit-3col .ov-col-assets #chart-ov{height:52px!important;max-height:52px}
-  .ov-cockpit-3col .ov-col-assets .ov-hero-goal-compact{margin-top:4px;padding:8px 10px}
-  .ov-cockpit-3col .ov-col-assets .ov-hero-alloc-compact{margin-top:0;padding:10px 12px}
-  .ov-cockpit-3col .ov-col-assets .ov-hero-alloc-compact .card-title{font-size:12px;margin-bottom:6px}
-  .ov-cockpit-3col .ov-col-assets .ov-hero-alloc-compact .ov-pie-canvas{height:100px;max-width:128px}
-  .ov-cockpit-3col .ov-col-assets .ov-pie-leg-row{font-size:9px;gap:4px 5px}
-  .ov-cockpit-3col .ov-col-assets #ov-dash{flex-shrink:1;min-height:0}
+  .ov-cockpit-3col .ov-col-assets{padding:12px 14px}
+  .ov-cockpit-3col .ov-hero-head{
+    display:grid;
+    grid-template-columns:minmax(0,1.02fr) minmax(0,0.98fr);
+    grid-template-areas:"main chart" "goal goal" "dash dash";
+    gap:6px 10px;
+    align-content:start;
+    align-items:start;
+  }
+  .ov-cockpit-3col .ov-hero-main{grid-area:main;min-width:0}
+  .ov-cockpit-3col .ov-hero-chart-mini{grid-area:chart;align-self:stretch;justify-content:flex-end}
+  .ov-cockpit-3col #goal-bar-wrap{grid-area:goal}
+  .ov-cockpit-3col #ov-dash{grid-area:dash}
+  .ov-cockpit-3col .ov-col-assets .ov-hero-label{margin-bottom:4px}
+  .ov-cockpit-3col .ov-col-assets #ov-cny,.ov-cockpit-3col .ov-col-assets .ov-hero-nav{font-size:38px;line-height:1.05}
+  .ov-cockpit-3col .ov-col-assets .ov-hero-delta{font-size:11px;line-height:1.4}
+  .ov-cockpit-3col .ov-col-assets .ov-nav-baseline{display:block;font-size:10px;line-height:1.35;margin-top:2px}
+  .ov-cockpit-3col .ov-col-assets .ov-hero-fx{margin-top:6px;gap:6px 10px;font-size:11px}
+  .ov-cockpit-3col .ov-col-assets .ov-hero-fx-item .val{font-size:12px}
+  .ov-cockpit-3col .ov-col-assets .ov-insights{margin-top:6px;gap:4px}
+  .ov-cockpit-3col .ov-col-assets .ov-insight-chip{font-size:10px;padding:3px 7px;line-height:1.35;max-width:100%}
+  .ov-cockpit-3col .ov-col-assets .ov-hero-chart-mini .nav-chart-wrap,.ov-cockpit-3col .ov-col-assets #chart-ov{height:48px!important;max-height:48px}
+  .ov-cockpit-3col .ov-col-assets .ov-hero-range{margin-top:0}
+  .ov-cockpit-3col .ov-col-assets .ov-hero-goal-compact{margin-top:0;padding:7px 10px}
+  .ov-cockpit-3col .ov-col-assets .ov-goal-aside{display:none}
+  .ov-cockpit-3col .ov-col-assets .ov-goal-meta{margin-top:4px;font-size:10px}
+  .ov-cockpit-3col .ov-col-assets .ov-hero-alloc-compact{margin-top:0;padding:8px 10px}
+  .ov-cockpit-3col .ov-col-assets .ov-hero-alloc-compact .card-title{font-size:11px;margin-bottom:4px}
+  .ov-cockpit-3col .ov-col-assets .ov-hero-alloc-compact .ov-pie-canvas{height:88px;max-width:120px}
+  .ov-cockpit-3col .ov-col-assets .ov-pie-lbl{font-size:10px;margin-bottom:4px}
+  .ov-cockpit-3col .ov-col-assets .ov-pie-leg-row{font-size:9px;gap:3px 4px}
+  .ov-cockpit-3col .ov-col-assets .ov-pie-legend{gap:3px;margin-top:4px}
 }
 .ov-copilot-tabs{display:flex;gap:6px;margin-bottom:12px;flex-shrink:0}
 .ov-copilot-tab{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:8px 10px;border:1px solid var(--border);background:var(--bg-card);border-radius:var(--radius-md);font-size:12px;font-weight:500;cursor:pointer;color:var(--text-3);font-family:var(--font);transition:all var(--ease-lux)}
@@ -641,7 +663,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
                   </div>
                   <div id="ov-insights" class="ov-insights"></div>
                 </div>
-                <div class="ov-hero-chart-block">
+                <div class="ov-hero-chart-mini">
                   <div class="ov-hero-chart nav-chart-wrap"><canvas id="chart-ov"></canvas></div>
                   <div class="ov-hero-range">
                     <div class="range-tabs">
@@ -650,6 +672,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
                       <button class="rt" onclick="setRange(9999,this)">ALL</button>
                     </div>
                   </div>
+                </div>
                   <div class="ov-hero-goal-compact" id="goal-bar-wrap">
                     <div class="ov-goal-inner">
                       <div class="ov-goal-hd">
@@ -691,7 +714,6 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
                       </div>
                     </div>
                   </div>
-                </div>
               </div>
             </div>
             <div class="ov-col-events">
@@ -5023,7 +5045,14 @@ function renderOverviewDashboard(){
     if(miscNav>1)
       chips.push({t:`约有 ${fc(miscNav,'CNY',0)} 未归入中/美/澳（饼图为「未标地区」）— 请编辑资产，将地区选为 中国境内 / 美国 / 澳洲。`,c:'warn'});
   }
-  elI.innerHTML=chips.length?chips.map(x=>`<span class="ov-insight-chip ${x.c}">${x.t}</span>`).join(''):`<span class="ov-insight-chip">添加资产后将显示配置分析与提示</span>`;
+  const insightMax=window.innerWidth>=1280?4:chips.length;
+  const insightShown=chips.slice(0,insightMax);
+  const insightMore=chips.length>insightMax?`<span class="ov-insight-chip info" title="${escOvHtml(chips.slice(insightMax).map(x=>x.t).join('\n'))}">+${chips.length-insightMax} 条提示</span>`:'';
+  elI.innerHTML=insightShown.length?insightShown.map(x=>{
+    const full=escOvHtml(x.t);
+    const short=x.t.length>36?escOvHtml(x.t.slice(0,34)+'…'):full;
+    return`<span class="ov-insight-chip ${x.c}" title="${full}">${short}</span>`;
+  }).join('')+insightMore:`<span class="ov-insight-chip">添加资产后将显示配置分析与提示</span>`;
   if(cny<=0){
     destroyOvDashCharts();
     if(elAllocLeg)elAllocLeg.innerHTML='';
