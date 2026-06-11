@@ -124,12 +124,12 @@ assert(triggered[0].status === 'TRIGGERED_WARNING', '跌破止损 → TRIGGERED_
 
 console.log('\n=== index.html 静态检查 ===');
 const html = fs.readFileSync('index.html', 'utf8');
-assert(html.includes('--bg-page:#0B0F17'), '暗黑画布色');
+assert(html.includes('--bg-page:#080B12'), '暗黑画布色');
 assert(html.includes('FX_RATES'), 'FX_RATES 存在');
 assert(html.includes('prepareSanitizedPayload'), 'prepareSanitizedPayload 存在');
 assert(html.includes('productToAssetV2'), 'asset v2 导出');
 assert(html.includes('portfolioPayload'), 'AI 请求携带 portfolioPayload');
-assert(html.includes('--fs-nav:52px'), 'NAV 字号变量');
+assert(html.includes('--fs-nav:40px'), 'NAV 字号变量');
 assert(!html.match(/<style><\/style>/), 'style 块非空');
 
 console.log('\n=== api/ai-advisor.js ===');
