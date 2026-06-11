@@ -72,7 +72,7 @@ export async function onRequest(context) {
     return jsonResponse({
       error: 'no api key',
       hint:
-        '在 Vercel → 本项目 → Settings → Environment Variables 添加 TWELVE_DATA_KEY（值=Twelve Data 控制台里的 API Key），务必勾选 Production，保存后 Deployments → Redeploy。',
+        '在 Vercel / Cloudflare Pages → Environment Variables 添加 TWELVE_DATA_KEY（值=Twelve Data 控制台里的 API Key），保存后重新部署。',
       expectedNames: ['TWELVE_DATA_KEY', 'TWELVE_DATA_API_KEY', 'TWELVEDATA_API_KEY'],
     });
   }

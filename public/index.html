@@ -1476,7 +1476,7 @@ maybeShowHttpDataTip();
   const probeUrl='https://query1.finance.yahoo.com/v8/finance/chart/AAPL?interval=1d&range=1d';
   const qs='?url='+encodeURIComponent(probeUrl);
   let ok=false;
-  for(const p of ['/_proxy','/proxy']){
+  for(const p of ['/api/proxy','/_proxy','/proxy']){
     try{
       const r=await fetch(p+qs,{cache:'no-store'});
       if(!r.ok)continue;
@@ -1732,6 +1732,7 @@ async function fetchProxiedText(targetUrl){
   const b=(typeof FIREBASE_PROXY_BASE==='string'&&FIREBASE_PROXY_BASE.trim())?FIREBASE_PROXY_BASE.replace(/\/$/,''):'';
   if(b)add(b+'/proxy'+qs);
   if(location.protocol==='http:'||location.protocol==='https:'){
+    add(location.origin+'/api/proxy'+qs);
     add(location.origin+'/proxy'+qs);
     const ro=(typeof WO_REMOTE_PROXY_ORIGIN==='string'&&WO_REMOTE_PROXY_ORIGIN.trim())?WO_REMOTE_PROXY_ORIGIN.replace(/\/$/,''):'';
     if(ro){
@@ -1813,7 +1814,11 @@ function applyFxRatesIfStable(fx,force){
 function commitLiveQuotePrice(prev,next,force){
   const p=parseFloat(prev)||0,n=parseFloat(next)||0;
   if(!(n>0)||!isFinite(n))return false;
-  if(!force&&p>0&&Math.abs(n-p)/p>QUOTE_AUTO_MAX_JUMP_PCT)return false;
+  if(!force&&p>0&&Math.abs(n-p)/p>QUOTE_AUTO_MAX_JUMP_PCT){
+    /* 行情 API 全挂时易残留统一错价（如全线 $5）；真价拉回时允许纠正 */
+    if(p<=8&&n>=p*4)return true;
+    return false;
+  }
   return true;
 }
 /** 基金：估算净值与单位净值差太大时用单位净值，避免 gsz↔dwjz 来回切换拉歪总净值 */

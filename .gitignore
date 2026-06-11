@@ -3,6 +3,7 @@
 !.env.example
 node_modules/
 functions/node_modules/
+_worker.bundle
 .DS_Store
 Thumbs.db
 *.log

@@ -1,1 +1,3 @@
+/proxy    /api/proxy    200
+/_proxy    /api/proxy    200
 /*    /index.html   200
