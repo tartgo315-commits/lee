@@ -1793,8 +1793,8 @@ async function fetchYahooStockPrice(ticker){
 
 // ══ Finnhub：REST 经同源 /api/finnhub-quote（密钥在 Vercel 环境变量 FINNHUB_TOKEN）；浏览器不再持有 token，故不使用 wss ══
 const FINNHUB_WATCH_SYMBOLS=['NVDA','TSLA','PLTR','VOO','CRCL'];
-/** 轮询：Yahoo 批量 + 延长时段 Finnhub；间隔约 110s 使 Finnhub 日调用 &lt; 800 次（免费档） */
-const FINNHUB_QUOTE_POLL_MS=60000;
+/** 后台美股轮询：Yahoo（经 /api/proxy，不占 Twelve Data 额度）+ 必要时 Finnhub；默认 10 分钟 */
+const FINNHUB_QUOTE_POLL_MS=600000;
 const FH_QUOTE_STAGGER_MS=700;
 /** 自动刷新时：汇率单次最大漂移、行情单次最大跳变（防多源 API 噪声导致总净值乱跳） */
 const FX_AUTO_MAX_DRIFT_PCT=0.0008;
@@ -2085,26 +2085,8 @@ async function pollFinnhubQuotesOnce(){
   /* 轮询只跟股价；汇率改由低频定时器更新，避免多源汇率噪声让人民币总净值大幅跳动 */
   const syms=[...finnhubDesiredSymbols()];
   if(!syms.length)return;
-  const tdMap=new Map();
-  if(location.protocol==='http:'||location.protocol==='https:'){
-    try{
-      const list=[...syms].sort().join(',');
-      const r=await fetch(location.origin+'/api/stock-price?symbols='+encodeURIComponent(list),{cache:'no-store'});
-      let j=null;
-      try{j=await r.json();}catch(e){}
-      if(j&&!j.error&&!(typeof j.code==='number'&&j.code>=400)&&Array.isArray(j.quotes)){
-        for(const row of j.quotes){
-          const sym=String(row.symbol||'').trim().toUpperCase();
-          if(!sym)continue;
-          const ext=parseFloat(row.extended_price||row.prepost_price||0);
-          const reg=parseFloat(row.close||0);
-          const p=ext>0?ext:reg;
-          if(p>0)tdMap.set(sym,p);
-        }
-      }
-    }catch(e){}
-  }
-  const yahooMap=await fetchYahooV7QuotePriceMap(syms,{skipTwelve:true,seedMap:tdMap});
+  /* 后台不批量打 Twelve Data（按标的计额度）；仅 Yahoo + Finnhub。Twelve Data 留给手动「刷新行情」。 */
+  const yahooMap=await fetchYahooV7QuotePriceMap(syms,{skipTwelve:true});
   for(const [sym,px] of yahooMap)patchUsStockLiveRow(sym,px);
   if(location.protocol!=='http:'&&location.protocol!=='https:')return;
   let lastFh=0;
@@ -4547,7 +4529,7 @@ async function refreshBtcPrice(){
 let btcAutoRefreshTimer=null;
 function startBtcAutoRefresh(){
   if(btcAutoRefreshTimer)clearInterval(btcAutoRefreshTimer);
-  btcAutoRefreshTimer=setInterval(()=>{refreshBtcPrice();},60000);
+  btcAutoRefreshTimer=setInterval(()=>{refreshBtcPrice();},600000);
 }
 
 const TROY_OZ_GRAMS=31.1034768;
@@ -4904,10 +4886,10 @@ async function refreshAllQuotes(){
   }
 }
 
-const AUTO_QUOTE_REFRESH_MS=60000;
+const AUTO_QUOTE_REFRESH_MS=600000;
 let autoQuoteRefreshTimer=null,quoteRefreshBusy=false;
 
-/** 每分钟静默刷新行情（不含汇率/快照/资讯；汇率见 startFxAutoRefresh） */
+/** 每 10 分钟静默刷新黄金/基金/BTC（不含汇率/快照/资讯/美股；美股见 pollFinnhubQuotesOnce） */
 async function autoRefreshQuotesSilent(){
   if(quoteRefreshBusy)return;
   quoteRefreshBusy=true;
