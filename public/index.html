@@ -356,12 +356,17 @@ body{
 .ov-liq-fill.cash{background:var(--text-2)}
 .ov-liq-fill.lock{background:var(--accent-blue)}
 .ov-liq-fill.inv{background:var(--accent-gold)}
-.ov-pie-split{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:start}
-.ov-pie-panel{display:flex;flex-direction:column;align-items:center;min-width:0}
-.ov-pie-lbl{font-size:11px;font-weight:500;color:var(--text-4);margin-bottom:6px;text-align:center;letter-spacing:.02em}
-.ov-pie-canvas{position:relative;width:100%;max-width:132px;height:96px;margin:0 auto}
+.ov-pie-split{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start}
+.ov-pie-panel{display:flex;flex-direction:column;align-items:stretch;min-width:0}
+.ov-pie-lbl{font-size:11px;font-weight:500;color:var(--text-4);margin-bottom:8px;text-align:center;letter-spacing:.02em}
+.ov-pie-canvas{position:relative;width:100%;max-width:156px;height:128px;margin:0 auto 4px}
 .ov-pie-canvas canvas{width:100%!important;height:100%!important}
-.ov-hero-alloc-compact .ov-pie-canvas{height:88px;max-width:120px}
+.ov-hero-alloc-compact .ov-pie-canvas{height:120px;max-width:148px}
+.ov-pie-legend{width:100%;margin-top:6px;display:flex;flex-direction:column;gap:5px}
+.ov-pie-leg-row{display:grid;grid-template-columns:8px 1fr auto;gap:5px 6px;align-items:center;font-size:10px;line-height:1.35}
+.ov-pie-leg-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.ov-pie-leg-name{color:var(--text-3);min-width:0}
+.ov-pie-leg-val{color:var(--text-4);font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
 .ov-dash-bento{display:none}
 .ov-dash-empty{font-size:var(--text-xs);color:var(--text-4);padding:8px 0}
 .ai-pb-panel{background:var(--bg-muted);border:1px solid var(--border);border-radius:var(--radius-lg);padding:var(--card-pad)}
@@ -649,10 +654,12 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
                       <div class="ov-pie-panel">
                         <div class="ov-pie-lbl">区域配置</div>
                         <div class="ov-donut-wrap ov-pie-canvas"><canvas id="chart-alloc-region"></canvas></div>
+                        <div class="ov-pie-legend" id="ov-alloc-legend"></div>
                       </div>
                       <div class="ov-pie-panel">
                         <div class="ov-pie-lbl">流动性结构</div>
                         <div class="ov-donut-wrap ov-pie-canvas"><canvas id="chart-alloc-liq"></canvas></div>
+                        <div class="ov-pie-legend" id="ov-liq-legend"></div>
                       </div>
                     </div>
                     <div class="visually-hidden" aria-hidden="true">
@@ -4911,15 +4918,20 @@ function typeBreakdownForCharts(){
   }
   return bd;
 }
-function upsertOvDonutChart(ref,canvas,labels,data,bgColors,bdColors,cny,textColor){
+function renderPieLegend(el,parts,cny){
+  if(!el)return;
+  if(!parts.length){el.innerHTML='';return;}
+  el.innerHTML=parts.map(p=>`<div class="ov-pie-leg-row"><span class="ov-pie-leg-dot" style="background:${p.bg}"></span><span class="ov-pie-leg-name">${escOvHtml(p.l)}</span><span class="ov-pie-leg-val">${(p.d/cny*100).toFixed(1)}% · ${fc(p.d,'CNY',0)}</span></div>`).join('');
+}
+function upsertOvDonutChart(ref,canvas,labels,data,bgColors,bdColors,cny){
   if(!canvas)return ref;
   const chartOpts={
     animation:false,
     responsive:true,maintainAspectRatio:false,
-    layout:{padding:{top:2,bottom:0,left:0,right:0}},
-    cutout:'52%',
+    layout:{padding:{top:4,bottom:4,left:2,right:2}},
+    cutout:'54%',
     plugins:{
-      legend:{position:'bottom',labels:{color:textColor,boxWidth:8,padding:2,font:{size:10}}},
+      legend:{display:false},
       tooltip:{callbacks:{label:c=>{
         const v=c.raw,pct=cny>0?(v/cny*100):0;
         return c.label+': '+fc(v,'CNY',0)+'（'+pct.toFixed(1)+'%）';
@@ -4935,7 +4947,6 @@ function upsertOvDonutChart(ref,canvas,labels,data,bgColors,bdColors,cny,textCol
     ref.data.datasets[0].data=data;
     ref.data.datasets[0].backgroundColor=bgColors;
     ref.data.datasets[0].borderColor=bdColors;
-    ref.options.plugins.legend.labels.color=textColor;
     ref.update('none');
     return ref;
   }
@@ -4958,6 +4969,8 @@ function renderOverviewDashboard(){
   const mileRecent=document.getElementById('mile-recent-delta');
   const ctxR=document.getElementById('chart-alloc-region');
   const ctxLiq=document.getElementById('chart-alloc-liq');
+  const elAllocLeg=document.getElementById('ov-alloc-legend');
+  const elLiqLeg=document.getElementById('ov-liq-legend');
   if(!elI||!mileFirst||!mileDelta||!mileRecent)return;
   const cny=totalCNY();
   const chips=[];
@@ -4993,6 +5006,8 @@ function renderOverviewDashboard(){
   elI.innerHTML=chips.length?chips.map(x=>`<span class="ov-insight-chip ${x.c}">${x.t}</span>`).join(''):`<span class="ov-insight-chip">添加资产后将显示配置分析与提示</span>`;
   if(cny<=0){
     destroyOvDashCharts();
+    if(elAllocLeg)elAllocLeg.innerHTML='';
+    if(elLiqLeg)elLiqLeg.innerHTML='';
     mileFirst.textContent='—';
     mileDelta.textContent='—';
     mileDelta.className='';
@@ -5037,7 +5052,6 @@ function renderOverviewDashboard(){
     mileRecent.className='';
     mileRecent.style.color='';
   }
-  const textColor=document.body.classList.contains('light')?'#57534e':'#6B7280';
   const rCn=totalCNY('cn'),rUs=totalCNY('us'),rAu=totalCNY('au');
   const assigned=rCn+rUs+rAu;
   const misc=Math.max(0,cny-assigned);
@@ -5050,18 +5064,20 @@ function renderOverviewDashboard(){
     ovDashChartRegion,ctxR,
     regParts.map(x=>x.l),regParts.map(x=>x.d),
     regParts.map(x=>x.bg),regParts.map(x=>x.bd),
-    cny,textColor
+    cny
   );
+  renderPieLegend(elAllocLeg,regParts,cny);
   const liqParts=[];
-  if(cashV>0.01)liqParts.push({l:'现金/活期',d:cashV,bg:'rgba(148,163,184,.55)',bd:'rgba(148,163,184,.35)'});
-  if(lockV>0.01)liqParts.push({l:'定期/锁定',d:lockV,bg:'rgba(96,165,250,.55)',bd:'rgba(96,165,250,.35)'});
+  if(cashV>0.01)liqParts.push({l:'现金 / 活期',d:cashV,bg:'rgba(148,163,184,.55)',bd:'rgba(148,163,184,.35)'});
+  if(lockV>0.01)liqParts.push({l:'定期 / 锁定',d:lockV,bg:'rgba(96,165,250,.55)',bd:'rgba(96,165,250,.35)'});
   if(invV>0.01)liqParts.push({l:'投资类',d:invV,bg:'rgba(201,162,39,.55)',bd:'rgba(201,162,39,.35)'});
   ovDashChartLiq=upsertOvDonutChart(
     ovDashChartLiq,ctxLiq,
     liqParts.map(x=>x.l),liqParts.map(x=>x.d),
     liqParts.map(x=>x.bg),liqParts.map(x=>x.bd),
-    cny,textColor
+    cny
   );
+  renderPieLegend(elLiqLeg,liqParts,cny);
 }
 function snapFmtDelta(v){
   if(v==null||isNaN(v))return '<span class="hb-item">—</span>';
