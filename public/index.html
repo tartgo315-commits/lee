@@ -159,20 +159,24 @@ body{
 .ov-top-split{display:grid;grid-template-columns:1fr;min-width:0}
 .ov-top-split.ov-cockpit-3col{gap:0}
 @media(min-width:960px){.ov-top-split.ov-cockpit-3col{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-areas:"assets events" "copilot copilot"}}
-@media(min-width:1280px){.ov-top-split.ov-cockpit-3col{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-areas:"assets events copilot";min-height:calc(100vh - 132px);align-items:stretch}}
-.ov-col-assets{grid-area:assets;padding:20px;min-width:0;min-height:0}
+@media(min-width:960px){.ov-top-split.ov-cockpit-3col{min-height:calc(100vh - 132px);align-items:stretch}}
+@media(min-width:1280px){
+  .ov-top-unified.card{display:flex;flex-direction:column;height:calc(100vh - 132px);max-height:calc(100vh - 132px)}
+  .ov-top-split.ov-cockpit-3col{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-areas:"assets events copilot";flex:1;min-height:0;height:100%;max-height:100%;grid-template-rows:minmax(0,1fr)}
+}
+.ov-col-assets{grid-area:assets;padding:20px;min-width:0;min-height:0;height:100%;max-height:100%;overflow:hidden}
 @media(min-width:960px){.ov-col-assets{border-right:1px solid var(--border-light)}}
-.ov-col-events{grid-area:events;padding:16px 18px;min-width:0;display:flex;flex-direction:column;min-height:0;overflow:hidden;background:rgba(11,15,23,.12)}
+.ov-col-events{grid-area:events;padding:16px 18px;min-width:0;height:100%;max-height:100%;display:flex;flex-direction:column;min-height:0;overflow:hidden;background:rgba(11,15,23,.12)}
 @media(min-width:1280px){.ov-col-events{border-right:1px solid var(--border-light)}}
-.ov-col-copilot{grid-area:copilot;padding:16px;min-width:0;display:flex;flex-direction:column;min-height:0;background:rgba(11,15,23,.25)}
+.ov-col-copilot{grid-area:copilot;padding:16px;min-width:0;height:100%;max-height:100%;display:flex;flex-direction:column;min-height:0;overflow:hidden;background:rgba(11,15,23,.25)}
 @media(min-width:1280px){.ov-col-copilot{border-right:none}}
-.ov-col-events .ov-events-card{background:transparent;border:none;padding:0;margin:0;box-shadow:none!important;flex:1;min-height:0;display:flex;flex-direction:column}
+.ov-col-events .ov-events-card{background:transparent;border:none;padding:0;margin:0;box-shadow:none!important;flex:1;min-height:0;height:100%;display:flex;flex-direction:column;overflow:hidden}
 .ov-col-events .ov-events-hd{flex-direction:column;align-items:stretch;gap:10px;margin-bottom:10px;flex-shrink:0}
-.ov-col-events .ov-events-filters{gap:6px}
+.ov-col-events .ov-events-filters{gap:6px;flex-shrink:0}
 .ov-col-events .ov-events-filter{font-size:11px;padding:4px 10px}
-.ov-col-events .ov-events-list{flex:1;min-height:0;max-height:none;overflow-y:auto}
+.ov-col-events .ov-events-list{flex:1;min-height:0;max-height:none!important;height:auto;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-gutter:stable;-webkit-overflow-scrolling:touch;padding-right:2px}
 .ov-col-events .ov-event-row{grid-template-columns:1fr;gap:8px;padding:10px 0;font-size:12px}
-.ov-cockpit-3col .ov-col-assets{display:flex;flex-direction:column;gap:12px;overflow-y:auto}
+.ov-cockpit-3col .ov-col-assets{display:flex;flex-direction:column;gap:12px;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
 .ov-cockpit-3col .ov-hero-head{display:flex;flex-direction:column;gap:12px}
 .ov-cockpit-3col .ov-hero-chart-block{flex:none;max-width:none;width:100%;align-self:stretch}
 .ov-copilot-tabs{display:flex;gap:6px;margin-bottom:12px;flex-shrink:0}
@@ -182,17 +186,17 @@ body{
 .ov-copilot-body{flex:1;min-height:0;display:flex;flex-direction:column}
 .ov-copilot-panel{display:none;flex:1;flex-direction:column;min-height:0}
 .ov-copilot-panel.active{display:flex}
-.ov-copilot-scroll{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:8px}
+.ov-copilot-scroll{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;gap:8px}
 .ov-copilot-console{flex-shrink:0;border-top:1px solid var(--border-light);padding-top:12px;margin-top:8px}
 .ov-col-copilot .ov-events-ai{margin-top:0;padding-top:0;border-top:none;display:flex;flex-direction:column;gap:8px}
-.ov-col-copilot .ov-events-ai-msgs{flex:1;min-height:80px;max-height:min(420px,48vh);overflow-y:auto;margin-bottom:0}
+.ov-col-copilot .ov-events-ai-msgs{flex:1;min-height:0;max-height:none;overflow-y:auto;margin-bottom:0}
 .ov-col-copilot .ov-events-ai-compose{margin-top:0}
 .ov-col-copilot .ov-events-ai-hd{flex-shrink:0}
 .ov-copilot-wealth{background:transparent!important;border:none!important;padding:0!important;box-shadow:none!important}
 .ov-copilot-wealth .ai-pb-head{margin-bottom:0}
 .ov-copilot-wealth .ai-pb-sub,.ov-copilot-wealth .ai-pb-privacy{display:none}
 .ov-copilot-wealth .ai-pb-result{border-top:none;margin-top:0;padding-top:0}
-.ov-copilot-wealth .ai-pb-chat-msgs{max-height:min(360px,42vh)}
+.ov-copilot-wealth .ai-pb-chat-msgs{flex:1;min-height:0;max-height:none}
 .ov-copilot-console-wealth .ai-pb-actions{display:flex;gap:6px;width:100%;flex-wrap:wrap}
 .ov-copilot-console-wealth .ai-pb-select{flex:1;min-width:120px}
 .ov-copilot-console-wealth .ai-pb-chat-chips{display:flex;flex-wrap:wrap;gap:6px}
@@ -264,6 +268,7 @@ body{
 .ov-events-filter:hover{border-color:var(--border-hover);color:var(--text-2)}
 .ov-events-filter.active{background:var(--up-bg);color:var(--up-soft);border-color:var(--border-accent)}
 .ov-events-list{max-height:420px;overflow-y:auto}
+.ov-cockpit-3col .ov-events-list{max-height:none}
 .ov-layout-side .ov-events-card{padding:20px}
 .ov-layout-side .ov-events-hd{flex-direction:column;align-items:stretch;gap:12px}
 .ov-layout-side .ov-events-filters{gap:6px}
