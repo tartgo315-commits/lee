@@ -83,7 +83,6 @@ body{
 .ov-prod-pnl.neg,.pr-pnl.neg,.fh-px.fh-down{color:var(--dn-soft)}
 .ov-prod-cny,.ph-sub,.ov-hero-fx-item .sub,.ov-nav-lbl,.ov-link-all,.ov-goal-meta,.ov-goal-eta,.ov-goal-aside-lbl,.ov-col-meta,.news-item-meta,.ov-events-sub{font-size:var(--text-xs);font-weight:400;color:var(--text-4)}
 .sr-only-totals,.visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
-.visually-hidden #chart-alloc-type{width:100px;height:100px;position:absolute;left:0;top:0;opacity:0;pointer-events:none}
 .card,.ov-top-unified,.ov-hero-card,.account-block,.page-header,.ai-pb-panel,.news-item,.total-card,.ov-col,.ov-goal-card,.fx-input-block,.fx-reverse-block,#nav-chart-wrap{transition:all var(--ease-lux)}
 .card:hover,.ov-top-unified:hover,.ov-hero-card:hover,.account-block:hover,.page-header:hover,.ai-pb-panel:hover,.news-item:hover,.total-card:hover,.ov-col:hover,.ov-goal-card:hover,.fx-input-block:hover,.fx-reverse-block:hover,#nav-chart-wrap:hover{transform:scale(1.005);border-color:var(--border-hover)!important;box-shadow:var(--shadow-card-hover)}
 .pin-overlay{position:fixed;inset:0;z-index:9999;background:var(--bg-page);display:none;flex-direction:column;align-items:center;justify-content:center}
@@ -357,11 +356,12 @@ body{
 .ov-liq-fill.cash{background:var(--text-2)}
 .ov-liq-fill.lock{background:var(--accent-blue)}
 .ov-liq-fill.inv{background:var(--accent-gold)}
-.ov-liq-fill.region-cn{background:var(--accent-blue)}
-.ov-liq-fill.region-us{background:var(--accent-gold)}
-.ov-liq-fill.region-au{background:var(--purple)}
-.ov-liq-fill.region-misc{background:var(--text-4)}
-.ov-alloc-bars{margin-bottom:10px}
+.ov-pie-split{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:start}
+.ov-pie-panel{display:flex;flex-direction:column;align-items:center;min-width:0}
+.ov-pie-lbl{font-size:11px;font-weight:500;color:var(--text-4);margin-bottom:6px;text-align:center;letter-spacing:.02em}
+.ov-pie-canvas{position:relative;width:100%;max-width:132px;height:96px;margin:0 auto}
+.ov-pie-canvas canvas{width:100%!important;height:100%!important}
+.ov-hero-alloc-compact .ov-pie-canvas{height:88px;max-width:120px}
 .ov-dash-bento{display:none}
 .ov-dash-empty{font-size:var(--text-xs);color:var(--text-4);padding:8px 0}
 .ai-pb-panel{background:var(--bg-muted);border:1px solid var(--border);border-radius:var(--radius-lg);padding:var(--card-pad)}
@@ -645,11 +645,17 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
                   </div>
                   <div class="card ov-side-combo ov-hero-alloc-compact mb-0" id="ov-dash">
                     <div class="card-title"><i class="ti ti-chart-pie"></i> 区域配置 · 流动性</div>
-                    <div class="ov-alloc-bars" id="ov-alloc-bars"></div>
-                    <div class="card-title sub">流动性结构</div>
-                    <div class="ov-liq-bars" id="ov-liq-body"></div>
+                    <div class="ov-pie-split">
+                      <div class="ov-pie-panel">
+                        <div class="ov-pie-lbl">区域配置</div>
+                        <div class="ov-donut-wrap ov-pie-canvas"><canvas id="chart-alloc-region"></canvas></div>
+                      </div>
+                      <div class="ov-pie-panel">
+                        <div class="ov-pie-lbl">流动性结构</div>
+                        <div class="ov-donut-wrap ov-pie-canvas"><canvas id="chart-alloc-liq"></canvas></div>
+                      </div>
+                    </div>
                     <div class="visually-hidden" aria-hidden="true">
-                      <canvas id="chart-alloc-type"></canvas>
                       <div id="ov-liq-card"></div>
                       <div id="ov-mile-body">
                         <div id="mile-first-val">—</div>
@@ -3227,7 +3233,7 @@ async function fetchAiAdvice(){
 }
 
 // ══ OVERVIEW ══
-let ovChart=null,ovDashChartType=null,ovRange=30,__ovChartDays=null,__ovChartDark=null;
+let ovChart=null,ovDashChartRegion=null,ovDashChartLiq=null,ovRange=30,__ovChartDays=null,__ovChartDark=null;
 let ovEventsFilter='all';
 
 const MACRO_EVENTS_WATCH=[
@@ -4905,19 +4911,54 @@ function typeBreakdownForCharts(){
   }
   return bd;
 }
+function upsertOvDonutChart(ref,canvas,labels,data,bgColors,bdColors,cny,textColor){
+  if(!canvas)return ref;
+  const chartOpts={
+    animation:false,
+    responsive:true,maintainAspectRatio:false,
+    layout:{padding:{top:2,bottom:0,left:0,right:0}},
+    cutout:'52%',
+    plugins:{
+      legend:{position:'bottom',labels:{color:textColor,boxWidth:8,padding:2,font:{size:10}}},
+      tooltip:{callbacks:{label:c=>{
+        const v=c.raw,pct=cny>0?(v/cny*100):0;
+        return c.label+': '+fc(v,'CNY',0)+'（'+pct.toFixed(1)+'%）';
+      }}}
+    }
+  };
+  if(!data.length){
+    if(ref){try{ref.destroy();}catch(e){}}
+    return null;
+  }
+  if(ref&&ref.canvas===canvas){
+    ref.data.labels=labels;
+    ref.data.datasets[0].data=data;
+    ref.data.datasets[0].backgroundColor=bgColors;
+    ref.data.datasets[0].borderColor=bdColors;
+    ref.options.plugins.legend.labels.color=textColor;
+    ref.update('none');
+    return ref;
+  }
+  if(ref){try{ref.destroy();}catch(e){}}
+  return new Chart(canvas.getContext('2d'),{
+    type:'doughnut',
+    data:{labels,datasets:[{data,backgroundColor:bgColors,borderColor:bdColors,borderWidth:1}]},
+    options:chartOpts
+  });
+}
 function destroyOvDashCharts(){
-  if(ovDashChartType){try{ovDashChartType.destroy();}catch(e){}ovDashChartType=null;}
+  if(ovDashChartRegion){try{ovDashChartRegion.destroy();}catch(e){}ovDashChartRegion=null;}
+  if(ovDashChartLiq){try{ovDashChartLiq.destroy();}catch(e){}ovDashChartLiq=null;}
 }
 function renderOverviewDashboard(){
   try{renderMajorEventsWatch();}catch(e){console.error('renderMajorEventsWatch',e);}
   const elI=document.getElementById('ov-insights');
-  const elL=document.getElementById('ov-liq-body');
-  const elAlloc=document.getElementById('ov-alloc-bars');
   const mileFirst=document.getElementById('mile-first-val');
   const mileDelta=document.getElementById('mile-first-delta');
   const mileRecent=document.getElementById('mile-recent-delta');
-  const ctxT=document.getElementById('chart-alloc-type');
-  if(!elI||!elL||!elAlloc||!mileFirst||!mileDelta||!mileRecent)return;
+  const ctxR=document.getElementById('chart-alloc-region');
+  const ctxLiq=document.getElementById('chart-alloc-liq');
+  if(!elI||!mileFirst||!mileDelta||!mileRecent)return;
   const cny=totalCNY();
   const chips=[];
   if(!D.navHistory||!D.navHistory.length)
@@ -4952,8 +4993,6 @@ function renderOverviewDashboard(){
   elI.innerHTML=chips.length?chips.map(x=>`<span class="ov-insight-chip ${x.c}">${x.t}</span>`).join(''):`<span class="ov-insight-chip">添加资产后将显示配置分析与提示</span>`;
   if(cny<=0){
     destroyOvDashCharts();
-    elAlloc.innerHTML='<div class="ov-dash-empty" style="color:var(--text3)">暂无资产数据</div>';
-    elL.innerHTML='<div class="ov-dash-empty" style="color:var(--text3)">暂无资产数据</div>';
     mileFirst.textContent='—';
     mileDelta.textContent='—';
     mileDelta.className='';
@@ -4966,12 +5005,6 @@ function renderOverviewDashboard(){
   const bd=typeBreakdownForCharts();
   const cashV=bd.cash,lockV=bd.term_deposit;
   const invV=bd.fund_cn+bd.gold+bd.stock_us+bd.other;
-  const liqSum=cashV+lockV+invV;
-  const scale=liqSum>0?100/liqSum:0;
-  elL.innerHTML=`
-    <div class="ov-liq-row"><div class="ov-liq-hd"><span>现金 / 活期（含手填闲置）</span><b>${(cashV/cny*100).toFixed(1)}% · ${fc(cashV,'CNY',0)}</b></div><div class="ov-liq-track"><div class="ov-liq-fill cash" style="width:${Math.min(100,cashV*scale)}%"></div></div></div>
-    <div class="ov-liq-row"><div class="ov-liq-hd"><span>定期 / 锁定</span><b>${(lockV/cny*100).toFixed(1)}% · ${fc(lockV,'CNY',0)}</b></div><div class="ov-liq-track"><div class="ov-liq-fill lock" style="width:${Math.min(100,lockV*scale)}%"></div></div></div>
-    <div class="ov-liq-row"><div class="ov-liq-hd"><span>投资类（基金·黄金·美股·其它）</span><b>${(invV/cny*100).toFixed(1)}% · ${fc(invV,'CNY',0)}</b></div><div class="ov-liq-track"><div class="ov-liq-fill inv" style="width:${Math.min(100,invV*scale)}%"></div></div></div>`;
   const snapsSorted=(D.navHistory||[]).filter(n=>n&&n.date&&n.cny!=null&&!isNaN(Number(n.cny))).sort((a,b)=>a.date.localeCompare(b.date));
   const oldest=snapsSorted[0]||null;
   const lastSnap=snapsSorted.length?snapsSorted[snapsSorted.length-1]:null;
@@ -5009,53 +5042,26 @@ function renderOverviewDashboard(){
   const assigned=rCn+rUs+rAu;
   const misc=Math.max(0,cny-assigned);
   const regParts=[];
-  if(rCn>0.01)regParts.push({l:'中国',d:rCn,cls:'region-cn'});
-  if(rUs>0.01)regParts.push({l:'美国',d:rUs,cls:'region-us'});
-  if(rAu>0.01)regParts.push({l:'澳洲',d:rAu,cls:'region-au'});
-  if(misc>0.01)regParts.push({l:'未标地区',d:misc,cls:'region-misc'});
-  const regionSum=regParts.reduce((s,x)=>s+x.d,0);
-  const regScale=regionSum>0?100/regionSum:0;
-  elAlloc.innerHTML=regionSum>0?regParts.map(p=>`
-    <div class="ov-liq-row"><div class="ov-liq-hd"><span>${p.l}</span><b>${(p.d/cny*100).toFixed(1)}% · ${fc(p.d,'CNY',0)}</b></div><div class="ov-liq-track"><div class="ov-liq-fill ${p.cls}" style="width:${Math.min(100,p.d*regScale)}%"></div></div></div>`).join(''):'<div class="ov-dash-empty">暂无区域数据</div>';
-  if(ctxT){
-    const order=['cash','fund_cn','gold','stock_us','term_deposit','other'];
-    const labels=order.map(k=>SNAP_TYPE_LBL[k]);
-    const vals=order.map(k=>bd[k]);
-    const colors=['#64748b','#6366f1','#ca8a04','#2563eb','#0d9488','#7c3aed'];
-    const filt=vals.map((v,i)=>({v,l:labels[i],c:colors[i]})).filter(x=>x.v>1);
-    if(!filt.length){
-      if(ovDashChartType){try{ovDashChartType.destroy();}catch(e){}ovDashChartType=null;}
-    }else if(ovDashChartType&&ovDashChartType.canvas===ctxT){
-      ovDashChartType.data.labels=filt.map(x=>x.l);
-      ovDashChartType.data.datasets[0].data=filt.map(x=>x.v);
-      ovDashChartType.data.datasets[0].backgroundColor=filt.map(x=>x.c+'b3');
-      ovDashChartType.data.datasets[0].borderColor=filt.map(x=>x.c);
-      ovDashChartType.options.plugins.legend.labels.color=textColor;
-      ovDashChartType.update('none');
-    }else{
-      if(ovDashChartType){try{ovDashChartType.destroy();}catch(e){}ovDashChartType=null;}
-      ovDashChartType=new Chart(ctxT.getContext('2d'),{
-        type:'doughnut',
-        data:{
-          labels:filt.map(x=>x.l),
-          datasets:[{data:filt.map(x=>x.v),backgroundColor:filt.map(x=>x.c+'b3'),borderColor:filt.map(x=>x.c),borderWidth:1}]
-        },
-        options:{
-          animation:false,
-          responsive:true,maintainAspectRatio:false,
-          layout:{padding:{top:2,bottom:0,left:0,right:0}},
-          cutout:'50%',
-          plugins:{
-            legend:{position:'bottom',labels:{color:textColor,boxWidth:8,padding:3,font:{size:11}}},
-            tooltip:{callbacks:{label:c=>{
-              const v=c.raw,pct=cny>0?(v/cny*100):0;
-              return c.label+': '+fc(v,'CNY',0)+'（'+pct.toFixed(1)+'%）';
-            }}}
-          }
-        }
-      });
-    }
-  }
+  if(rCn>0.01)regParts.push({l:'中国',d:rCn,bg:'rgba(96,165,250,.55)',bd:'rgba(96,165,250,.35)'});
+  if(rUs>0.01)regParts.push({l:'美国',d:rUs,bg:'rgba(201,162,39,.55)',bd:'rgba(201,162,39,.35)'});
+  if(rAu>0.01)regParts.push({l:'澳洲',d:rAu,bg:'rgba(167,139,250,.55)',bd:'rgba(167,139,250,.35)'});
+  if(misc>0.01)regParts.push({l:'未标地区',d:misc,bg:'rgba(107,114,128,.45)',bd:'rgba(107,114,128,.25)'});
+  ovDashChartRegion=upsertOvDonutChart(
+    ovDashChartRegion,ctxR,
+    regParts.map(x=>x.l),regParts.map(x=>x.d),
+    regParts.map(x=>x.bg),regParts.map(x=>x.bd),
+    cny,textColor
+  );
+  const liqParts=[];
+  if(cashV>0.01)liqParts.push({l:'现金/活期',d:cashV,bg:'rgba(148,163,184,.55)',bd:'rgba(148,163,184,.35)'});
+  if(lockV>0.01)liqParts.push({l:'定期/锁定',d:lockV,bg:'rgba(96,165,250,.55)',bd:'rgba(96,165,250,.35)'});
+  if(invV>0.01)liqParts.push({l:'投资类',d:invV,bg:'rgba(201,162,39,.55)',bd:'rgba(201,162,39,.35)'});
+  ovDashChartLiq=upsertOvDonutChart(
+    ovDashChartLiq,ctxLiq,
+    liqParts.map(x=>x.l),liqParts.map(x=>x.d),
+    liqParts.map(x=>x.bg),liqParts.map(x=>x.bd),
+    cny,textColor
+  );
 }
 function snapFmtDelta(v){
   if(v==null||isNaN(v))return '<span class="hb-item">—</span>';

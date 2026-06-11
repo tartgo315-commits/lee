@@ -55,7 +55,8 @@ const CONTAINERS = [
   ['ai-provider', 'AI provider 选择'],
   ['ai-diagnosis-output', 'AI 诊断输出'],
   ['chart-ov', '总览 NAV 图'],
-  ['ov-alloc-bars', '区域配置横条图'],
+  ['chart-alloc-region', '区域配置饼图'],
+  ['chart-alloc-liq', '流动性结构饼图'],
   ['ov-regions', '总览区域持仓'],
 ];
 
