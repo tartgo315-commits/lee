@@ -287,6 +287,13 @@ body{
 .ov-event-tag.impact-high{background:var(--dn-bg);color:var(--dn-soft);border-color:rgba(239,68,68,.2)}
 .ov-event-tag.impact-med{background:var(--bg-muted);color:var(--text-3)}
 .ov-event-row.today{background:var(--bg-muted);margin:0 -8px;padding:16px 8px;border-radius:var(--radius-md);border:1px solid var(--border-accent)}
+.ov-event-row.ov-event-news{text-decoration:none;color:inherit;cursor:pointer;transition:background var(--ease-lux)}
+.ov-event-row.ov-event-news:hover{background:var(--bg-hover)}
+.ov-event-news-en{font-size:var(--text-xs);color:var(--text-4);margin-top:4px;line-height:1.45}
+.ov-event-desc{font-size:var(--text-xs);color:var(--text-3);margin-top:8px;line-height:1.55}
+.ov-events-news-hint{font-size:12px;color:var(--text-4);padding:12px 0;line-height:1.55;border-top:1px dashed var(--border-light);margin-top:8px}
+.ov-events-news-hint a{color:var(--up-soft);text-decoration:none}
+.ov-events-news-hint a:hover{text-decoration:underline}
 .ov-event-impact-grid{display:grid;gap:12px;margin-top:12px}
 .ov-event-impact-box{padding:12px 14px;font-size:var(--fs-ev-body);font-weight:400;line-height:1.65;color:var(--text-3);border-radius:var(--radius-md)}
 .ov-event-impact-box .lbl{font-size:var(--text-xs);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;color:var(--text-4)}
@@ -666,6 +673,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
                     <button type="button" class="ov-events-filter" data-ev-filter="macro" onclick="setEventsFilter('macro',this)">宏观</button>
                     <button type="button" class="ov-events-filter" data-ev-filter="personal" onclick="setEventsFilter('personal',this)">我的持仓</button>
                     <button type="button" class="ov-events-filter" data-ev-filter="high" onclick="setEventsFilter('high',this)">高影响</button>
+                    <button type="button" class="ov-events-filter" data-ev-filter="news" onclick="setEventsFilter('news',this)">资讯</button>
                   </div>
                 </div>
                 <div class="ov-events-list" id="ov-events-list"></div>
@@ -2261,6 +2269,7 @@ async function refreshNewsFeeds(){
     D.newsCache={updatedAt:ts,items:uniq,profileKey:pr.chips.join('|')};
     save();
     renderNewsPageList();
+    if(document.getElementById('page-overview')?.classList.contains('active'))renderMajorEventsWatch();
     if(atEl)atEl.textContent='· 更新 '+ts;
     ok=true;
   }catch(e){
@@ -3453,6 +3462,66 @@ function collectPersonalWatchEvents(){
   return out;
 }
 
+function parseNewsPubDate(pub){
+  if(!pub)return null;
+  const d=new Date(pub);
+  if(isNaN(d.getTime()))return null;
+  return d.toISOString().slice(0,10);
+}
+function getWatchNewsItems(minScore=1){
+  const c=D.newsCache;
+  if(!c||!c.items||!c.items.length)return [];
+  const today=new Date(localTodayISO()+'T00:00:00');
+  const past=new Date(today);past.setDate(past.getDate()-30);
+  return c.items
+    .filter(it=>(it.score||0)>=minScore)
+    .map(it=>{
+      const date=parseNewsPubDate(it.pub)||localTodayISO();
+      return{
+        kind:'news',
+        date,
+        title:it.titleZh||it.title,
+        titleEn:it.titleZh?it.title:'',
+        desc:it.descZh||it.desc||'',
+        link:it.link,
+        source:it.source,
+        pub:it.pub,
+        score:it.score||0,
+        personal:true,
+        impact:it.score>=8?'high':'medium',
+        region:'global',
+        cat:'news'
+      };
+    })
+    .filter(it=>{
+      const d=new Date(it.date+'T00:00:00');
+      return d>=past&&d<=today;
+    });
+}
+function renderNewsWatchRowHtml(ev){
+  const days=eventDaysUntil(ev.date);
+  const isToday=days===0;
+  const d=new Date(ev.date+'T12:00:00');
+  const yearLbl=d.getFullYear()!==new Date().getFullYear()?` ${d.getFullYear()}`:'';
+  let countdown='';
+  if(days===0)countdown='今天';
+  else if(days<0)countdown=`${Math.abs(days)} 天前`;
+  const titleEn=ev.titleEn?`<div class="ov-event-news-en" lang="en">${escOvHtml(ev.titleEn)}</div>`:'';
+  const desc=ev.desc?`<div class="ov-event-desc">${escOvHtml(ev.desc)}</div>`:'';
+  return `<a class="ov-event-row ov-event-news${isToday?' today':''} past" href="${escOvHtml(ev.link)}" target="_blank" rel="noopener noreferrer">
+    <div class="ov-event-date"><div class="tz-line cn">${d.getMonth()+1}月${d.getDate()}日</div><span>${yearLbl.trim()||'本年'}</span>${countdown?`<div class="countdown past-days">${countdown}</div>`:''}</div>
+    <div class="ov-event-body">
+      <div class="ov-event-title">${escOvHtml(ev.title)}</div>
+      ${titleEn}
+      ${desc}
+      <div class="ov-event-tags">
+        <span class="ov-event-tag region-global">📰 持仓资讯</span>
+        <span class="ov-event-tag impact-med">相关 ${ev.score}</span>
+        <span class="ov-event-tag">${escOvHtml(ev.source||'')}</span>
+      </div>
+    </div>
+  </a>`;
+}
 function mergeWatchEvents(){
   const today=new Date(localTodayISO()+'T00:00:00');
   const past=new Date(today);past.setDate(past.getDate()-30);
@@ -3493,6 +3562,14 @@ function buildEventsCalendarContext(){
     else if(ev.actualPending)lines.push(`  实际影响：待更新`);
     else if(ev.desc)lines.push(`  ${ev.desc}`);
   });
+  const news=getWatchNewsItems(1);
+  if(news.length){
+    lines.push('','【持仓相关资讯（公开 RSS，按关键词匹配）】');
+    news.slice(0,12).forEach(n=>{
+      lines.push(`- ${n.date} · ${n.title} · ${n.source} · 相关度 ${n.score}`);
+      if(n.desc)lines.push(`  ${String(n.desc).slice(0,160)}`);
+    });
+  }
   return lines.join('\n');
 }
 
@@ -3579,28 +3656,56 @@ function renderMajorEventsWatch(){
   const rangeEl=document.getElementById('ov-events-range');
   if(!listEl)return;
   let events=mergeWatchEvents();
+  let newsItems=[];
   if(ovEventsFilter==='macro')events=events.filter(e=>!e.personal);
-  else if(ovEventsFilter==='personal')events=events.filter(e=>e.personal);
-  else if(ovEventsFilter==='high')events=events.filter(e=>e.impact==='high');
+  else if(ovEventsFilter==='personal'){
+    events=events.filter(e=>e.personal);
+    newsItems=getWatchNewsItems(1);
+  }else if(ovEventsFilter==='high')events=events.filter(e=>e.impact==='high');
+  else if(ovEventsFilter==='news'){
+    events=[];
+    newsItems=getWatchNewsItems(1);
+  }else{
+    newsItems=getWatchNewsItems(1);
+  }
 
   const today=new Date(localTodayISO()+'T00:00:00');
   const past=new Date(today);past.setDate(past.getDate()-30);
   const end=new Date(today);end.setDate(end.getDate()+365);
   const fmtR=d=>`${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
-  if(rangeEl)rangeEl.textContent=`${fmtR(past)} — ${fmtR(end)} · 共 ${events.length} 项`;
+  const eventCount=events.length;
+  const newsCount=newsItems.length;
+  if(rangeEl){
+    if(ovEventsFilter==='news')rangeEl.textContent=`近30天持仓相关资讯 · ${newsCount} 条${D.newsCache?.updatedAt?' · 更新 '+D.newsCache.updatedAt:''}`;
+    else if(newsCount>0)rangeEl.textContent=`${fmtR(past)} — ${fmtR(end)} · ${eventCount} 项日历 · ${newsCount} 条资讯`;
+    else rangeEl.textContent=`${fmtR(past)} — ${fmtR(end)} · 共 ${eventCount} 项`;
+  }
 
-  if(!events.length){
-    listEl.innerHTML='<div class="ov-events-empty">该筛选下暂无事件</div>';
+  let combined=[...events.map(e=>({...e,kind:'event'})),...newsItems];
+  if(ovEventsFilter==='news')combined.sort((a,b)=>b.date.localeCompare(a.date)||b.score-a.score);
+  else combined.sort((a,b)=>a.date.localeCompare(b.date)||(a.kind==='event'&&b.kind==='news'?-1:a.kind==='news'&&b.kind==='event'?1:0));
+
+  if(!combined.length){
+    const emptyMsg=ovEventsFilter==='news'
+      ?'暂无持仓相关资讯。请打开「资讯」页点击「刷新资讯」，或使用顶栏「全部同步」。'
+      :'该筛选下暂无事件';
+    listEl.innerHTML=`<div class="ov-events-empty">${emptyMsg}</div>`;
+    renderEventsAiMsgs();
     return;
   }
 
   const regionLabel={cn:'🇨🇳 中国',us:'🇺🇸 美国',au:'🇦🇺 澳洲',global:'🌐 全球'};
-  const catLabel={monetary:'央行',policy:'政策',market:'市场',personal:'持仓',geopolitical:'地缘'};
+  const catLabel={monetary:'央行',policy:'政策',market:'市场',personal:'持仓',geopolitical:'地缘',news:'资讯'};
   const rows=[];
   let todayMarkerInserted=false;
-  events.forEach((ev,i)=>{
+  combined.forEach((ev,i)=>{
+    if(ev.kind==='news'){
+      rows.push(renderNewsWatchRowHtml(ev));
+      return;
+    }
     const days=eventDaysUntil(ev.date);
-    const prevDays=i>0?eventDaysUntil(events[i-1].date):null;
+    const prevEv=combined[i-1];
+    const prevDays=i>0&&prevEv?eventDaysUntil(prevEv.date):null;
     if(!todayMarkerInserted&&(prevDays!==null&&prevDays<0&&days>=0||days===0&&prevDays!==null&&prevDays<0)){
       rows.push(todayMarkerHtml());
       todayMarkerInserted=true;
@@ -3632,9 +3737,15 @@ function renderMajorEventsWatch(){
       </div>
     </div>`);
   });
-  if(!todayMarkerInserted){
-    if(events.every(e=>eventDaysUntil(e.date)<0))rows.push(todayMarkerHtml());
-    else if(events.every(e=>eventDaysUntil(e.date)>0))rows.unshift(todayMarkerHtml());
+  if(ovEventsFilter!=='news'){
+    const calOnly=combined.filter(x=>x.kind==='event');
+    if(!todayMarkerInserted){
+      if(calOnly.length&&calOnly.every(e=>eventDaysUntil(e.date)<0))rows.push(todayMarkerHtml());
+      else if(calOnly.length&&calOnly.every(e=>eventDaysUntil(e.date)>0))rows.unshift(todayMarkerHtml());
+    }
+  }
+  if(newsCount===0&&(ovEventsFilter==='all'||ovEventsFilter==='personal'||ovEventsFilter==='news')&&(!D.newsCache?.items?.length)){
+    rows.push('<div class="ov-events-news-hint">持仓相关新闻尚未拉取。<a href="#" onclick="showPage(\'news\');return false">打开资讯页刷新</a> 或使用顶栏「全部同步」。</div>');
   }
   listEl.innerHTML=rows.join('');
   renderEventsAiMsgs();
