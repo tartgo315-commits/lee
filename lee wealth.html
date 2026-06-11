@@ -158,20 +158,49 @@ body{
 .ov-layout-main{display:flex;flex-direction:column;gap:24px;min-width:0}
 .ov-top-unified.card{margin-bottom:0;padding:0;border-radius:var(--radius-lg);border-color:var(--border-accent);overflow:hidden}
 .ov-top-split{display:grid;grid-template-columns:1fr;min-width:0}
-@media(min-width:960px){.ov-top-split{grid-template-columns:repeat(2,minmax(0,1fr))}}
-.ov-top-left{padding:32px;min-width:0}
-@media(min-width:960px){.ov-top-left{border-right:1px solid var(--border-light)}}
-.ov-top-right{padding:20px 20px 24px;min-width:0;display:flex;flex-direction:column;min-height:0;background:rgba(11,15,23,.2)}
-.ov-top-right .ov-events-card{background:transparent;border:none;padding:0;margin:0;box-shadow:none!important;flex:1;min-height:0;display:flex;flex-direction:column}
-.ov-top-right .ov-events-hd{flex-direction:column;align-items:stretch;gap:10px;margin-bottom:10px;flex-shrink:0}
-.ov-top-right .ov-events-filters{gap:6px}
-.ov-top-right .ov-events-filter{font-size:11px;padding:4px 10px}
-.ov-top-right .ov-events-list{flex:1;min-height:0;max-height:min(320px,38vh);overflow-y:auto}
-.ov-top-right .ov-event-row{grid-template-columns:1fr;gap:8px;padding:10px 0;font-size:12px}
-.ov-top-right .ov-events-ai{margin-top:12px;padding-top:12px;flex-shrink:0}
-.ov-top-right .ov-events-ai-msgs{max-height:120px}
-.ov-top-right .ov-events-ai-compose{flex-direction:column;align-items:stretch}
-.ov-top-right .ov-events-ai-send{width:100%;margin-top:6px}
+.ov-top-split.ov-cockpit-3col{gap:0}
+@media(min-width:960px){.ov-top-split.ov-cockpit-3col{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-areas:"assets events" "copilot copilot"}}
+@media(min-width:1280px){.ov-top-split.ov-cockpit-3col{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-areas:"assets events copilot";min-height:calc(100vh - 132px);align-items:stretch}}
+.ov-col-assets{grid-area:assets;padding:20px;min-width:0;min-height:0}
+@media(min-width:960px){.ov-col-assets{border-right:1px solid var(--border-light)}}
+.ov-col-events{grid-area:events;padding:16px 18px;min-width:0;display:flex;flex-direction:column;min-height:0;overflow:hidden;background:rgba(11,15,23,.12)}
+@media(min-width:1280px){.ov-col-events{border-right:1px solid var(--border-light)}}
+.ov-col-copilot{grid-area:copilot;padding:16px;min-width:0;display:flex;flex-direction:column;min-height:0;background:rgba(11,15,23,.25)}
+@media(min-width:1280px){.ov-col-copilot{border-right:none}}
+.ov-col-events .ov-events-card{background:transparent;border:none;padding:0;margin:0;box-shadow:none!important;flex:1;min-height:0;display:flex;flex-direction:column}
+.ov-col-events .ov-events-hd{flex-direction:column;align-items:stretch;gap:10px;margin-bottom:10px;flex-shrink:0}
+.ov-col-events .ov-events-filters{gap:6px}
+.ov-col-events .ov-events-filter{font-size:11px;padding:4px 10px}
+.ov-col-events .ov-events-list{flex:1;min-height:0;max-height:none;overflow-y:auto}
+.ov-col-events .ov-event-row{grid-template-columns:1fr;gap:8px;padding:10px 0;font-size:12px}
+.ov-cockpit-3col .ov-col-assets{display:flex;flex-direction:column;gap:12px;overflow-y:auto}
+.ov-cockpit-3col .ov-hero-head{display:flex;flex-direction:column;gap:12px}
+.ov-cockpit-3col .ov-hero-chart-block{flex:none;max-width:none;width:100%;align-self:stretch}
+.ov-copilot-tabs{display:flex;gap:6px;margin-bottom:12px;flex-shrink:0}
+.ov-copilot-tab{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:8px 10px;border:1px solid var(--border);background:var(--bg-card);border-radius:var(--radius-md);font-size:12px;font-weight:500;cursor:pointer;color:var(--text-3);font-family:var(--font);transition:all var(--ease-lux)}
+.ov-copilot-tab:hover{border-color:var(--border-hover);color:var(--text-2)}
+.ov-copilot-tab.active{background:var(--up-bg);color:var(--up-soft);border-color:var(--border-accent)}
+.ov-copilot-body{flex:1;min-height:0;display:flex;flex-direction:column}
+.ov-copilot-panel{display:none;flex:1;flex-direction:column;min-height:0}
+.ov-copilot-panel.active{display:flex}
+.ov-copilot-scroll{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:8px}
+.ov-copilot-console{flex-shrink:0;border-top:1px solid var(--border-light);padding-top:12px;margin-top:8px}
+.ov-col-copilot .ov-events-ai{margin-top:0;padding-top:0;border-top:none;display:flex;flex-direction:column;gap:8px}
+.ov-col-copilot .ov-events-ai-msgs{flex:1;min-height:80px;max-height:min(420px,48vh);overflow-y:auto;margin-bottom:0}
+.ov-col-copilot .ov-events-ai-compose{margin-top:0}
+.ov-col-copilot .ov-events-ai-hd{flex-shrink:0}
+.ov-copilot-wealth{background:transparent!important;border:none!important;padding:0!important;box-shadow:none!important}
+.ov-copilot-wealth .ai-pb-head{margin-bottom:0}
+.ov-copilot-wealth .ai-pb-sub,.ov-copilot-wealth .ai-pb-privacy{display:none}
+.ov-copilot-wealth .ai-pb-result{border-top:none;margin-top:0;padding-top:0}
+.ov-copilot-wealth .ai-pb-chat-msgs{max-height:min(360px,42vh)}
+.ov-copilot-console-wealth .ai-pb-actions{display:flex;gap:6px;width:100%;flex-wrap:wrap}
+.ov-copilot-console-wealth .ai-pb-select{flex:1;min-width:120px}
+.ov-copilot-console-wealth .ai-pb-chat-chips{display:flex;flex-wrap:wrap;gap:6px}
+.ov-copilot-console-wealth .ai-pb-chat-compose{display:flex;gap:8px;align-items:flex-end}
+@media(min-width:960px) and (max-width:1279px){.ov-col-copilot{border-top:1px solid var(--border-light)}}
+.ov-copilot-empty{font-size:13px;color:var(--text-4);line-height:1.6;padding:12px 4px}
+#page-overview .ov-top-unified:hover,#page-overview .ov-col-assets:hover,#page-overview .ov-col-events:hover,#page-overview .ov-col-copilot:hover{transform:none!important;box-shadow:var(--shadow-card)!important}
 .ov-hero-head{display:flex;flex-direction:column;gap:16px;min-width:0}
 @media(min-width:720px){.ov-hero-head{flex-direction:row;align-items:stretch;gap:20px}}
 .ov-hero-main{flex:1;min-width:0}
@@ -462,8 +491,9 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
   .c2,.c3,.c4,.fg-row.c2,.fg-row.c3,.fg-row.c4{grid-template-columns:1fr!important}
   .product-row,.product-row.hdr{grid-template-columns:1fr;gap:8px}
   .ov-layout{grid-template-columns:1fr;grid-template-areas:"top" "main"}
-  .ov-top-left{padding:20px}
-  .ov-top-right{padding:16px}
+  .ov-col-assets{padding:20px}
+  .ov-col-events,.ov-col-copilot{padding:16px}
+  .ov-col-assets,.ov-col-events,.ov-col-copilot{border-right:none;border-top:none}
   #ov-regions{grid-template-columns:1fr}
   .ov-col-body{max-height:none}
   .ov-event-row{grid-template-columns:1fr}
@@ -557,8 +587,8 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
     <div class="page active" id="page-overview">
       <div class="ov-layout">
         <div class="card ov-top-unified">
-          <div class="ov-top-split">
-            <div class="ov-top-left">
+          <div class="ov-top-split ov-cockpit-3col">
+            <div class="ov-col-assets">
               <div class="ov-hero-head">
                 <div class="ov-hero-main">
                   <div class="ov-hero-label">总净值 · NAV</div>
@@ -573,46 +603,6 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
                     <div class="ov-hero-fx-item"><span class="lbl">BTC</span><span class="val" id="ov-hero-btc">—</span></div>
                   </div>
                   <div id="ov-insights" class="ov-insights"></div>
-                  <div id="ai-advisor-wrap" class="ai-pb-panel ov-hero-ai-compact">
-                    <div class="ai-pb-head">
-                      <div>
-                        <div class="ai-pb-title">
-                          <span class="ai-pulse-dot" aria-hidden="true"></span>
-                          <span class="ai-pb-label">AI 财富诊断 · CIO</span>
-                        </div>
-                        <div class="ai-pb-sub">脱敏云端分析 · 本地规则引擎</div>
-                        <div class="ai-pb-privacy"><i class="ti ti-lock"></i> 云端 AI 仅接收脱敏摘要</div>
-                      </div>
-                      <div class="ai-pb-actions">
-                        <select id="ai-provider" class="ai-pb-select" aria-label="AI 模型">
-                          <option value="gemini">Gemini Flash</option>
-                          <option value="groq">Groq Llama3</option>
-                          <option value="cohere">Cohere Command-R</option>
-                        </select>
-                        <button type="button" id="ai-advisor-btn" class="ai-pb-btn-ai" onclick="fetchAiAdvice()"><i class="ti ti-sparkles"></i> AI 诊断</button>
-                        <button type="button" class="ai-pb-btn-local" onclick="runAiAdvisor()"><i class="ti ti-chart-dots"></i> 本地</button>
-                      </div>
-                    </div>
-                    <div id="ai-advisor-result" class="ai-pb-result" style="display:none">
-                      <div id="ai-diagnosis-output"></div>
-                      <div id="ai-chat-section" class="ai-pb-chat-section" style="display:none">
-                        <div class="ai-pb-chat-head">
-                          <span><i class="ti ti-message-circle"></i> 继续与 CIO 对话</span>
-                          <button type="button" class="ai-pb-btn-local" style="height:28px;padding:0 10px;font-size:11px" onclick="resetAiChat()"><i class="ti ti-refresh"></i> 新对话</button>
-                        </div>
-                        <div id="ai-chat-messages" class="ai-pb-chat-msgs"></div>
-                        <div class="ai-pb-chat-chips">
-                          <button type="button" class="ai-pb-chat-chip" onclick="aiChatSuggest('如果美元相对人民币贬值 5%，对我整体净值影响大概多少？')">美元 -5% 影响</button>
-                          <button type="button" class="ai-pb-chat-chip" onclick="aiChatSuggest('我的组合集中度是否过高？如何优化？')">集中度优化</button>
-                          <button type="button" class="ai-pb-chat-chip" onclick="aiChatSuggest('定存到期后，现金应该如何再配置？')">定存到期配置</button>
-                        </div>
-                        <div class="ai-pb-chat-compose">
-                          <textarea id="ai-chat-input" class="ai-pb-chat-input" rows="2" placeholder="继续追问…"></textarea>
-                          <button type="button" id="ai-chat-send" class="ai-pb-btn-ai ai-pb-chat-send" onclick="sendAiChatMessage()"><i class="ti ti-send"></i></button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
                 </div>
                 <div class="ov-hero-chart-block">
                   <div class="ov-hero-chart nav-chart-wrap"><canvas id="chart-ov"></canvas></div>
@@ -662,7 +652,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
                 </div>
               </div>
             </div>
-            <div class="ov-top-right">
+            <div class="ov-col-events">
               <div class="card ov-events-card mb-0" id="ov-events-card">
                 <div class="ov-events-hd">
                   <div>
@@ -677,17 +667,70 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
                   </div>
                 </div>
                 <div class="ov-events-list" id="ov-events-list"></div>
-                <div class="ov-events-ai" id="ov-events-ai">
-                  <div class="ov-events-ai-hd"><i class="ti ti-robot"></i> 大事件 AI 解读 <span class="ov-events-ai-sub">结合日历与持仓 · 可连续追问</span></div>
-                  <div class="ov-events-ai-chips">
-                    <button type="button" class="ov-events-filter" onclick="eventsAiSuggest('未来3个月哪些大事件对我的组合影响最大？')">3个月影响</button>
-                    <button type="button" class="ov-events-filter" onclick="eventsAiSuggest('今天前后有什么需要我立刻关注的事项？')">今天关注什么</button>
-                    <button type="button" class="ov-events-filter" onclick="eventsAiSuggest('已发生的FOMC/CPI对我当前配置意味着什么？')">回顾已发生事件</button>
+              </div>
+            </div>
+            <div class="ov-col-copilot">
+              <div class="ov-copilot-tabs" role="tablist" aria-label="AI Copilot">
+                <button type="button" class="ov-copilot-tab active" role="tab" aria-selected="true" data-copilot-tab="events" onclick="setCopilotTab('events',this)"><i class="ti ti-calendar-event"></i> 大事件解读</button>
+                <button type="button" class="ov-copilot-tab" role="tab" aria-selected="false" data-copilot-tab="wealth" onclick="setCopilotTab('wealth',this)"><i class="ti ti-sparkles"></i> 财富诊断</button>
+              </div>
+              <div class="ov-copilot-body">
+                <div id="ov-copilot-panel-events" class="ov-copilot-panel active" role="tabpanel">
+                  <div class="ov-copilot-scroll">
+                    <div class="ov-events-ai-hd"><i class="ti ti-robot"></i> 大事件 AI 解读 <span class="ov-events-ai-sub">结合日历与持仓 · 可连续追问</span></div>
+                    <div class="ov-events-ai-msgs" id="ov-events-ai-msgs"></div>
                   </div>
-                  <div class="ov-events-ai-msgs" id="ov-events-ai-msgs"></div>
-                  <div class="ov-events-ai-compose">
-                    <textarea id="ov-events-ai-input" class="ov-events-ai-input" rows="2" placeholder="询问任意大事件：如「RBA 降息对我 AUD 定存有何影响？」"></textarea>
-                    <button type="button" id="ov-events-ai-send" class="btn btn-primary ov-events-ai-send" onclick="sendEventsAiChat()"><i class="ti ti-send"></i></button>
+                  <div class="ov-copilot-console">
+                    <div class="ov-events-ai" id="ov-events-ai">
+                      <div class="ov-events-ai-chips">
+                        <button type="button" class="ov-events-filter" onclick="eventsAiSuggest('未来3个月哪些大事件对我的组合影响最大？')">3个月影响</button>
+                        <button type="button" class="ov-events-filter" onclick="eventsAiSuggest('今天前后有什么需要我立刻关注的事项？')">今天关注什么</button>
+                        <button type="button" class="ov-events-filter" onclick="eventsAiSuggest('已发生的FOMC/CPI对我当前配置意味着什么？')">回顾已发生事件</button>
+                      </div>
+                      <div class="ov-events-ai-compose">
+                        <textarea id="ov-events-ai-input" class="ov-events-ai-input" rows="2" placeholder="询问任意大事件：如「RBA 降息对我 AUD 定存有何影响？」"></textarea>
+                        <button type="button" id="ov-events-ai-send" class="btn btn-primary ov-events-ai-send" onclick="sendEventsAiChat()"><i class="ti ti-send"></i></button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div id="ov-copilot-panel-wealth" class="ov-copilot-panel" role="tabpanel">
+                  <div class="ov-copilot-scroll">
+                    <div id="ai-copilot-empty" class="ov-copilot-empty">选择模型后点击「AI 诊断」获取 CIO 组合分析，或使用「本地」规则引擎。</div>
+                    <div id="ai-advisor-wrap" class="ai-pb-panel ov-copilot-wealth">
+                      <div id="ai-advisor-result" class="ai-pb-result" style="display:none">
+                        <div id="ai-diagnosis-output"></div>
+                        <div id="ai-chat-section" class="ai-pb-chat-section" style="display:none">
+                          <div class="ai-pb-chat-head">
+                            <span><i class="ti ti-message-circle"></i> 继续与 CIO 对话</span>
+                            <button type="button" class="ai-pb-btn-local" style="height:28px;padding:0 10px;font-size:11px" onclick="resetAiChat()"><i class="ti ti-refresh"></i> 新对话</button>
+                          </div>
+                          <div id="ai-chat-messages" class="ai-pb-chat-msgs"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="ov-copilot-console ov-copilot-console-wealth">
+                    <div class="ai-pb-head">
+                      <div class="ai-pb-actions" style="width:100%;justify-content:stretch">
+                        <select id="ai-provider" class="ai-pb-select" aria-label="AI 模型">
+                          <option value="gemini">Gemini Flash</option>
+                          <option value="groq">Groq Llama3</option>
+                          <option value="cohere">Cohere Command-R</option>
+                        </select>
+                        <button type="button" id="ai-advisor-btn" class="ai-pb-btn-ai" onclick="fetchAiAdvice()"><i class="ti ti-sparkles"></i> AI 诊断</button>
+                        <button type="button" class="ai-pb-btn-local" onclick="runAiAdvisor()"><i class="ti ti-chart-dots"></i> 本地</button>
+                      </div>
+                    </div>
+                    <div class="ai-pb-chat-chips" id="ai-copilot-chips" style="display:none;margin-top:8px">
+                      <button type="button" class="ai-pb-chat-chip" onclick="aiChatSuggest('如果美元相对人民币贬值 5%，对我整体净值影响大概多少？')">美元 -5% 影响</button>
+                      <button type="button" class="ai-pb-chat-chip" onclick="aiChatSuggest('我的组合集中度是否过高？如何优化？')">集中度优化</button>
+                      <button type="button" class="ai-pb-chat-chip" onclick="aiChatSuggest('定存到期后，现金应该如何再配置？')">定存到期配置</button>
+                    </div>
+                    <div class="ai-pb-chat-compose" id="ai-copilot-compose" style="display:none;margin-top:8px">
+                      <textarea id="ai-chat-input" class="ai-pb-chat-input" rows="2" placeholder="继续追问…"></textarea>
+                      <button type="button" id="ai-chat-send" class="ai-pb-btn-ai ai-pb-chat-send" onclick="sendAiChatMessage()"><i class="ti ti-send"></i></button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -2813,6 +2856,7 @@ function runAiAdvisor(){
   if(!result||!el)return;
   resetAiChat();
   result.style.display='block';
+  updateCopilotWealthEmpty();
   const fx=D.fx||{};
   const cny=totalCNY();
   const stocks=D.products.filter(p=>p.type==='stock_us'&&p.ticker&&p.currentPrice>0&&p.costPrice>0);
@@ -2823,6 +2867,7 @@ function runAiAdvisor(){
   const sections=[];
   if(cny<=0){
     el.innerHTML='<div style="font-size:13px;color:var(--text3);line-height:1.7">暂无有效净值数据，请先添加资产。</div>';
+    updateCopilotWealthEmpty();
     return;
   }
   const stockLines=[];
@@ -2991,6 +3036,7 @@ function runAiAdvisor(){
     </div>`).join('');
   el.innerHTML=summaryHtml.join('')+sectionsHtml+
     `<div class="ai-pb-disclaimer">📊 分析时间：${ts} · 本地规则引擎 · 使用真实持仓 · 仅供参考，不构成投资建议</div>`;
+  updateCopilotWealthEmpty();
 }
 
 let aiChatState={active:false,portfolio:'',provider:'gemini',model:'',messages:[]};
@@ -3016,6 +3062,18 @@ function renderAiChatMessages(){
 function showAiChatSection(show){
   const sec=document.getElementById('ai-chat-section');
   if(sec)sec.style.display=show?'block':'none';
+  const chips=document.getElementById('ai-copilot-chips');
+  const compose=document.getElementById('ai-copilot-compose');
+  if(chips)chips.style.display=show?'flex':'none';
+  if(compose)compose.style.display=show?'flex':'none';
+}
+function updateCopilotWealthEmpty(){
+  const empty=document.getElementById('ai-copilot-empty');
+  const result=document.getElementById('ai-advisor-result');
+  const diagnosis=document.getElementById('ai-diagnosis-output');
+  if(!empty)return;
+  const visible=result&&result.style.display!=='none'&&(diagnosis?.innerHTML||'').trim();
+  empty.style.display=visible?'none':'block';
 }
 
 function initAiChatSession(portfolio,provider,model,initialAdvice){
@@ -3127,6 +3185,7 @@ async function fetchAiAdvice(){
   resetAiChat();
   btn.disabled=true;btn.textContent='🔄 诊断中…';
   result.style.display='block';
+  updateCopilotWealthEmpty();
   diagnosis.innerHTML='<div class="ai-pb-loading">💎 CIO 正在审阅脱敏持仓摘要，约需 5–15 秒…</div>';
 
   const portfolio=buildSanitizedPortfolio();
@@ -3152,6 +3211,7 @@ async function fetchAiAdvice(){
     diagnosis.innerHTML=`<span style="color:#f87171">网络错误：${escOvHtml(String(e.message||''))}</span>`;
   }finally{
     btn.disabled=false;btn.textContent='✨ AI 诊断';
+    updateCopilotWealthEmpty();
   }
 }
 
@@ -3496,9 +3556,19 @@ function todayMarkerHtml(){
   return `<div class="ov-events-today-marker">📍 今天 · ${t.getFullYear()}年${t.getMonth()+1}月${t.getDate()}日</div>`;
 }
 
+function setCopilotTab(tab,btn){
+  document.querySelectorAll('.ov-copilot-tab').forEach(t=>{
+    const on=t===btn;
+    t.classList.toggle('active',on);
+    t.setAttribute('aria-selected',on?'true':'false');
+  });
+  document.querySelectorAll('.ov-copilot-panel').forEach(p=>p.classList.remove('active'));
+  const panel=document.getElementById(tab==='events'?'ov-copilot-panel-events':'ov-copilot-panel-wealth');
+  if(panel)panel.classList.add('active');
+}
 function setEventsFilter(filter,btn){
   ovEventsFilter=filter;
-  document.querySelectorAll('.ov-events-filter').forEach(b=>b.classList.toggle('active',b===btn));
+  document.querySelectorAll('#ov-events-filters .ov-events-filter').forEach(b=>b.classList.toggle('active',b===btn));
   renderMajorEventsWatch();
 }
 
