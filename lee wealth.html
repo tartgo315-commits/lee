@@ -670,6 +670,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
   <div class="main">
     <div id="proxy-miss-banner" class="alert alert-warn" role="alert" style="display:none;margin-bottom:var(--s-5);padding:var(--s-4) var(--gutter-x);border-radius:var(--r);line-height:1.55;font-size:var(--text-sm)"></div>
     <div id="http-data-migrate-banner" class="alert alert-info" role="status" style="display:none;margin-bottom:var(--s-5);padding:var(--s-4) var(--gutter-x);border-radius:var(--r);line-height:1.55;font-size:var(--text-sm)"></div>
+    <div id="stock-quote-fallback-banner" class="alert alert-warn" role="status" style="display:none;margin-bottom:var(--s-5);padding:var(--s-3) var(--gutter-x);border-radius:var(--r);line-height:1.45;font-size:var(--text-xs)"></div>
 
     <!-- OVERVIEW -->
     <div class="page active" id="page-overview">
@@ -1425,6 +1426,7 @@ function save(){
 }
 const today=()=>new Date().toISOString().slice(0,10);
 load();
+hydrateStocksFromCacheOnLoad();
 if(!D.goal||typeof D.goal!=='object'||!(Number(D.goal.amount)>0))
   D.goal={amount:1500000,currency:'CNY',label:'存款目标'};
 (function seedCrclDefaultStopLoss(){
@@ -1748,37 +1750,125 @@ async function fetchProxiedText(targetUrl){
   return '';
 }
 async function fetchTextCrossOrigin(url){return fetchProxiedText(url);}
-/** Twelve Data 经同源 /api/stock-price；无 key 或失败时返回 null */
-async function fetchTwelveDataStockPrice(ticker){
-  const sym=String(ticker||'').trim().toUpperCase();
-  if(!sym)return null;
-  if(location.protocol!=='https:'&&location.protocol!=='http:')return null;
+
+// ══ 美股现价：Twelve Data → Yahoo → localStorage 缓存（stock_price_cache）══
+const STOCK_PRICE_CACHE_KEY='stock_price_cache';
+const stockPriceSourceBySym=new Map();
+let __stockTdRateLimited=false;
+
+function readStockPriceCacheStore(){
   try{
-    const r=await fetch(
-      location.origin+'/api/stock-price?symbol='+
-      encodeURIComponent(sym),{cache:'no-store'});
-    let d=null;
-    try{d=await r.json();}catch(e){return null;}
-    if(!d||d.error||(typeof d.code==='number'&&d.code>=400))return null;
-    const ext=parseFloat(
-      d.extended_price||d.prepost_price||0);
-    const reg=parseFloat(d.close||0);
-    const p=ext>0?ext:reg;
-    if(p>0)return p;
-  }catch(e){}
+    const raw=localStorage.getItem(STOCK_PRICE_CACHE_KEY);
+    if(!raw)return{};
+    const o=JSON.parse(raw);
+    return o&&typeof o==='object'?o:{};
+  }catch(e){return{};}
+}
+function writeStockPriceCache(sym,price){
+  const T=String(sym||'').trim().toUpperCase();
+  const p=parseFloat(price);
+  if(!T||!(p>0)||!isFinite(p))return;
+  const store=readStockPriceCacheStore();
+  store[T]={price:p,timestamp:Date.now()};
+  try{localStorage.setItem(STOCK_PRICE_CACHE_KEY,JSON.stringify(store));}catch(e){}
+}
+function getCachedStockPrice(sym){
+  const T=String(sym||'').trim().toUpperCase();
+  const ent=readStockPriceCacheStore()[T];
+  if(ent&&ent.price>0)return{price:ent.price,timestamp:ent.timestamp||0};
   return null;
 }
-/**
- * 美股现价：Twelve Data 与 Yahoo Chart/v7 并行；盘前/盘后/收盘后盘后价以 Yahoo marketState 为准（combineTwelveDataYahoo）。
- */
-async function fetchYahooStockPrice(ticker){
+function formatStockCacheAge(ts){
+  const ms=Date.now()-(ts||0);
+  if(!(ms>0))return'未知时间';
+  const h=Math.floor(ms/3600000);
+  const m=Math.floor((ms%3600000)/60000);
+  if(h>=1)return h+'小时前';
+  if(m>=1)return m+'分钟前';
+  return '刚刚';
+}
+function updateStockQuoteFallbackBanner(){
+  const el=document.getElementById('stock-quote-fallback-banner');
+  if(!el)return;
+  const entries=[...stockPriceSourceBySym.values()];
+  const cacheEntries=entries.filter(m=>m.source==='cache');
+  const yahooUsed=entries.some(m=>m.source==='yahoo');
+  if(__stockTdRateLimited&&(yahooUsed||cacheEntries.length)){
+    el.style.display='block';
+    el.className='alert alert-warn';
+    el.textContent=cacheEntries.length
+      ?'Twelve Data 额度已用尽，行情使用备用数据源；部分标的显示缓存价格'
+      :'Twelve Data 额度已用尽，行情已切换 Yahoo 备用数据源';
+    return;
+  }
+  if(cacheEntries.length){
+    const oldest=Math.min(...cacheEntries.map(m=>m.timestamp||0));
+    el.style.display='block';
+    el.className='alert alert-info';
+    el.textContent='显示缓存价格（'+formatStockCacheAge(oldest)+'）';
+    return;
+  }
+  if(yahooUsed&&!__stockTdRateLimited){
+    el.style.display='block';
+    el.className='alert alert-info';
+    el.textContent='行情使用备用数据源（Yahoo）';
+    return;
+  }
+  el.style.display='none';
+}
+function hydrateStocksFromCacheOnLoad(){
+  const stocks=D.products.filter(p=>p.type==='stock_us'&&p.ticker);
+  if(!stocks.length)return;
+  let any=false;
+  for(const p of stocks){
+    const sym=String(p.ticker||'').trim().toUpperCase();
+    const c=getCachedStockPrice(sym);
+    if(!c||!(c.price>0))continue;
+    p.currentPrice=c.price;
+    stockPriceSourceBySym.set(sym,{source:'cache',timestamp:c.timestamp});
+    any=true;
+  }
+  if(any)updateStockQuoteFallbackBanner();
+}
+function parseTwelveDataQuotePayload(d){
+  if(!d||d.error)return null;
+  if(typeof d.code==='number'&&d.code>=400)return null;
+  const ext=parseFloat(d.extended_price||d.prepost_price||0);
+  const reg=parseFloat(d.close||0);
+  const p=ext>0?ext:reg;
+  return p>0&&isFinite(p)?p:null;
+}
+function isTwelveDataRateLimited(d){
+  if(!d)return false;
+  if(d.code===429)return true;
+  const msg=String(d.error||d.message||'').toLowerCase();
+  return /credit|limit|quota|429|run out/.test(msg);
+}
+/** Twelve Data 经同源 /api/stock-price */
+async function fetchTwelveDataStockPriceDetailed(ticker){
+  const sym=String(ticker||'').trim().toUpperCase();
+  if(!sym||location.protocol!=='https:'&&location.protocol!=='http:')return{price:null,rateLimited:false};
+  try{
+    const r=await fetch(location.origin+'/api/stock-price?symbol='+encodeURIComponent(sym),{cache:'no-store'});
+    let d=null;
+    try{d=await r.json();}catch(e){return{price:null,rateLimited:false};}
+    if(isTwelveDataRateLimited(d))return{price:null,rateLimited:true};
+    const p=parseTwelveDataQuotePayload(d);
+    return{price:p,rateLimited:false};
+  }catch(e){return{price:null,rateLimited:false};}
+}
+async function fetchTwelveDataStockPrice(ticker){
+  const r=await fetchTwelveDataStockPriceDetailed(ticker);
+  return r.price;
+}
+/** 仅 Yahoo（经 /api/proxy）+ Stooq，不占 Twelve Data 额度 */
+async function fetchYahooOnlyStockPrice(ticker){
   const sym=String(ticker||'').trim().toUpperCase();
   if(!sym)return null;
   const yChart='https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(sym)+'?interval=5m&range=5d&includePrePost=true';
   const yQuote='https://query1.finance.yahoo.com/v7/finance/quote?symbols='+encodeURIComponent(sym);
   const stooqUrl='https://stooq.com/q/l/?s='+encodeURIComponent(sym.toLowerCase())+'.us&f=sd2t2ohlcv&h&e=csv';
-  const [td,t1,t2,t3]=await Promise.all([
-    fetchTwelveDataStockPrice(sym),
+  const [t1,t2,t3]=await Promise.all([
     fetchTextCrossOrigin(yChart),
     fetchTextCrossOrigin(yQuote),
     fetchTextCrossOrigin(stooqUrl),
@@ -1787,13 +1877,43 @@ async function fetchYahooStockPrice(ticker){
   const p2=parseYahooV7Quote(t2);
   const p3=parseStooqCsv(t3);
   const yPx=(p2!=null&&p2>0&&isFinite(p2))?p2:((p1!=null&&p1>0&&isFinite(p1))?p1:((p3>0&&isFinite(p3))?p3:null));
-  const px=combineTwelveDataYahoo(td,yPx,sym);
-  return px!=null&&px>0?px:null;
+  return yPx!=null&&yPx>0?yPx:null;
+}
+/** 按序 fallback：Twelve Data → Yahoo → localStorage 缓存 */
+async function fetchStockPriceWithFallback(ticker){
+  const sym=String(ticker||'').trim().toUpperCase();
+  if(!sym)return null;
+  const td=await fetchTwelveDataStockPriceDetailed(sym);
+  if(td.rateLimited)__stockTdRateLimited=true;
+  if(td.price>0){
+    __stockTdRateLimited=false;
+    writeStockPriceCache(sym,td.price);
+    return{price:td.price,source:'twelve',timestamp:Date.now()};
+  }
+  const yPx=await fetchYahooOnlyStockPrice(sym);
+  if(yPx>0){
+    writeStockPriceCache(sym,yPx);
+    return{price:yPx,source:'yahoo',timestamp:Date.now()};
+  }
+  const cached=getCachedStockPrice(sym);
+  if(cached&&cached.price>0){
+    return{price:cached.price,source:'cache',timestamp:cached.timestamp};
+  }
+  return null;
+}
+/** 手动全量刷新等入口：返回价格数字 */
+async function fetchYahooStockPrice(ticker){
+  const r=await fetchStockPriceWithFallback(ticker);
+  if(!r||!(r.price>0))return null;
+  const sym=String(ticker||'').trim().toUpperCase();
+  stockPriceSourceBySym.set(sym,{source:r.source,timestamp:r.timestamp});
+  updateStockQuoteFallbackBanner();
+  return r.price;
 }
 
 // ══ Finnhub：REST 经同源 /api/finnhub-quote（密钥在 Vercel 环境变量 FINNHUB_TOKEN）；浏览器不再持有 token，故不使用 wss ══
 const FINNHUB_WATCH_SYMBOLS=['NVDA','TSLA','PLTR','VOO','CRCL'];
-/** 后台美股轮询：Yahoo（经 /api/proxy，不占 Twelve Data 额度）+ 必要时 Finnhub；默认 10 分钟 */
+/** 后台美股轮询：Twelve Data → Yahoo → 缓存 fallback；默认 10 分钟 */
 const FINNHUB_QUOTE_POLL_MS=600000;
 const FH_QUOTE_STAGGER_MS=700;
 /** 自动刷新时：汇率单次最大漂移、行情单次最大跳变（防多源 API 噪声导致总净值乱跳） */
@@ -1873,7 +1993,7 @@ function patchOverviewStockRow(sym,price){
     const shares=p.shares||0,cost=p.costPrice||0;
     const mkt=shares*price,pnlUSD=shares*(price-cost),pct=cost>0?(price-cost)/cost*100:0;
     const pxEl=row.querySelector('.ov-prod-px');
-    if(pxEl){pxEl.textContent=fmtUsdShare(price);pxEl.classList.remove('wait');}
+    if(pxEl){pxEl.textContent=fmtStockPx(T,price);pxEl.classList.remove('wait');}
     const amtEl=row.querySelector('.ov-prod-amt');
     if(amtEl)amtEl.textContent=fc(mkt,'USD',2);
     const pnlEl=row.querySelector('.ov-prod-pnl');
@@ -1956,23 +2076,33 @@ function updateUsLiveAggregates(){
   refreshOVTotals();
   renderSidebar();
 }
-function patchUsStockLiveRow(sym,price,force){
+function patchUsStockLiveRow(sym,price,opts){
+  let force=false,source='twelve',timestamp=Date.now();
+  if(typeof opts==='boolean')force=opts;
+  else if(opts&&typeof opts==='object'){
+    force=!!opts.force;
+    source=opts.source||'twelve';
+    timestamp=opts.timestamp||Date.now();
+  }
   const T=String(sym||'').trim().toUpperCase();
   if(!T||!(price>0))return;
   const p=D.products.find(x=>x.type==='stock_us'&&String(x.ticker||'').trim().toUpperCase()===T);
   if(!p)return;
   const prev=parseFloat(p.currentPrice)||0;
-  if(!commitLiveQuotePrice(prev,price,!!force))return;
+  if(!commitLiveQuotePrice(prev,price,force||source==='cache'))return;
   p.currentPrice=price;
   p.updatedAt=today();
+  stockPriceSourceBySym.set(T,{source,timestamp});
+  if(source!=='cache')writeStockPriceCache(T,price);
   patchOverviewStockRow(T,price);
   scheduleOverviewLiveRefresh();
   debouncedFinnhubSave();
+  updateStockQuoteFallbackBanner();
   const row=[...document.querySelectorAll('#page-us .product-row[data-us-ticker]')].find(r=>r.dataset.usTicker===T);
   if(row){
     const pxEl=row.querySelector('.fh-px');
     if(pxEl){
-      pxEl.textContent=fmtUsdShare(price);
+      pxEl.textContent=fmtStockPx(T,price);
       pxEl.classList.remove('fh-up','fh-down','fh-flat');
       if(prev>0){
         if(price>prev)pxEl.classList.add('fh-up');
@@ -2082,29 +2212,19 @@ function mergeYahooFinnhubPrice(yPx,fhRow,sym){
 }
 async function pollFinnhubQuotesOnce(){
   /* 不在此用 document.hidden 直接 return：手机切后台/系统省电会导致长时间不轮询，页面上像「股价死了」。 */
-  /* 轮询只跟股价；汇率改由低频定时器更新，避免多源汇率噪声让人民币总净值大幅跳动 */
   const syms=[...finnhubDesiredSymbols()];
   if(!syms.length)return;
-  /* 后台不批量打 Twelve Data（按标的计额度）；仅 Yahoo + Finnhub。Twelve Data 留给手动「刷新行情」。 */
-  const yahooMap=await fetchYahooV7QuotePriceMap(syms,{skipTwelve:true});
-  for(const [sym,px] of yahooMap)patchUsStockLiveRow(sym,px);
   if(location.protocol!=='http:'&&location.protocol!=='https:')return;
-  let lastFh=0;
-  const throttle=async()=>{
-    const wait=FH_QUOTE_STAGGER_MS-(Date.now()-lastFh);
-    if(wait>0)await new Promise(r=>setTimeout(r,wait));
-    lastFh=Date.now();
-  };
   for(const sym of syms){
-    const yPx=yahooMap.get(sym);
-    const need=!yahooMap.has(sym)||yahooUsSessionWantsFinnhubParallel(sym);
-    if(!need)continue;
-    await throttle();
-    const fhRow=await fetchFinnhubQuote(sym);
-    if(!fhRow)continue;
-    const m=mergeYahooFinnhubPrice(yPx,fhRow,sym);
-    if(m)patchUsStockLiveRow(sym,m);
+    const result=await fetchStockPriceWithFallback(sym);
+    if(!result||!(result.price>0))continue;
+    patchUsStockLiveRow(sym,result.price,{
+      force:result.source==='cache',
+      source:result.source,
+      timestamp:result.timestamp,
+    });
   }
+  updateStockQuoteFallbackBanner();
   scheduleOverviewLiveRefresh();
 }
 function startFinnhubQuotePolling(){
@@ -2413,6 +2533,13 @@ function renderNewsPage(){
 function fmtUsdShare(n){
   if(n==null||isNaN(n))return'—';
   return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',minimumFractionDigits:2,maximumFractionDigits:4}).format(n);
+}
+function fmtStockPx(sym,price){
+  const base=fmtUsdShare(price);
+  const T=String(sym||'').trim().toUpperCase();
+  const meta=stockPriceSourceBySym.get(T);
+  if(meta?.source==='cache')return base+' (缓存)';
+  return base;
 }
 
 // ══ PRODUCT VALUE ══
@@ -3890,7 +4017,7 @@ function renderOverview(){
           const mkt=shares*price,pnlUSD=shares*(price-cost),pct=cost>0?(price-cost)/cost*100:0;
           const tick=(p.ticker||'').trim()||'—';
           const hasName=p.name&&p.name.trim()&&p.name.trim().toUpperCase()!==tick.toUpperCase();
-          nameHtml=`<div class="ov-prod-name ov-prod-name--stock">${hasName?`<span class="ov-prod-tick">${escOvHtml(p.name.trim())}</span><span class="ov-prod-ticktag">${escOvHtml(tick)}</span>`:`<span class="ov-prod-tick">${escOvHtml(tick)}</span>`}<span class="ov-prod-px${price?'':' wait'}">${price?fmtUsdShare(price):'待刷新'}</span></div>`;
+          nameHtml=`<div class="ov-prod-name ov-prod-name--stock">${hasName?`<span class="ov-prod-tick">${escOvHtml(p.name.trim())}</span><span class="ov-prod-ticktag">${escOvHtml(tick)}</span>`:`<span class="ov-prod-tick">${escOvHtml(tick)}</span>`}<span class="ov-prod-px${price?'':' wait'}">${price?fmtStockPx(tick,price):'待刷新'}</span></div>`;
           const wPct=acny>0?(cny/acny*100).toFixed(1):null;
           sub=`${fmt(shares,2)}股 · 成本${fc(cost,'USD',2)}${wPct!=null?` · 占比 ${wPct}%`:''}${stockRiskSubHtml(p)}`;
           amt=price?fc(mkt,'USD',2):'待刷新';
@@ -4280,7 +4407,7 @@ function buildProductRow(p,region,primaryCur,accountTotalCNY){
     const nm=(p.name||'').trim();
     const title=nm&&nm.toUpperCase()!==tick.toUpperCase()?`${nm} (${tick})`:tick;
     const etfTag=/^(SGOV|SHV|BIL|VOO|IVV|SPY|QQQ|IWM|GLD|TLT)$/i.test(tick)?' · ETF':'';
-    const pxShow=price?fmtUsdShare(price):'—';
+    const pxShow=price?fmtStockPx(tick,price):'—';
     const slNote=stockRiskSubHtml(p);
     nameCell=`<div><div class="pr-name">${title}</div><div class="pr-sub">${fmt(shares,4)} 股 · 成本 ${fc(cost,'USD',2)}${etfTag} · 现价 <span class="fh-px fh-flat" data-ticker="${escAttr(tick)}">${pxShow}</span>${fhMktBadgeHtml(tick,p)}${slNote}</div></div>`;
     amtCell=`<div class="pr-amt primary"><span class="fh-mkt-usd" data-ticker="${escAttr(tick)}">${price?fc(mkt,'USD',2):'—'}</span></div>${price?'':'<div class="pr-amt dim" style="font-size:11px;margin-top:2px">WS/手动刷新</div>'}`;
@@ -4559,7 +4686,7 @@ async function fetchIntlGoldUsdPerOz(){
   }catch(e){}
   for(const sym of syms){
     try{
-      const px=await fetchYahooStockPrice(sym);
+      const px=await fetchYahooOnlyStockPrice(sym);
       if(px>800&&px<20000&&isFinite(px))return px;
     }catch(e){}
   }
@@ -4676,9 +4803,11 @@ async function refreshStocks(){
   let ok=0,fail=[];
   for(const s of stocks){
     try{
-      const price=await fetchYahooStockPrice(s.ticker);
-      if(price){s.currentPrice=price;s.updatedAt=today();ok++;}
-      else fail.push(s.ticker);
+      const result=await fetchStockPriceWithFallback(s.ticker);
+      if(result?.price>0){
+        patchUsStockLiveRow(s.ticker,result.price,{force:true,source:result.source,timestamp:result.timestamp});
+        ok++;
+      }else fail.push(s.ticker);
     }catch(e){fail.push(s.ticker);}
   }
   save();renderRegion('us');renderSidebar();
@@ -4826,8 +4955,11 @@ async function refreshAllQuotes(){
       show('🔄 正在并行刷新美股…');
       const okSt=await Promise.all(stocks.map(async s=>{
         try{
-          const price=await fetchYahooStockPrice(s.ticker);
-          if(price){s.currentPrice=price;s.updatedAt=today();return 1;}
+          const result=await fetchStockPriceWithFallback(s.ticker);
+          if(result?.price>0){
+            patchUsStockLiveRow(s.ticker,result.price,{force:true,source:result.source,timestamp:result.timestamp});
+            return 1;
+          }
         }catch(e){}
         return 0;
       }));
