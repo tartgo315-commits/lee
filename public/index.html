@@ -1690,15 +1690,6 @@ if(!D.goal||typeof D.goal!=='object'||!(Number(D.goal.amount)>0))
   D.settings.crclStop82Applied=true;
   if(patched)save();
 })();
-(function migrateGoldStrayFundFields(){
-  let patched=false;
-  for(const p of D.products||[]){
-    if(!goldHasStrayFundFields(p))continue;
-    for(const k of GOLD_STRAY_FUND_KEYS)delete p[k];
-    patched=true;
-  }
-  if(patched)save();
-})();
 maybeRollAuWeeklyCompound();
 function maybeShowHttpDataTip(){
   var el=document.getElementById('http-data-migrate-banner');
@@ -6376,6 +6367,15 @@ function importCbaAuPreset(){
     });
   }
 })();
+function migrateGoldStrayFundFields(){
+  let patched=false;
+  for(const p of D.products||[]){
+    if(!goldHasStrayFundFields(p))continue;
+    for(const k of GOLD_STRAY_FUND_KEYS)delete p[k];
+    patched=true;
+  }
+  if(patched)save();
+}
 renderOverview();
 initIntelHeightObserver();
 renderSidebar();

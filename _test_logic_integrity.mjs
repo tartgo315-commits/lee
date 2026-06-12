@@ -97,6 +97,12 @@ ok(
   'page-cn 在 page-overview 闭合之后（导航可切换）'
 );
 
+console.log('\n=== 启动顺序（migrate 须在 GOLD_STRAY 定义之后）===');
+const mainScript=(html.match(/<script>\s*\n\/\/ ══ DATA[\s\S]*?(?=<\/script>)/)||[''])[0];
+const migrateIdx=mainScript.indexOf('function migrateGoldStrayFundFields');
+const goldKeysIdx=mainScript.indexOf('const GOLD_STRAY_FUND_KEYS');
+ok(migrateIdx>0&&goldKeysIdx>0&&migrateIdx>goldKeysIdx,'migrateGoldStrayFundFields 在 GOLD_STRAY_FUND_KEYS 之后执行');
+
 console.log(`\n${'='.repeat(44)}`);
 console.log(`逻辑契约检查：通过 ${passed} · 失败 ${failed}`);
 process.exit(failed > 0 ? 1 : 0);
