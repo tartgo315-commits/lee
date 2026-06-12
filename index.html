@@ -981,6 +981,9 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
             <div class="card-title"><i class="ti ti-briefcase"></i> Portfolio</div>
             <a href="#" class="ov-link-all" onclick="showPage('us');return false">全部持仓 <i class="ti ti-chevron-right"></i></a>
           </div>
+          <div id="gold-price-warn" style="display:none;margin-bottom:8px;padding:8px 12px;border-radius:8px;background:var(--warn-bg);border:1px solid rgba(217,119,6,.25);color:var(--warn);font-size:13px;">
+            ⚠️ 黄金积存金价未刷新，当前净值未计入黄金市值。请点击顶栏「Au/g」刷新金价。
+          </div>
           <div id="ov-regions"></div>
         </section>
 
@@ -1570,6 +1573,7 @@ function assetV2ToProduct(a){
     const rate=Number(yc.annual_rate)>0&&Number(yc.annual_rate)<=1?Number(yc.annual_rate)*100:Number(yc.annual_rate)||Number(a.rate)||0;
     return {...base,type:'term_deposit',principal:Number(a.holding_qty)||Number(a.principal)||0,rate,
       tdCur:cur,currency:cur,tdStart:a.tdStart||today(),tdEnd:a.tdEnd||'',
+      tdOrigPrincipal:(Number(a.tdOrigPrincipal)>0)?Number(a.tdOrigPrincipal):null,
       tdCompoundWeekly:!!yc.is_compounding&&String(yc.compound_frequency||'').toLowerCase()==='weekly'};
   }
   if(region==='us'&&a.ticker){
@@ -2226,6 +2230,9 @@ function patchOverviewLive(){
   const e3=document.getElementById('ov-aud');if(e3)e3.textContent=fc(aud,'AUD');
   const e4=document.getElementById('ov-aud-sub');if(e4)e4.textContent='1 AUD = ¥'+FX_RATES.AUD_TO_CNY;
   if(D.btcQuote?.usd>0){const hb=document.getElementById('ov-hero-btc');if(hb)hb.textContent=formatBtcUsd(D.btcQuote.usd);}
+  const missingGoldPrice=D.products.some(p=>p.type==='gold'&&!(p.goldPrice>0));
+  const warnEl=document.getElementById('gold-price-warn');
+  if(warnEl)warnEl.style.display=missingGoldPrice?'block':'none';
   try{renderNavMiniChart(ovRange);}catch(e){console.error('patchOverviewLive chart',e);}
   try{updateGoalBar();}catch(e){}
   try{renderSidebar();}catch(e){}
@@ -3313,7 +3320,7 @@ function buildSanitizedPortfolio(){
   });
   const funds=D.products.filter(p=>p.type==='fund_cn').map((p,i)=>({
     code:`基金${String.fromCharCode(65+i)}`,
-    notionalCny:aiRoundWan((p.fundPrice||0)*(p.fundShares||0)),
+    notionalCny:aiRoundWan(toCNY((p.fundPrice||0)*(p.fundShares||0),p.fundCurrency||'CNY')),
     pnlPct:p.fundCost>0&&p.fundPrice?((p.fundPrice-p.fundCost)/p.fundCost*100):null
   }));
   const tds=D.products.filter(p=>p.type==='term_deposit').map((p,i)=>{
@@ -4275,6 +4282,9 @@ function ovPerfBarHtml(pct){
 function renderOverview(){
   maybeRollAuWeeklyCompound();
   const cny=totalCNY(),usd=fromCNY(cny,'USD'),aud=fromCNY(cny,'AUD');
+  const missingGoldPrice=D.products.some(p=>p.type==='gold'&&!(p.goldPrice>0));
+  const warnEl=document.getElementById('gold-price-warn');
+  if(warnEl)warnEl.style.display=missingGoldPrice?'block':'none';
   document.getElementById('ov-cny').textContent=fc(cny,'CNY');
   document.getElementById('ov-usd').textContent=fc(usd,'USD');
   document.getElementById('ov-usd-sub').textContent='1 USD = ¥'+FX_RATES.USD_TO_CNY;
@@ -5754,11 +5764,15 @@ function renderHistory(){
       const chg=prev?n.cny-prev.cny:null;
       const pct=prev&&prev.cny>0?((n.cny-prev.cny)/prev.cny*100):null;
       const c=chg===null?'var(--text3)':chg>=0?'var(--green)':'var(--red)';
+      const snapUsdRate=(n.fx?.USD>0)?n.fx.USD:FX_RATES.USD_TO_CNY;
+      const snapAudRate=(n.fx?.AUD>0)?n.fx.AUD:FX_RATES.AUD_TO_CNY;
+      const snapUsd=n.cny/snapUsdRate;
+      const snapAud=n.cny/snapAudRate;
       const main=`<tr>
         <td class="mono" style="font-size:12px">${n.date}</td>
         <td class="mono tr">${fc(n.cny,'CNY')}</td>
-        <td class="mono tr">${fc(fromCNY(n.cny,'USD'),'USD')}</td>
-        <td class="mono tr">${fc(fromCNY(n.cny,'AUD'),'AUD')}</td>
+        <td class="mono tr">${fc(snapUsd,'USD')}</td>
+        <td class="mono tr">${fc(snapAud,'AUD')}</td>
         <td class="mono tr" style="color:${c}">${chg!==null?(chg>=0?'+':'')+fc(chg,'CNY'):'—'}</td>
         <td class="mono tr" style="color:${c}">${pct!==null?(pct>=0?'+':'')+pct.toFixed(2)+'%':'—'}</td>
         <td><button class="btn btn-ghost btn-sm" onclick="delSnap('${n.date}')">删除</button></td>
