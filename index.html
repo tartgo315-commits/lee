@@ -168,7 +168,7 @@ input[type=text],input[type=number],input[type=date],select,textarea{font-size:v
 .card-title .ti{font-size:var(--fs-title);color:var(--text-3);margin-right:4px}
 .card-title.sub{font-size:var(--fs-caption);font-weight:500;margin-top:16px;margin-bottom:8px;color:var(--text-4);letter-spacing:.02em}
 #page-overview{padding:0}
-.terminal-dashboard{display:grid;grid-template-areas:"head head intel" "portfolio portfolio intel";grid-template-columns:minmax(0,1fr) minmax(248px,272px);grid-template-rows:auto auto;gap:6px;flex:1;min-height:0;height:auto;overflow:visible;align-items:stretch}
+.terminal-dashboard{display:grid;grid-template-areas:"head head intel" "portfolio portfolio intel";grid-template-columns:minmax(0,1fr) minmax(340px,34vw);grid-template-rows:auto auto;gap:6px;flex:1;min-height:0;height:auto;overflow:visible;align-items:stretch}
 .term-zone{min-width:0;min-height:0}
 #page-overview .glass-panel{padding:0;box-shadow:none;background:transparent;border:none;backdrop-filter:none}
 .term-zone-head{grid-area:head;display:grid;grid-template-columns:minmax(168px,.95fr) minmax(150px,1.05fr) minmax(130px,.75fr) minmax(150px,.85fr) minmax(150px,.85fr);gap:6px;align-items:stretch}
@@ -201,7 +201,7 @@ input[type=text],input[type=number],input[type=date],select,textarea{font-size:v
 .term-portfolio-hd .card-title{margin:0;font-size:10px;font-weight:600;color:var(--text-4);letter-spacing:.06em;text-transform:uppercase}
 #page-overview #ov-regions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;flex:none;min-height:auto;height:auto;align-items:start;overflow:visible}
 #ov-regions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;align-items:stretch}
-.term-zone-intel{grid-area:intel;display:flex;flex-direction:column;gap:5px;min-height:0;overflow:hidden;padding:8px 10px!important;background:var(--bg-card);backdrop-filter:var(--glass-blur);border:1px solid var(--border);border-radius:14px;align-self:stretch}
+.term-zone-intel{grid-area:intel;display:flex;flex-direction:column;gap:6px;min-height:0;overflow:hidden;padding:10px 14px!important;background:var(--bg-card);backdrop-filter:var(--glass-blur);border:1px solid var(--border);border-radius:14px;align-self:stretch;min-width:340px}
 .term-intel-hd{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text-4);margin-bottom:4px;display:flex;align-items:center;gap:5px}
 .term-intel-events{flex:0 0 auto;min-height:0;display:flex;flex-direction:column;overflow:hidden}
 .term-intel-events .ov-events-card{background:transparent;border:none;padding:0;margin:0;box-shadow:none!important;flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}
@@ -210,13 +210,15 @@ input[type=text],input[type=number],input[type=date],select,textarea{font-size:v
 .term-intel-events .ov-events-sub{display:none}
 .term-intel-events .ov-events-filters{display:none}
 .term-intel-events .ov-events-list{flex:1;min-height:0;overflow:hidden;max-height:100%}
-.term-intel-events .ov-event-row{padding:5px 0;font-size:10px;grid-template-columns:58px 1fr;gap:6px;border-bottom-color:var(--border-light)}
+.term-intel-events .ov-event-row{padding:6px 0;font-size:11px;grid-template-columns:72px 1fr;gap:8px;border-bottom-color:var(--border-light)}
+.term-intel-events .ov-event-title{font-size:12px}
+.term-intel-risk .ov-insight-chip{font-size:11px;line-height:1.4}
 .term-intel-events .ov-event-tags{gap:3px;margin-top:4px}
 .term-intel-events .ov-event-tag{font-size:9px;padding:1px 5px;border-radius:4px;border-color:var(--border);background:transparent}
 .term-intel-events .ov-event-tag.impact-high{background:rgba(220,38,38,.12);color:var(--dn-soft);border-color:rgba(220,38,38,.2)}
 .term-intel-events .ov-event-tag:not(.impact-high){display:none}
 .term-intel-events .ov-event-impact-grid,.term-intel-events .ov-event-desc,.term-intel-events .ov-events-news-hint,.term-intel-events .ov-events-today-marker{display:none!important}
-.term-intel-events .ov-event-title{font-size:11px;line-height:1.35}
+.term-intel-events .ov-event-title{line-height:1.4}
 .term-intel-risk{flex:0 0 auto;min-height:0;overflow:hidden;padding:6px 8px;border-radius:10px;background:rgba(255,255,255,.02);border:1px solid var(--border)}
 .term-intel-risk .ov-insights{display:flex;flex-direction:column;gap:3px;margin:0;max-height:100%;overflow:hidden}
 .term-intel-risk .ov-insight-chip{display:flex;align-items:flex-start;gap:6px;font-size:10px;line-height:1.35;padding:2px 0;border:none;border-radius:0;background:transparent!important;color:var(--text-3)}
