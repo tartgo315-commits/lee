@@ -168,39 +168,42 @@ input[type=text],input[type=number],input[type=date],select,textarea{font-size:v
 .card-title .ti{font-size:var(--fs-title);color:var(--text-3);margin-right:4px}
 .card-title.sub{font-size:var(--fs-caption);font-weight:500;margin-top:16px;margin-bottom:8px;color:var(--text-4);letter-spacing:.02em}
 #page-overview{padding:0}
-.terminal-dashboard{display:grid;grid-template-areas:"nav nav nav intel" "alloc alloc alloc intel" "portfolio portfolio portfolio intel";grid-template-columns:repeat(3,minmax(0,1fr)) minmax(260px,300px);grid-template-rows:auto auto auto;gap:8px;flex:1;min-height:0;height:auto;overflow:visible;align-items:start}
+.terminal-dashboard{display:grid;grid-template-areas:"head head intel" "portfolio portfolio intel";grid-template-columns:minmax(0,1fr) minmax(248px,272px);grid-template-rows:auto auto;gap:6px;flex:1;min-height:0;height:auto;overflow:visible;align-items:stretch}
 .term-zone{min-width:0;min-height:0}
-#page-overview .glass-panel{padding:10px 12px;box-shadow:none}
-.term-zone-nav{grid-area:nav;display:grid;grid-template-columns:minmax(200px,.9fr) minmax(180px,1fr) minmax(160px,.75fr);gap:8px;align-items:stretch;padding:0!important;background:transparent!important;border:none!important;backdrop-filter:none!important}
-.term-nav-hero,.term-nav-chart,.term-nav-goal{padding:10px 12px;background:var(--bg-card);backdrop-filter:var(--glass-blur);border:1px solid var(--border);border-radius:var(--radius-lg)}
-.term-nav-hero .ov-hero-label{margin-bottom:4px;font-size:9px}
-.term-nav-hero #ov-cny,.term-nav-hero .ov-hero-nav{font-size:32px;font-family:var(--mono);line-height:1}
-.term-nav-hero .ov-hero-delta{margin-top:2px;font-family:var(--mono);font-size:11px;gap:4px 8px}
+#page-overview .glass-panel{padding:0;box-shadow:none;background:transparent;border:none;backdrop-filter:none}
+.term-zone-head{grid-area:head;display:grid;grid-template-columns:minmax(168px,.95fr) minmax(150px,1.05fr) minmax(130px,.75fr) minmax(150px,.85fr) minmax(150px,.85fr);gap:6px;align-items:stretch}
+.term-nav-hero,.term-nav-chart,.term-nav-goal,.term-alloc-card{padding:8px 10px;background:var(--bg-card);backdrop-filter:var(--glass-blur);border:1px solid var(--border);border-radius:14px}
+.term-nav-hero .ov-hero-label{margin-bottom:2px;font-size:9px}
+.term-nav-hero #ov-cny,.term-nav-hero .ov-hero-nav{font-size:28px;font-family:var(--mono);line-height:1}
+.term-nav-hero .ov-hero-delta{margin-top:2px;font-family:var(--mono);font-size:10px;gap:2px 6px;flex-direction:column;align-items:flex-start}
+.term-nav-hero .ov-nav-baseline{font-size:9px;line-height:1.25;max-width:100%}
 .term-nav-hero .ov-hero-fx{display:none}
-.term-nav-chart{display:flex;flex-direction:column;justify-content:center}
-.term-nav-chart .nav-chart-wrap{height:44px;flex:0 0 44px}
-.term-nav-chart #chart-ov{height:44px!important;max-height:44px}
-.term-nav-chart-foot{display:flex;align-items:center;justify-content:space-between;margin-top:4px}
-.term-nav-chart-foot .rt{padding:3px 8px;font-size:10px}
-.term-nav-goal .ov-goal-pct{font-size:15px;font-family:var(--mono)}
+.term-nav-chart{display:flex;flex-direction:column;justify-content:flex-start}
+.term-nav-chart .nav-chart-wrap{height:36px;flex:0 0 36px}
+.term-nav-chart #chart-ov{height:36px!important;max-height:36px}
+.term-nav-chart-foot{display:flex;align-items:center;justify-content:space-between;margin-top:3px}
+.term-nav-chart-foot .ov-assets-chart-lbl{font-size:9px}
+.term-nav-chart-foot .rt{padding:2px 6px;font-size:9px}
+.term-nav-goal .ov-goal-hd{margin-bottom:0}
+.term-nav-goal .ov-goal-pct{font-size:14px;font-family:var(--mono)}
 .term-nav-goal .ov-goal-aside{display:none}
-.term-nav-goal .ov-goal-track{height:4px;margin-top:4px}
-.term-nav-goal .ov-goal-meta{margin-top:4px;font-size:10px}
-.term-zone-alloc{grid-area:alloc;display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0!important;background:transparent!important;border:none!important;backdrop-filter:none!important}
-.term-alloc-card{padding:8px 10px;min-height:0;background:var(--bg-card);backdrop-filter:var(--glass-blur);border:1px solid var(--border);border-radius:var(--radius-lg)}
-.term-alloc-card .card-title{font-size:10px;margin-bottom:6px;color:var(--text-4);letter-spacing:.06em;text-transform:uppercase}
-.term-alloc-row{display:flex;align-items:center;gap:10px;min-height:0}
-.term-alloc-row .ov-pie-canvas{flex:0 0 50px;width:50px!important;height:50px!important;max-width:50px!important;margin:0}
-.term-alloc-row .ov-pie-legend{flex:1;min-width:0;margin:0;gap:2px}
-.term-alloc-card .ov-pie-leg-row{font-size:9px;gap:3px 5px;line-height:1.25}
-.term-zone-portfolio{grid-area:portfolio;display:flex;flex-direction:column;min-height:auto;overflow:visible;padding:10px 12px!important}
-.term-portfolio-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-shrink:0}
-.term-portfolio-hd .card-title{margin:0;font-size:11px;font-weight:600;color:var(--text-3);letter-spacing:.06em;text-transform:uppercase}
-#page-overview #ov-regions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;flex:none;min-height:auto;height:auto;align-items:start;overflow:visible}
+.term-nav-goal .ov-goal-track{height:3px;margin-top:3px}
+.term-nav-goal .ov-goal-meta{margin-top:3px;font-size:9px}
+.term-nav-goal .ov-goal-edit{top:4px;right:4px;width:22px;height:22px}
+.term-alloc-card{min-height:0;display:flex;flex-direction:column;justify-content:flex-start}
+.term-alloc-card .card-title{font-size:9px;margin-bottom:4px;color:var(--text-4);letter-spacing:.06em;text-transform:uppercase}
+.term-alloc-row{display:flex;align-items:center;gap:8px;min-height:0;flex:1}
+.term-alloc-row .ov-pie-canvas{flex:0 0 42px;width:42px!important;height:42px!important;max-width:42px!important;margin:0}
+.term-alloc-row .ov-pie-legend{flex:1;min-width:0;margin:0;gap:1px}
+.term-alloc-card .ov-pie-leg-row{font-size:8px;gap:2px 4px;line-height:1.2}
+.term-zone-portfolio{grid-area:portfolio;display:flex;flex-direction:column;min-height:auto;overflow:visible;padding:8px 10px!important;background:var(--bg-card);backdrop-filter:var(--glass-blur);border:1px solid var(--border);border-radius:14px}
+.term-portfolio-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-shrink:0}
+.term-portfolio-hd .card-title{margin:0;font-size:10px;font-weight:600;color:var(--text-4);letter-spacing:.06em;text-transform:uppercase}
+#page-overview #ov-regions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;flex:none;min-height:auto;height:auto;align-items:start;overflow:visible}
 #ov-regions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;align-items:stretch}
-.term-zone-intel{grid-area:intel;display:grid;grid-template-rows:minmax(0,38%) minmax(0,24%) minmax(0,38%);gap:6px;min-height:0;overflow:hidden;padding:10px 12px!important}
+.term-zone-intel{grid-area:intel;display:flex;flex-direction:column;gap:5px;min-height:0;overflow:hidden;padding:8px 10px!important;background:var(--bg-card);backdrop-filter:var(--glass-blur);border:1px solid var(--border);border-radius:14px;align-self:stretch}
 .term-intel-hd{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text-4);margin-bottom:4px;display:flex;align-items:center;gap:5px}
-.term-intel-events{min-height:0;display:flex;flex-direction:column;overflow:hidden}
+.term-intel-events{flex:0 0 auto;min-height:0;display:flex;flex-direction:column;overflow:hidden}
 .term-intel-events .ov-events-card{background:transparent;border:none;padding:0;margin:0;box-shadow:none!important;flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}
 .term-intel-events .ov-events-hd{margin-bottom:4px;flex-shrink:0}
 .term-intel-events .ov-events-hd .card-title{font-size:10px;margin:0}
@@ -214,7 +217,7 @@ input[type=text],input[type=number],input[type=date],select,textarea{font-size:v
 .term-intel-events .ov-event-tag:not(.impact-high){display:none}
 .term-intel-events .ov-event-impact-grid,.term-intel-events .ov-event-desc,.term-intel-events .ov-events-news-hint,.term-intel-events .ov-events-today-marker{display:none!important}
 .term-intel-events .ov-event-title{font-size:11px;line-height:1.35}
-.term-intel-risk{min-height:0;overflow:hidden;padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.02);border:1px solid var(--border)}
+.term-intel-risk{flex:0 0 auto;min-height:0;overflow:hidden;padding:6px 8px;border-radius:10px;background:rgba(255,255,255,.02);border:1px solid var(--border)}
 .term-intel-risk .ov-insights{display:flex;flex-direction:column;gap:3px;margin:0;max-height:100%;overflow:hidden}
 .term-intel-risk .ov-insight-chip{display:flex;align-items:flex-start;gap:6px;font-size:10px;line-height:1.35;padding:2px 0;border:none;border-radius:0;background:transparent!important;color:var(--text-3)}
 .term-intel-risk .ov-insight-chip::before{content:'';width:4px;height:4px;border-radius:50%;margin-top:5px;flex-shrink:0;background:var(--text-4)}
@@ -239,13 +242,18 @@ input[type=text],input[type=number],input[type=date],select,textarea{font-size:v
 #page-overview .ov-col-name-row{align-items:center}
 #page-overview .ov-col-add-icon{width:22px;height:22px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text-3);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:12px;padding:0;flex-shrink:0;transition:all var(--ease-lux)}
 #page-overview .ov-col-add-icon:hover{border-color:var(--border-hover);color:var(--up-soft)}
-#page-overview .ov-col-header{padding:8px 10px}
-#page-overview .ov-col-name{font-size:15px}
-#page-overview .ov-head-triple{margin-top:6px;border-radius:8px}
-#page-overview .ov-head-cell{padding:5px 2px}
-#page-overview .ov-head-cell-val{font-size:11px}
-#page-overview .ov-region-viz{margin:4px 0}
-#page-overview .ov-col-pnl-row{margin-top:6px;font-size:10px;gap:4px}
+#page-overview .ov-col-header{padding:6px 8px}
+#page-overview .ov-col-name{font-size:13px}
+#page-overview .ov-col-name-row{margin-bottom:4px}
+#page-overview .ov-col-meta{font-size:9px;padding:2px 6px}
+#page-overview .ov-head-triple{margin-top:4px;border-radius:6px}
+#page-overview .ov-head-cell{padding:3px 2px}
+#page-overview .ov-head-cell-lbl{font-size:8px;margin-bottom:2px}
+#page-overview .ov-head-cell-val{font-size:10px}
+#page-overview .ov-region-viz{margin:2px 0;height:3px}
+#page-overview .ov-region-viz-pct{top:-14px;font-size:9px}
+#page-overview .ov-col-pnl-row{margin-top:4px;font-size:9px;gap:3px}
+#page-overview .ov-us-cap-split{font-size:9px}
 #page-overview .ov-col{overflow:visible;height:auto;min-height:auto}
 #page-overview .ov-col-body{padding:4px 6px;flex:none;min-height:auto;overflow:visible}
 #page-overview .ov-add-btn{display:none!important}
@@ -703,7 +711,9 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
   .ov-col-assets{padding:20px}
   .ov-col-events,.ov-col-copilot{padding:16px}
   .ov-col-assets,.ov-col-events,.ov-col-copilot{border-right:none;border-top:none}
-  .terminal-dashboard{grid-template-areas:"nav" "alloc" "portfolio" "intel";grid-template-columns:1fr;grid-template-rows:auto auto auto minmax(200px,1fr);height:auto;max-height:none;overflow:visible}
+  .terminal-dashboard{grid-template-areas:"head" "intel" "portfolio";grid-template-columns:1fr;grid-template-rows:auto auto auto;height:auto;max-height:none;overflow:visible}
+  .term-zone-head{grid-template-columns:1fr 1fr;gap:6px}
+  .term-zone-intel{align-self:auto}
   #page-overview.active{height:auto;max-height:none;overflow:visible}
   .main:has(#page-overview.active){overflow-y:auto}
   .term-zone-nav{grid-template-columns:1fr}
@@ -801,7 +811,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
     <!-- OVERVIEW · Private banking terminal -->
     <div class="page active" id="page-overview">
       <div class="terminal-dashboard">
-        <section class="term-zone term-zone-nav glass-panel">
+        <section class="term-zone term-zone-head" id="ov-dash">
           <div class="term-nav-hero">
             <div class="ov-hero-label">Total NAV</div>
             <div class="ov-hero-nav" id="ov-cny">¥ —</div>
@@ -826,7 +836,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
               </div>
             </div>
           </div>
-          <div class="term-nav-goal glass-panel ov-hero-goal-compact" id="goal-bar-wrap">
+          <div class="term-nav-goal ov-hero-goal-compact" id="goal-bar-wrap">
             <div class="ov-goal-inner">
               <div class="ov-goal-hd">
                 <span class="ov-goal-lbl" id="goal-label">存款目标</span>
@@ -844,18 +854,15 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
               <button type="button" class="btn btn-icon btn-sm ov-goal-edit" onclick="openGoalEdit()" title="修改目标"><i class="ti ti-pencil"></i></button>
             </div>
           </div>
-        </section>
-
-        <section class="term-zone term-zone-alloc" id="ov-dash">
           <div class="term-alloc-card">
-            <div class="card-title"><i class="ti ti-chart-pie"></i> Regional Allocation</div>
+            <div class="card-title"><i class="ti ti-chart-pie"></i> Regional</div>
             <div class="term-alloc-row">
               <div class="ov-donut-wrap ov-pie-canvas"><canvas id="chart-alloc-region"></canvas></div>
               <div class="ov-pie-legend" id="ov-alloc-legend"></div>
             </div>
           </div>
           <div class="term-alloc-card">
-            <div class="card-title"><i class="ti ti-droplet"></i> Liquidity Structure</div>
+            <div class="card-title"><i class="ti ti-droplet"></i> Liquidity</div>
             <div class="term-alloc-row">
               <div class="ov-donut-wrap ov-pie-canvas"><canvas id="chart-alloc-liq"></canvas></div>
               <div class="ov-pie-legend" id="ov-liq-legend"></div>
@@ -871,7 +878,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
           </div>
         </section>
 
-        <section class="term-zone term-zone-portfolio glass-panel">
+        <section class="term-zone term-zone-portfolio">
           <div class="term-portfolio-hd">
             <div class="card-title"><i class="ti ti-briefcase"></i> Portfolio</div>
             <a href="#" class="ov-link-all" onclick="showPage('us');return false">全部持仓 <i class="ti ti-chevron-right"></i></a>
@@ -879,7 +886,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
           <div id="ov-regions"></div>
         </section>
 
-        <aside class="term-zone term-zone-intel glass-panel">
+        <aside class="term-zone term-zone-intel">
           <div class="term-intel-events">
             <div class="card ov-events-card mb-0" id="ov-events-card">
               <div class="ov-events-hd">
@@ -5299,8 +5306,8 @@ function upsertOvDonutChart(ref,canvas,labels,data,bgColors,bdColors,cny){
   const chartOpts={
     animation:false,
     responsive:true,maintainAspectRatio:false,
-    layout:{padding:{top:4,bottom:4,left:2,right:2}},
-    cutout:'70%',
+    layout:{padding:0},
+    cutout:'72%',
     plugins:{
       legend:{display:false},
       tooltip:{callbacks:{label:c=>{
