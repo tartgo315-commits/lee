@@ -241,7 +241,6 @@ input[type=text],input[type=number],input[type=date],select,textarea{font-size:v
 .term-intel-events .ov-event-title{font-size:var(--fs-ev-title);font-weight:600;line-height:1.4;color:var(--text-2);overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word}
 .term-intel-events .ov-event-row.ov-event-news{min-width:0;max-width:100%}
 .term-intel-events .ov-events-empty,.term-intel-events .ov-events-news-hint{min-width:0;max-width:100%;overflow:hidden;word-break:break-word}
-.term-intel-risk .ov-insight-chip{font-size:11px;line-height:1.4}
 .term-intel-events .ov-event-tags{gap:4px;margin-top:6px;flex-wrap:wrap;display:flex}
 .term-intel-events .ov-event-tag{font-size:9px;padding:1px 5px;border-radius:4px;border-color:var(--border);background:transparent}
 .term-intel-events .ov-event-tag.impact-high{background:rgba(239,68,68,.1);color:var(--dn);border-color:rgba(239,68,68,.2)}
@@ -252,10 +251,11 @@ input[type=text],input[type=number],input[type=date],select,textarea{font-size:v
 .term-intel-events .ov-events-today-marker{display:block!important;font-size:var(--text-xs);opacity:.55;padding:4px 0}
 .term-intel-events .ov-events-news-hint{display:block!important;font-size:var(--text-xs);padding:8px 0;line-height:1.45;opacity:.7}
 .term-intel-hd .term-beta{margin-left:auto;font-size:10px;font-weight:400;opacity:.5;letter-spacing:.06em;text-transform:uppercase}
-.term-intel-risk{flex:0 0 auto;margin-top:auto;min-height:0;min-width:0;max-width:100%;overflow:hidden;padding:6px 8px;border-radius:10px;background:rgba(255,255,255,.02);border:1px solid var(--border)}
-.term-intel-risk .ov-insights{display:flex;flex-direction:column;gap:3px;margin:0;max-height:100%;overflow:hidden}
-.term-intel-risk .ov-insight-chip{display:flex;align-items:flex-start;gap:6px;font-size:10px;line-height:1.35;padding:2px 0;border:none;border-radius:0;background:transparent!important;color:var(--text-3)}
-.term-intel-risk .ov-insight-chip::before{content:'';width:4px;height:4px;border-radius:50%;margin-top:5px;flex-shrink:0;background:var(--text-4)}
+.term-intel-risk{flex:0 0 auto;margin-top:auto;min-height:0;min-width:0;max-width:100%;overflow:hidden;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.02);border:1px solid var(--border)}
+.term-intel-risk .ov-insights{display:flex;flex-direction:column;gap:4px;margin:0;max-height:100%;overflow:hidden}
+.term-intel-risk .ov-insight-chip{display:flex;align-items:flex-start;gap:7px;font-size:var(--text-xs);line-height:1.45;padding:3px 0;border:none;border-radius:0;background:transparent!important;color:var(--text-3)}
+.term-intel-risk .ov-insight-chip::before{content:'';width:5px;height:5px;border-radius:50%;margin-top:6px;flex-shrink:0;background:var(--text-4)}
+.term-intel-risk .term-intel-hd{font-size:var(--text-sm);margin-bottom:6px}
 .term-intel-risk .ov-insight-chip.warn::before{background:var(--warn)}
 .term-intel-risk .ov-insight-chip.ok::before{background:var(--up-soft)}
 .term-intel-risk .ov-insight-chip.info::before{background:var(--accent-blue)}
