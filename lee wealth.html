@@ -680,7 +680,14 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--border-a
 .c2{grid-template-columns:1fr 1fr}.c3{grid-template-columns:1fr 1fr 1fr}.c4{grid-template-columns:repeat(4,1fr)}
 .overlay{display:none;position:fixed;inset:0;background:rgba(11,15,23,.75);z-index:200;align-items:center;justify-content:center;padding:24px}
 .overlay.open{display:flex}
-.modal{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);max-width:460px;width:100%;max-height:92vh;overflow-y:auto;padding:32px;box-shadow:var(--shadow-float)}
+.modal{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);max-width:min(540px,94vw);width:100%;max-height:92vh;overflow-y:auto;padding:28px 24px;box-shadow:var(--shadow-float)}
+.modal .fg-row .fg{margin-bottom:0}
+.modal .fg-row.c4,.modal .fg-row.c3{grid-template-columns:1fr 1fr}
+.modal label{white-space:normal;line-height:1.35;word-break:break-word}
+.modal .alert{display:block;font-size:12px;line-height:1.6;word-break:break-word;overflow-wrap:anywhere}
+.modal .alert strong{font-weight:600;color:var(--text-2)}
+.modal-tip-list{margin:8px 0 0;padding-left:1.1em;font-size:12px;line-height:1.55;color:inherit}
+.modal-tip-list li{margin:4px 0}
 .modal.modal-ai{max-width:min(720px,92vw);width:100%;max-height:88vh;padding:20px 22px;display:flex;flex-direction:column;overflow:hidden}
 .modal-ai .modal-title{margin-bottom:12px;flex-shrink:0}
 .modal-ai .ov-copilot-body{flex:1;min-height:280px;max-height:calc(88vh - 120px)}
@@ -1401,21 +1408,23 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
 
     <!-- Fund CN -->
     <div id="f-fund" style="display:none">
-      <div class="alert alert-info" style="margin-bottom:var(--s-3);font-size:var(--text-sm);line-height:var(--lh-body)">蚂蚁财富 / 支付宝「资产详情」对照：<strong>基金代码</strong>填 6 位（如 021740）；<strong>当前净值</strong>＝页面「基金净值」；<strong>持有份额</strong>＝<strong>金额 ÷ 基金净值</strong>（不要用「估算克数」，克数是黄金折合展示）；<strong>成本均价</strong>＝<strong>（金额 − 持有收益）÷ 份额</strong>。</div>
-      <div class="fg-row c4">
-        <div class="fg"><label>基金/产品代码（可选）</label><input type="text" id="m-fcode" placeholder="如 021740"></div>
-        <div class="fg"><label>持有份额</label><input type="number" id="m-fshares" placeholder="10143.42" step="any"></div>
-        <div class="fg"><label>成本均价</label><input type="number" id="m-fcost" placeholder="1.00" step="any"></div>
-        <div class="fg"><label>当前净值</label><input type="number" id="m-fprice" placeholder="1.024744" step="any"></div>
-      </div>
+      <div id="m-fund-tip" class="alert alert-info" style="margin-bottom:12px"></div>
       <div class="fg-row c2">
+        <div class="fg"><label>基金/产品代码（可选）</label><input type="text" id="m-fcode" placeholder="如 021740"></div>
         <div class="fg"><label>计价货币</label>
-          <select id="m-fcurrency">
+          <select id="m-fcurrency" onchange="updateFundModalTip()">
             <option value="CNY">CNY 人民币</option>
             <option value="USD">USD 美元</option>
             <option value="AUD">AUD 澳元</option>
           </select>
         </div>
+      </div>
+      <div class="fg-row c2">
+        <div class="fg"><label>持有份额</label><input type="number" id="m-fshares" placeholder="10143.42" step="any"></div>
+        <div class="fg"><label>当前净值</label><input type="number" id="m-fprice" placeholder="1.024744" step="any"></div>
+      </div>
+      <div class="fg-row c2">
+        <div class="fg"><label>成本均价（每份）</label><input type="number" id="m-fcost" placeholder="1.00" step="any"></div>
         <div class="fg"><label>净值更新日期</label><input type="date" id="m-fdate"></div>
       </div>
     </div>
@@ -1432,9 +1441,11 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
 
     <!-- Stock US -->
     <div id="f-stock" style="display:none">
-      <div class="fg-row c4">
+      <div class="fg-row c2">
         <div class="fg"><label>股票代码</label><input type="text" id="m-ticker" placeholder="AAPL / SGOV（ETF）"></div>
         <div class="fg"><label>持股数量</label><input type="number" id="m-shares" placeholder="100" step="any"></div>
+      </div>
+      <div class="fg-row c2">
         <div class="fg"><label>成本价 (USD)</label><input type="number" id="m-cost" placeholder="150.00" step="any"></div>
         <div class="fg"><label>当前价 (USD)</label><input type="number" id="m-sprice" placeholder="自动刷新" step="any"></div>
       </div>
@@ -6008,6 +6019,7 @@ function onType(){
   document.getElementById('f-gold').style.display=t==='gold'?'block':'none';
   document.getElementById('f-stock').style.display=t==='stock_us'?'block':'none';
   document.getElementById('f-td').style.display=t==='term_deposit'?'block':'none';
+  if(t==='fund_cn')updateFundModalTip();
   const tip=document.getElementById('m-us-cash-tip');
   if(tip)tip.style.display=r==='us'&&['cash','other'].includes(t)?'block':'none';
   const cur=document.getElementById('m-currency');
@@ -6016,6 +6028,18 @@ function onType(){
     if(r==='us')cur.value='USD';
     else if(r==='cn')cur.value='CNY';
     else if(r==='au')cur.value='AUD';
+  }
+}
+function updateFundModalTip(){
+  const el=document.getElementById('m-fund-tip');
+  if(!el)return;
+  const cur=document.getElementById('m-fcurrency')?.value||'CNY';
+  if(cur==='USD'){
+    el.innerHTML='<strong>建行美元理财</strong><ul class="modal-tip-list"><li><strong>持有份额</strong>、<strong>当前净值</strong>：从持仓页抄（USD/份）</li><li><strong>成本均价</strong>：抄「单位成本 / 参考成本价」，勿填占位 1</li><li>市值 = 份额 × 净值；盈亏才依赖成本均价</li></ul>';
+  }else if(cur==='CNY'){
+    el.innerHTML='<strong>支付宝 / 蚂蚁财富</strong><ul class="modal-tip-list"><li><strong>基金代码</strong>：6 位，如 021740</li><li><strong>持有份额</strong> = 金额 ÷ 基金净值</li><li><strong>成本均价</strong> = （金额 − 持有收益）÷ 份额</li></ul>';
+  }else{
+    el.innerHTML='<strong>基金 / 理财</strong><ul class="modal-tip-list"><li><strong>持有份额</strong>、<strong>当前净值</strong>：按 App 持仓页填写</li><li><strong>成本均价</strong>：每份买入均价（同币种）</li></ul>';
   }
 }
 
@@ -6122,6 +6146,7 @@ function editProduct(id){
     document.getElementById('m-fprice').value=p.fundPrice||'';
     document.getElementById('m-fcurrency').value=p.fundCurrency||'CNY';
     document.getElementById('m-fdate').value=p.updatedAt||today();
+    updateFundModalTip();
   } else if(p.type==='term_deposit'){
     document.getElementById('m-principal').value=p.principal||'';
     document.getElementById('m-rate').value=p.rate||'';
