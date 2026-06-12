@@ -2827,7 +2827,6 @@ function goldHasStrayFundFields(p){
 function sumStockUsCNY(aps){return aps.filter(p=>p.type==='stock_us').reduce((s,p)=>s+pCNY(p),0);}
 /** 名称/备注像券商美元现金（不含泛称「现金」，避免把人民币活期误判成美元） */
 function looksLikeUsdBrokerCash(p){
-  if((p.region||'')!=='us')return false;
   return /可用|闲置|购买力|预估|现金额|应计利息|美元|美金|\bUSD\b|\$|Tiger|券商/i.test((p.name||'')+(p.note||''));
 }
 function isUsdIdleProduct(p){
