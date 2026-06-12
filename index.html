@@ -1195,7 +1195,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
       <div class="card" style="margin-bottom:14px">
         <div class="card-title" style="font-size:16px"><i class="ti ti-adjustments"></i> 账户与备份</div>
         <div class="settings-list">
-          <div class="settings-item">
+          <div class="settings-item" style="display:none">
             <div class="settings-item-main">
               <div class="settings-item-label"><i class="ti ti-chart-candle"></i> Tiger 账户本金（AUD）</div>
               <div class="settings-item-desc">用于总览页计算美股账户相对本金的盈亏</div>
@@ -1204,6 +1204,17 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
             <div class="settings-item-actions">
               <input type="number" id="cfg-principal-aud" class="fx-big-input" placeholder="72640" step="any">
               <button class="btn btn-primary" onclick="savePrincipal()">保存</button>
+            </div>
+          </div>
+          <div class="settings-item">
+            <div class="settings-item-main">
+              <div class="settings-item-label"><i class="ti ti-chart-candle"></i> Tiger 账户本金（USD）</div>
+              <div class="settings-item-desc">用于计算美股账户相对本金的盈亏，以 USD 为基准，不受汇率影响</div>
+              <div id="principal-usd-status"></div>
+            </div>
+            <div class="settings-item-actions">
+              <input type="number" id="cfg-principal-usd" class="fx-big-input" placeholder="46490" step="any">
+              <button class="btn btn-primary" onclick="savePrincipalUSD()">保存</button>
             </div>
           </div>
           <div class="settings-item">
@@ -1490,7 +1501,7 @@ const FIREBASE_PROXY_BASE='';
 /** 线上无同源 /_proxy 时回退（勿尾斜杠）。部署在 Vercel 且接口在 /_proxy 时填你的站点根。 */
 const WO_REMOTE_PROXY_ORIGIN='https://lee-lime.vercel.app';
 const SK='wo_v2';
-const blank=()=>({products:[],navHistory:[],fx:{USD:7.24,AUD:4.75},nextId:1,settings:{usPrincipalAUD:72640},usAccountMeta:{},goal:{amount:1500000,currency:'CNY',label:'存款目标'}});
+const blank=()=>({products:[],navHistory:[],fx:{USD:7.24,AUD:4.75},nextId:1,settings:{usPrincipalAUD:72640,usPrincipalUSD:46490},usAccountMeta:{},goal:{amount:1500000,currency:'CNY',label:'存款目标'}});
 let D=blank();
 
 // ══ Asset schema v2（统一 market / asset_type / risk_profile / yield_config）══
@@ -2816,10 +2827,11 @@ function goldHasStrayFundFields(p){
 function sumStockUsCNY(aps){return aps.filter(p=>p.type==='stock_us').reduce((s,p)=>s+pCNY(p),0);}
 /** 名称/备注像券商美元现金（不含泛称「现金」，避免把人民币活期误判成美元） */
 function looksLikeUsdBrokerCash(p){
+  if((p.region||'')!=='us')return false;
   return /可用|闲置|购买力|预估|现金额|应计利息|美元|美金|\bUSD\b|\$|Tiger|券商/i.test((p.name||'')+(p.note||''));
 }
 function isUsdIdleProduct(p){
-  if(p.type==='other'&&(p.currency||'')==='USD')return true;
+  if(p.type==='other'&&(p.currency||'')==='USD'&&looksLikeUsdBrokerCash(p))return true;
   if(p.type!=='cash')return false;
   const c=p.currency||'CNY';
   if(c==='USD')return true;
@@ -2925,6 +2937,7 @@ function maybeRollAuWeeklyCompound(){
   for(const p of ps){
     const v=tdCurVal(p);
     if(v>p.principal+0.009){
+      if(p.tdOrigPrincipal==null)p.tdOrigPrincipal=p.principal;
       p.principal=Math.round(v*100)/100;
       p.tdStart=today();
       ch=true;
@@ -4401,16 +4414,16 @@ function renderOverview(){
     if(r.id === 'us' && ps.length){
       usStockCny=sumStockUsCNY(ps);
       usIdleCny=regionUsIdleCnyTotal(ps);
-      const principalAUD = D.settings?.usPrincipalAUD || 72640;
-      totalAUD_us = fromCNY(rcny,'AUD');
-      const totalUSD = fromCNY(rcny,'USD');
-      pnlAUD = totalAUD_us - principalAUD;
-      const principalUSD = toCNY(principalAUD,'AUD') / FX_RATES.USD_TO_CNY;
-      pnlUSD = totalUSD - principalUSD;
-      const principalCNY = toCNY(principalAUD,'AUD');
-      pnlCNY = rcny - principalCNY;
-      pnlPct = principalAUD > 0 ? (pnlAUD/principalAUD*100) : 0;
-      const isPos = pnlAUD >= 0;
+      const principalUSD=D.settings?.usPrincipalUSD||46490;
+      const principalCNY=toCNY(principalUSD,'USD');
+      totalAUD_us=fromCNY(rcny,'AUD');
+      const principalAUD=fromCNY(principalCNY,'AUD');
+      const totalUSD=fromCNY(rcny,'USD');
+      pnlUSD=totalUSD-principalUSD;
+      pnlAUD=totalAUD_us-principalAUD;
+      pnlCNY=rcny-principalCNY;
+      pnlPct=principalUSD>0?(pnlUSD/principalUSD*100):0;
+      const isPos=pnlUSD>=0;
       col = isPos ? 'var(--green)' : 'var(--red)';
       sign = isPos ? '+' : '';
       extraStats = 'us';
@@ -6163,12 +6176,21 @@ function deleteProduct(id){
 function renderSettings(){
   if(!D.settings) D.settings={};
   document.getElementById('cfg-principal-aud').value = D.settings.usPrincipalAUD || 72640;
+  document.getElementById('cfg-principal-usd').value = D.settings.usPrincipalUSD || 46490;
 }
 function savePrincipal(){
   const v = parseFloat(document.getElementById('cfg-principal-aud').value);
   if(!D.settings) D.settings={};
   if(!isNaN(v)&&v>0){ D.settings.usPrincipalAUD=v; save(); renderOverview(); }
   const s=document.getElementById('principal-status');
+  s.innerHTML='<div class="alert alert-ok">✅ 已保存</div>';
+  setTimeout(()=>s.innerHTML='',3000);
+}
+function savePrincipalUSD(){
+  const v=parseFloat(document.getElementById('cfg-principal-usd').value);
+  if(!D.settings)D.settings={};
+  if(!isNaN(v)&&v>0){D.settings.usPrincipalUSD=v;save();renderOverview();}
+  const s=document.getElementById('principal-usd-status');
   s.innerHTML='<div class="alert alert-ok">✅ 已保存</div>';
   setTimeout(()=>s.innerHTML='',3000);
 }
