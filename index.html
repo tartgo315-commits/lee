@@ -117,9 +117,9 @@ input[type=text],input[type=number],input[type=date],select,textarea{font-size:v
 .pin-forgot{background:none;border:none;color:var(--text-4);font-size:12px;cursor:pointer;text-align:center}
 .main-wrap{margin-left:0!important;flex:1;min-height:0;display:flex;flex-direction:column;width:100%}
 .main{padding:8px var(--gutter-x);flex:1;overflow-y:auto}
-.main:has(#page-overview.active){overflow:hidden;padding:6px var(--gutter-x)}
+.main:has(#page-overview.active){overflow-y:auto;padding:6px var(--gutter-x)}
 .page{display:none}.page.active{display:block}
-#page-overview.active{display:flex;flex-direction:column;height:calc(100vh - 100px);max-height:min(calc(100vh - 100px),980px);overflow:hidden}
+#page-overview.active{display:flex;flex-direction:column;height:auto;max-height:none;overflow:visible}
 .topbar{height:52px;min-height:52px;max-height:52px;padding:0 var(--gutter-x);background:rgba(15,15,20,.85);backdrop-filter:var(--glass-blur);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:60;overflow:hidden;flex-shrink:0}
 .topbar-wealth{display:inline-flex;align-items:baseline;gap:10px;padding:0 4px 0 0;border:none;background:transparent;cursor:pointer;flex-shrink:0;min-width:0;max-height:100%}
 .topbar-wealth:hover .topbar-wealth-val{color:var(--up-soft)}
@@ -173,7 +173,7 @@ input[type=text],input[type=number],input[type=date],select,textarea{font-size:v
 .card-title .ti{font-size:var(--fs-title);color:var(--text-3);margin-right:4px}
 .card-title.sub{font-size:var(--fs-caption);font-weight:500;margin-top:16px;margin-bottom:8px;color:var(--text-4);letter-spacing:.02em}
 #page-overview{padding:0}
-.terminal-dashboard{display:grid;grid-template-areas:"nav nav nav intel" "alloc alloc alloc intel" "portfolio portfolio portfolio intel";grid-template-columns:repeat(3,minmax(0,1fr)) minmax(260px,300px);grid-template-rows:minmax(0,auto) minmax(0,auto) minmax(0,1fr);gap:8px;flex:1;min-height:0;height:100%;overflow:hidden}
+.terminal-dashboard{display:grid;grid-template-areas:"nav nav nav intel" "alloc alloc alloc intel" "portfolio portfolio portfolio intel";grid-template-columns:repeat(3,minmax(0,1fr)) minmax(260px,300px);grid-template-rows:auto auto auto;gap:8px;flex:1;min-height:0;height:auto;overflow:visible;align-items:start}
 .term-zone{min-width:0;min-height:0}
 #page-overview .glass-panel{padding:10px 12px;box-shadow:none}
 .term-zone-nav{grid-area:nav;display:grid;grid-template-columns:minmax(200px,.9fr) minmax(180px,1fr) minmax(160px,.75fr);gap:8px;align-items:stretch;padding:0!important;background:transparent!important;border:none!important;backdrop-filter:none!important}
@@ -198,10 +198,11 @@ input[type=text],input[type=number],input[type=date],select,textarea{font-size:v
 .term-alloc-row .ov-pie-canvas{flex:0 0 50px;width:50px!important;height:50px!important;max-width:50px!important;margin:0}
 .term-alloc-row .ov-pie-legend{flex:1;min-width:0;margin:0;gap:2px}
 .term-alloc-card .ov-pie-leg-row{font-size:9px;gap:3px 5px;line-height:1.25}
-.term-zone-portfolio{grid-area:portfolio;display:flex;flex-direction:column;min-height:0;overflow:hidden;padding:10px 12px!important}
+.term-zone-portfolio{grid-area:portfolio;display:flex;flex-direction:column;min-height:auto;overflow:visible;padding:10px 12px!important}
 .term-portfolio-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-shrink:0}
 .term-portfolio-hd .card-title{margin:0;font-size:11px;font-weight:600;color:var(--text-3);letter-spacing:.06em;text-transform:uppercase}
-#ov-regions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;flex:1;min-height:0;align-items:stretch}
+#page-overview #ov-regions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;flex:none;min-height:auto;height:auto;align-items:start;overflow:visible}
+#ov-regions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;align-items:stretch}
 .term-zone-intel{grid-area:intel;display:grid;grid-template-rows:minmax(0,38%) minmax(0,24%) minmax(0,38%);gap:6px;min-height:0;overflow:hidden;padding:10px 12px!important}
 .term-intel-hd{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text-4);margin-bottom:4px;display:flex;align-items:center;gap:5px}
 .term-intel-events{min-height:0;display:flex;flex-direction:column;overflow:hidden}
@@ -250,7 +251,8 @@ input[type=text],input[type=number],input[type=date],select,textarea{font-size:v
 #page-overview .ov-head-cell-val{font-size:11px}
 #page-overview .ov-region-viz{margin:4px 0}
 #page-overview .ov-col-pnl-row{margin-top:6px;font-size:10px;gap:4px}
-#page-overview .ov-col-body{padding:4px 6px}
+#page-overview .ov-col{overflow:visible;height:auto;min-height:auto}
+#page-overview .ov-col-body{padding:4px 6px;flex:none;min-height:auto;overflow:visible}
 #page-overview .ov-add-btn{display:none!important}
 #page-overview .ov-prod-row{grid-template-columns:minmax(0,1fr) auto auto;gap:6px;padding:4px 6px;margin-bottom:2px;border:none;border-radius:0;background:transparent;border-bottom:1px solid var(--border-light)}
 #page-overview .ov-prod-row:hover{background:rgba(255,255,255,.03)}
@@ -489,7 +491,7 @@ input[type=text],input[type=number],input[type=date],select,textarea{font-size:v
 .ov-link-all:hover{color:var(--text-2)}
 .ov-col{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:16px;overflow:hidden;display:flex;flex-direction:column;min-width:0;min-height:0;transition:all var(--ease-lux)}
 .ov-col-header{padding:12px 14px;border-bottom:1px solid var(--border-light);background:rgba(255,255,255,.02);flex-shrink:0}
-#page-overview .ov-col-body{padding:6px 8px;flex:1;min-height:0;max-height:none;overflow-y:auto;scrollbar-width:thin}
+#page-overview .ov-col-body{padding:6px 8px;flex:none;min-height:auto;max-height:none;overflow:visible}
 .ov-col-body{padding:8px 12px;flex:1;min-height:0;max-height:min(420px,55vh);overflow-y:auto;scrollbar-width:thin}
 .ov-col-body::-webkit-scrollbar{width:4px}
 .ov-col-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
