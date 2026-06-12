@@ -223,12 +223,17 @@ input[type=text],input[type=number],input[type=date],select,textarea{font-size:v
 .term-intel-events .ov-events-sub{display:none}
 .term-intel-events .ov-events-filters{display:none}
 .term-intel-events .ov-events-list{flex:1;min-height:0;overflow:hidden;max-height:100%}
-.term-intel-events .ov-event-row{padding:8px 0;font-size:11px;grid-template-columns:72px 1fr;gap:8px;border-bottom-color:var(--card-border)}
-.term-intel-events .ov-event-date .tz-line.cn{color:var(--up);font-size:var(--fs-ev-date);font-weight:700}
-.term-intel-events .ov-event-date .countdown{font-size:var(--fs-ev-tz);opacity:.5;font-weight:400}
-.term-intel-events .ov-event-title{font-size:var(--fs-ev-title);font-weight:600;line-height:1.4;color:var(--text-2)}
+.term-intel-events .ov-event-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;column-gap:10px;padding:8px 0;font-size:var(--text-xs);border-bottom-color:var(--card-border)}
+.term-intel-events .ov-event-date{display:contents}
+.term-intel-events .tz-dual{grid-column:1;display:flex;flex-direction:row;align-items:center;gap:6px;white-space:nowrap}
+.term-intel-events .ov-event-date .tz-line.cn{color:var(--up);font-size:var(--fs-ev-title);font-weight:700}
+.term-intel-events .ov-event-date .tz-line.us{display:none}
+.term-intel-events .ov-event-date>span{display:none}
+.term-intel-events .ov-event-date .countdown{grid-column:3;font-size:var(--fs-ev-tz);opacity:.5;font-weight:400;white-space:nowrap;justify-self:end}
+.term-intel-events .ov-event-body{grid-column:2;display:flex;flex-direction:row;align-items:center;gap:8px;min-width:0}
+.term-intel-events .ov-event-title{font-size:var(--fs-ev-title);font-weight:600;line-height:1.3;color:var(--text-2);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .term-intel-risk .ov-insight-chip{font-size:11px;line-height:1.4}
-.term-intel-events .ov-event-tags{gap:3px;margin-top:4px}
+.term-intel-events .ov-event-tags{gap:4px;margin-top:0;flex-shrink:0;flex-wrap:nowrap}
 .term-intel-events .ov-event-tag{font-size:9px;padding:1px 5px;border-radius:4px;border-color:var(--border);background:transparent}
 .term-intel-events .ov-event-tag.impact-high{background:rgba(239,68,68,.1);color:var(--dn);border-color:rgba(239,68,68,.2)}
 .term-intel-events .ov-event-tag:not(.impact-high){display:none}
