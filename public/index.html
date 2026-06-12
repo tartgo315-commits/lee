@@ -304,6 +304,8 @@ input[type=text],input[type=number],input[type=date],select,textarea{font-size:v
 #page-overview .ov-prod-row{grid-template-columns:minmax(0,1fr) auto auto;gap:8px;min-height:48px;padding:0 8px;margin-bottom:0;border:none;border-radius:0;background:transparent;border-bottom:1px solid var(--card-border);align-items:center}
 #page-overview .ov-prod-row:hover{background:rgba(255,255,255,.02);transform:none;border-color:var(--card-border)!important}
 #page-overview .ov-prod-sub{display:none}
+#page-overview .ov-prod-row[data-ov-ticker] .ov-prod-sub{display:block;font-size:10px;line-height:1.35;margin-top:2px;color:var(--text-4)}
+#page-overview .ov-prod-row[data-ov-ticker]{align-items:flex-start;min-height:auto;padding:6px 8px}
 #page-overview .ov-prod-cny{display:none}
 #page-overview .ov-prod-ticktag{display:none}
 #page-overview .ov-prod-px{display:none}
@@ -4389,7 +4391,7 @@ function renderOverview(){
           const hasName=p.name&&p.name.trim()&&p.name.trim().toUpperCase()!==tick.toUpperCase();
           nameHtml=`<div class="ov-prod-name ov-prod-name--stock">${hasName?`<span class="ov-prod-tick">${escOvHtml(p.name.trim())}</span><span class="ov-prod-ticktag">${escOvHtml(tick)}</span>`:`<span class="ov-prod-tick">${escOvHtml(tick)}</span>`}<span class="ov-prod-px${price?'':' wait'}">${price?fmtStockPx(tick,price):'待刷新'}</span></div>`;
           const wPct=acny>0?(cny/acny*100).toFixed(1):null;
-          sub=`${fmt(shares,2)}股 · 成本${fc(cost,'USD',2)}${wPct!=null?` · 占比 ${wPct}%`:''}${stockRiskSubHtml(p)}`;
+          sub=`持股量 ${fmt(shares,2)} 股 · 持股成本 ${fc(cost,'USD',2)}${wPct!=null?` · 占比 ${wPct}%`:''}${stockRiskSubHtml(p)}`;
           amt=price?fc(mkt,'USD',2):'待刷新';
           cnyStr='';
           pnl=price?`<div class="ov-prod-pnl ${pnlUSD>=0?'pos':'neg'}">${pnlUSD>=0?'+':''}${fc(pnlUSD,'USD',2)} (${pnlUSD>=0?'+':''}${safePctFixed(pct,1)}%)</div>`:'';
@@ -4825,7 +4827,7 @@ function buildProductRow(p,region,primaryCur,accountTotalCNY){
     const etfTag=/^(SGOV|SHV|BIL|VOO|IVV|SPY|QQQ|IWM|GLD|TLT)$/i.test(tick)?' · ETF':'';
     const pxShow=price?fmtStockPx(tick,price):'—';
     const slNote=stockRiskSubHtml(p);
-    nameCell=`<div><div class="pr-name">${title}</div><div class="pr-sub">${fmt(shares,4)} 股 · 成本 ${fc(cost,'USD',2)}${etfTag} · 现价 <span class="fh-px fh-flat" data-ticker="${escAttr(tick)}">${pxShow}</span>${fhMktBadgeHtml(tick,p)}${slNote}</div></div>`;
+    nameCell=`<div><div class="pr-name">${title}</div><div class="pr-sub">持股量 ${fmt(shares,4)} 股 · 持股成本 ${fc(cost,'USD',2)}${etfTag} · 现价 <span class="fh-px fh-flat" data-ticker="${escAttr(tick)}">${pxShow}</span>${fhMktBadgeHtml(tick,p)}${slNote}</div></div>`;
     amtCell=`<div class="pr-amt primary"><span class="fh-mkt-usd" data-ticker="${escAttr(tick)}">${price?fc(mkt,'USD',2):'—'}</span></div>${price?'':'<div class="pr-amt dim" style="font-size:11px;margin-top:2px">WS/手动刷新</div>'}`;
     pnlCell=price
       ?`<div class="pr-pnl ${pnlUSD>=0?'pos':'neg'}"><span class="fh-pnl-usd" data-ticker="${escAttr(tick)}">${pnlUSD>=0?'+':''}${fc(pnlUSD,'USD',2)}<br>${(pnlUSD>=0?'+':'')+pct.toFixed(2)}%</span></div>`
