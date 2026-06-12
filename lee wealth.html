@@ -216,13 +216,16 @@ input[type=text],input[type=number],input[type=date],select,textarea{font-size:v
 .term-zone-intel{grid-area:intel;display:flex;flex-direction:column;gap:6px;min-height:0;overflow:hidden;padding:16px 20px!important;background:var(--card-surface);border:1px solid var(--card-border);border-radius:16px;box-shadow:none;align-self:stretch;min-width:340px;transition:all var(--ease-lux)}
 .term-intel-hd{font-size:var(--fs-card-lbl);font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-4);margin-bottom:4px;display:flex;align-items:center;gap:5px}
 .term-intel-ai>.term-intel-hd{font-size:var(--fs-ai-title);text-transform:none;letter-spacing:0;color:var(--text-2)}
-.term-intel-events{flex:0 0 auto;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+.term-intel-events{flex:1 1 auto;min-height:120px;display:flex;flex-direction:column;overflow:hidden}
 .term-intel-events .ov-events-card{background:transparent;border:none;padding:0;margin:0;box-shadow:none!important;flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}
-.term-intel-events .ov-events-hd{margin-bottom:4px;flex-shrink:0}
+.term-intel-events .ov-events-hd{flex-direction:column;align-items:stretch;gap:6px;margin-bottom:6px;flex-shrink:0}
 .term-intel-events .ov-events-hd .card-title{font-size:var(--fs-card-lbl);margin:0;letter-spacing:.08em;text-transform:uppercase}
-.term-intel-events .ov-events-sub{display:none}
-.term-intel-events .ov-events-filters{display:none}
-.term-intel-events .ov-events-list{flex:1;min-height:0;overflow:hidden;max-height:100%}
+.term-intel-events .ov-events-sub{display:block;font-size:var(--text-xs);font-weight:400;opacity:.6;line-height:1.35;color:var(--text-4)}
+.term-intel-events .ov-events-filters{display:flex;flex-wrap:wrap;gap:4px}
+.term-intel-events .ov-events-filter{padding:3px 8px;font-size:var(--text-xs)}
+.term-intel-events .ov-events-list{flex:1;min-height:72px;max-height:min(280px,30vh);overflow-y:auto;scrollbar-width:thin}
+.term-intel-events .ov-events-list::-webkit-scrollbar{width:4px}
+.term-intel-events .ov-events-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:4px}
 .term-intel-events .ov-event-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;column-gap:10px;padding:8px 0;font-size:var(--text-xs);border-bottom-color:var(--card-border)}
 .term-intel-events .ov-event-date{display:contents}
 .term-intel-events .tz-dual{grid-column:1;display:flex;flex-direction:row;align-items:center;gap:6px;white-space:nowrap}
@@ -237,7 +240,11 @@ input[type=text],input[type=number],input[type=date],select,textarea{font-size:v
 .term-intel-events .ov-event-tag{font-size:9px;padding:1px 5px;border-radius:4px;border-color:var(--border);background:transparent}
 .term-intel-events .ov-event-tag.impact-high{background:rgba(239,68,68,.1);color:var(--dn);border-color:rgba(239,68,68,.2)}
 .term-intel-events .ov-event-tag:not(.impact-high){display:none}
-.term-intel-events .ov-event-impact-grid,.term-intel-events .ov-event-desc,.term-intel-events .ov-events-news-hint,.term-intel-events .ov-events-today-marker{display:none!important}
+.term-intel-events .ov-event-impact-grid,.term-intel-events .ov-event-desc{display:none!important}
+.term-intel-events .ov-events-today-marker{font-size:var(--text-xs);padding:4px 0;margin:2px 0}
+.term-intel-events .ov-events-news-hint{font-size:var(--text-xs);padding:8px 0;line-height:1.45;color:var(--text-4)}
+.term-intel-events .ov-event-row.past .ov-event-date .countdown{opacity:.45}
+.term-intel-events .ov-event-row.ov-event-news .ov-event-desc{display:none}
 .term-intel-hd .term-beta{margin-left:auto;font-size:10px;font-weight:400;opacity:.5;letter-spacing:.06em;text-transform:uppercase}
 .term-intel-risk{flex:0 0 auto;min-height:0;overflow:hidden;padding:6px 8px;border-radius:10px;background:rgba(255,255,255,.02);border:1px solid var(--border)}
 .term-intel-risk .ov-insights{display:flex;flex-direction:column;gap:3px;margin:0;max-height:100%;overflow:hidden}
@@ -923,7 +930,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
             <div class="card ov-events-card mb-0" id="ov-events-card">
               <div class="ov-events-hd">
                 <div>
-                  <div class="card-title" style="margin-bottom:0"><i class="ti ti-calendar-event"></i> Upcoming Events</div>
+                  <div class="card-title" style="margin-bottom:0"><i class="ti ti-calendar-event"></i> 大事件关注</div>
                   <div class="ov-events-sub" id="ov-events-range">近1个月已发生 + 未来12个月 · 宏观 + 持仓到期</div>
                 </div>
                 <div class="ov-events-filters" id="ov-events-filters">
@@ -4097,16 +4104,6 @@ function renderMajorEventsWatch(){
   let combined=[...events.map(e=>({...e,kind:'event'})),...newsItems];
   if(ovEventsFilter==='news')combined.sort((a,b)=>b.date.localeCompare(a.date)||b.score-a.score);
   else combined.sort((a,b)=>a.date.localeCompare(b.date)||(a.kind==='event'&&b.kind==='news'?-1:a.kind==='news'&&b.kind==='event'?1:0));
-  const onOverview=document.getElementById('page-overview')?.classList.contains('active');
-  if(onOverview&&ovEventsFilter==='all'){
-    const evOnly=combined.filter(x=>x.kind==='event');
-    const upcoming=evOnly.filter(e=>eventDaysUntil(e.date)>=0).sort((a,b)=>{
-      const imp=e=>e.impact==='high'?0:e.impact==='med'?1:2;
-      return imp(a)-imp(b)||a.date.localeCompare(b.date);
-    });
-    combined=upcoming.slice(0,3).map(e=>({...e,kind:'event'}));
-  }
-
   if(!combined.length){
     const emptyMsg=ovEventsFilter==='news'
       ?'暂无持仓相关资讯。请打开「资讯」页点击「刷新资讯」，或使用顶栏「全部同步」。'
