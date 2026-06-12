@@ -2095,6 +2095,8 @@ function hydrateStocksFromCacheOnLoad(){
 function parseTwelveDataQuotePayload(d){
   if(!d||d.error)return null;
   if(typeof d.code==='number'&&d.code>=400)return null;
+  const px=parseFloat(d.price||0);
+  if(px>0&&isFinite(px))return px;
   const ext=parseFloat(d.extended_price||d.prepost_price||0);
   const reg=parseFloat(d.close||0);
   const p=ext>0?ext:reg;
@@ -2118,6 +2120,37 @@ async function fetchTwelveDataStockPriceDetailed(ticker){
     const p=parseTwelveDataQuotePayload(d);
     return{price:p,rateLimited:false};
   }catch(e){return{price:null,rateLimited:false};}
+}
+async function fetchTwelveDataBatch(tickers){
+  const syms=tickers.map(t=>String(t||'').trim().toUpperCase()).filter(Boolean);
+  if(!syms.length||(location.protocol!=='https:'&&location.protocol!=='http:'))
+    return{map:new Map(),rateLimited:false};
+  try{
+    const r=await fetch(
+      location.origin+'/api/stock-price?symbol='+encodeURIComponent(syms.join(',')),
+      {cache:'no-store'}
+    );
+    const d=await r.json();
+    const isMulti=syms.length>1;
+    const out=new Map();
+    let rateLimited=false;
+    if(isMulti){
+      for(const sym of syms){
+        const entry=d[sym];
+        if(!entry)continue;
+        if(isTwelveDataRateLimited(entry)){rateLimited=true;continue;}
+        const p=parseTwelveDataQuotePayload(entry);
+        if(p>0)out.set(sym,p);
+      }
+    }else{
+      if(isTwelveDataRateLimited(d))return{map:out,rateLimited:true};
+      const p=parseTwelveDataQuotePayload(d);
+      if(p>0)out.set(syms[0],p);
+    }
+    return{map:out,rateLimited};
+  }catch(e){
+    return{map:new Map(),rateLimited:false};
+  }
 }
 async function fetchTwelveDataStockPrice(ticker){
   const r=await fetchTwelveDataStockPriceDetailed(ticker);
@@ -2175,8 +2208,8 @@ async function fetchYahooStockPrice(ticker){
 
 // ══ Finnhub：REST 经同源 /api/finnhub-quote（密钥在 Vercel 环境变量 FINNHUB_TOKEN）；浏览器不再持有 token，故不使用 wss ══
 const FINNHUB_WATCH_SYMBOLS=['NVDA','TSLA','PLTR','VOO','CRCL'];
-/** 后台美股轮询：Twelve Data → Yahoo → 缓存 fallback；默认 10 分钟 */
-const FINNHUB_QUOTE_POLL_MS=600000;
+/** 后台美股轮询：Twelve Data 批量 → Yahoo → 缓存 fallback；默认 30 分钟 */
+const FINNHUB_QUOTE_POLL_MS=1800000;
 const FH_QUOTE_STAGGER_MS=700;
 /** 自动刷新时：汇率单次最大漂移、行情单次最大跳变（防多源 API 噪声导致总净值乱跳） */
 const FX_AUTO_MAX_DRIFT_PCT=0.0008;
@@ -2480,13 +2513,35 @@ async function pollFinnhubQuotesOnce(){
   const syms=[...finnhubDesiredSymbols()];
   if(!syms.length)return;
   if(location.protocol!=='http:'&&location.protocol!=='https:')return;
+
+  let tdMap=new Map();
+  if(!__stockTdRateLimited){
+    const batch=await fetchTwelveDataBatch(syms);
+    if(batch.rateLimited){
+      __stockTdRateLimited=true;
+    }else{
+      tdMap=batch.map;
+      if(tdMap.size>0)__stockTdRateLimited=false;
+    }
+  }
+
   for(const sym of syms){
-    const result=await fetchStockPriceWithFallback(sym);
-    if(!result||!(result.price>0))continue;
-    patchUsStockLiveRow(sym,result.price,{
-      force:result.source==='cache',
-      source:result.source,
-      timestamp:result.timestamp,
+    let price=tdMap.get(sym)||null;
+    let source=price?'twelve':null;
+    if(price&&price>0){
+      writeStockPriceCache(sym,price);
+    }else{
+      const fallback=await fetchStockPriceWithFallback(sym);
+      if(fallback?.price>0){
+        price=fallback.price;
+        source=fallback.source;
+      }
+    }
+    if(!(price>0))continue;
+    patchUsStockLiveRow(sym,price,{
+      force:source==='cache',
+      source,
+      timestamp:Date.now(),
     });
   }
   updateStockQuoteFallbackBanner();
@@ -5379,10 +5434,10 @@ async function refreshAllQuotes(){
   }
 }
 
-const AUTO_QUOTE_REFRESH_MS=600000;
+const AUTO_QUOTE_REFRESH_MS=1800000;
 let autoQuoteRefreshTimer=null,quoteRefreshBusy=false;
 
-/** 每 10 分钟静默刷新黄金/基金/BTC（不含汇率/快照/资讯/美股；美股见 pollFinnhubQuotesOnce） */
+/** 每 30 分钟静默刷新黄金/基金/BTC（不含汇率/快照/资讯/美股；美股见 pollFinnhubQuotesOnce） */
 async function autoRefreshQuotesSilent(){
   if(quoteRefreshBusy)return;
   quoteRefreshBusy=true;

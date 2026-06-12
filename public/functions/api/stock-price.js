@@ -1,38 +1,5 @@
 import { jsonResponse, optionsResponse, getQueryParam } from '../_helpers.js';
 
-/** Twelve Data 多标的 quote 响应可能是数组、单对象或按 ticker 分键的对象 */
-function parseMultiQuoteResponse(data, requestedUpper) {
-  if (!data || typeof data !== 'object') return [];
-  if (Array.isArray(data)) return data;
-  if (typeof data.symbol === 'string' && requestedUpper.length <= 1) return [data];
-  const want = new Set(requestedUpper);
-  const out = [];
-  for (const sym of requestedUpper) {
-    const block = data[sym];
-    if (block && typeof block === 'object' && !Array.isArray(block)) {
-      if (typeof block.symbol === 'string' || block.close != null || block.open != null)
-        out.push(block);
-    }
-  }
-  if (out.length) return out;
-  for (const k of Object.keys(data)) {
-    if (k === 'symbol' || k === 'code' || k === 'message' || k === 'status') continue;
-    const v = data[k];
-    if (
-      v &&
-      typeof v === 'object' &&
-      !Array.isArray(v) &&
-      typeof v.symbol === 'string' &&
-      want.has(String(v.symbol).trim().toUpperCase())
-    ) {
-      out.push(v);
-    }
-  }
-  if (out.length) return out;
-  if (typeof data.symbol === 'string') return [data];
-  return [];
-}
-
 export async function onRequest(context) {
   const { request, env } = context;
 
@@ -45,24 +12,19 @@ export async function onRequest(context) {
 
   const url = new URL(request.url);
   const rawSym = getQueryParam(url, 'symbol');
-  const rawSyms = getQueryParam(url, 'symbols');
-
-  let symbolStr = '';
-  let isBatch = false;
-  if (rawSyms != null && String(rawSyms).trim()) {
-    isBatch = true;
-    const parts = String(rawSyms)
-      .split(',')
-      .map((s) => s.trim().toUpperCase())
-      .filter(Boolean);
-    symbolStr = [...new Set(parts)].join(',');
-  } else if (rawSym != null && String(rawSym).trim()) {
-    symbolStr = String(rawSym).trim();
-  }
-
-  if (!symbolStr) {
+  if (rawSym == null || !String(rawSym).trim()) {
     return jsonResponse({ error: 'missing symbol' });
   }
+
+  const symbols = String(rawSym)
+    .split(',')
+    .map((s) => s.trim().toUpperCase())
+    .filter(Boolean);
+  const uniqueSymbols = [...new Set(symbols)];
+  if (!uniqueSymbols.length) {
+    return jsonResponse({ error: 'missing symbol' });
+  }
+  const symbolStr = uniqueSymbols.join(',');
 
   const key =
     env.TWELVE_DATA_KEY ||
@@ -78,7 +40,7 @@ export async function onRequest(context) {
   }
 
   try {
-    const apiUrl = `https://api.twelvedata.com/quote?symbol=${encodeURIComponent(symbolStr)}&apikey=${encodeURIComponent(String(key).trim())}&dp=2&prepost=true`;
+    const apiUrl = `https://api.twelvedata.com/price?symbol=${encodeURIComponent(symbolStr)}&apikey=${encodeURIComponent(String(key).trim())}`;
     const r = await fetch(apiUrl);
     const data = await r.json();
 
@@ -90,12 +52,6 @@ export async function onRequest(context) {
         error: data.message || 'twelve data error',
         code: data.code,
       });
-    }
-
-    if (isBatch) {
-      const reqList = symbolStr.split(',').map((s) => s.trim().toUpperCase()).filter(Boolean);
-      const quotes = parseMultiQuoteResponse(data, reqList);
-      return jsonResponse({ quotes });
     }
 
     return jsonResponse(data);
