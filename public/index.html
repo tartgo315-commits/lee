@@ -184,12 +184,19 @@ input[type=text],input[type=number],input[type=date],select,textarea{font-size:v
 .term-nav-chart-foot{display:flex;align-items:center;justify-content:space-between;margin-top:3px}
 .term-nav-chart-foot .ov-assets-chart-lbl{font-size:9px}
 .term-nav-chart-foot .rt{padding:2px 6px;font-size:9px}
-.term-nav-goal .ov-goal-hd{margin-bottom:0}
-.term-nav-goal .ov-goal-pct{font-size:14px;font-family:var(--mono)}
+.term-nav-goal{display:flex;flex-direction:column;gap:4px;position:relative}
+.term-nav-goal .ov-goal-inner{display:flex;flex-direction:column;gap:4px;min-height:0}
+.term-nav-goal .ov-goal-hd{margin:0;display:flex;align-items:center;justify-content:space-between;gap:6px}
+.term-nav-goal .ov-goal-lbl{font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-4)}
+.term-nav-goal .term-goal-row{display:flex;align-items:center;gap:8px;flex:1;min-height:0}
+.term-nav-goal .term-goal-chart{position:relative;flex:0 0 42px;width:42px!important;height:42px!important;max-width:42px!important}
+.term-nav-goal .term-goal-center{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:9px;font-family:var(--mono);font-weight:600;color:var(--text-1);pointer-events:none;line-height:1}
+.term-nav-goal .term-goal-meta-col{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;font-size:9px;line-height:1.3;color:var(--text-4)}
+.term-nav-goal #goal-current{font-family:var(--mono);font-size:10px;color:var(--text-2)}
+.term-nav-goal #goal-target,#goal-remaining,#goal-eta{font-size:9px}
 .term-nav-goal .ov-goal-aside{display:none}
-.term-nav-goal .ov-goal-track{height:3px;margin-top:3px}
-.term-nav-goal .ov-goal-meta{margin-top:3px;font-size:9px}
-.term-nav-goal .ov-goal-edit{top:4px;right:4px;width:22px;height:22px}
+.term-nav-goal .ov-goal-track,.term-nav-goal .ov-goal-meta{display:none}
+.term-nav-goal .ov-goal-edit{position:static;width:20px;height:20px;flex-shrink:0}
 .term-alloc-card{min-height:0;display:flex;flex-direction:column;justify-content:flex-start}
 .term-alloc-card .card-title{font-size:9px;margin-bottom:4px;color:var(--text-4);letter-spacing:.06em;text-transform:uppercase}
 .term-alloc-row{display:flex;align-items:center;gap:8px;min-height:0;flex:1}
@@ -842,18 +849,24 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
             <div class="ov-goal-inner">
               <div class="ov-goal-hd">
                 <span class="ov-goal-lbl" id="goal-label">存款目标</span>
-                <span class="ov-goal-pct" id="goal-pct">—%</span>
+                <button type="button" class="btn btn-icon btn-sm ov-goal-edit" onclick="openGoalEdit()" title="修改目标"><i class="ti ti-pencil"></i></button>
               </div>
-              <div class="ov-goal-track"><div id="goal-fill"></div></div>
-              <div class="ov-goal-meta">
-                <span id="goal-current">¥—</span>
-                <span id="goal-target">目标 ¥1,500,000</span>
+              <div class="term-goal-row">
+                <div class="ov-donut-wrap ov-pie-canvas term-goal-chart">
+                  <canvas id="chart-goal"></canvas>
+                  <div class="term-goal-center ov-goal-pct" id="goal-pct">—%</div>
+                </div>
+                <div class="term-goal-meta-col">
+                  <span id="goal-current">¥—</span>
+                  <span id="goal-target">目标 ¥1,500,000</span>
+                  <span id="goal-remaining">—</span>
+                  <span id="goal-eta">预计达成 —</span>
+                </div>
               </div>
-              <div class="ov-goal-aside">
-                <span class="ov-goal-aside-lbl">还差 <span class="ov-goal-remaining" id="goal-remaining">—</span></span>
-                <span class="ov-goal-eta" id="goal-eta">预计达成 —</span>
+              <div class="ov-goal-aside" aria-hidden="true">
+                <span class="ov-goal-aside-lbl">还差 <span class="ov-goal-remaining">—</span></span>
               </div>
-              <button type="button" class="btn btn-icon btn-sm ov-goal-edit" onclick="openGoalEdit()" title="修改目标"><i class="ti ti-pencil"></i></button>
+              <div id="goal-fill" style="display:none" aria-hidden="true"></div>
             </div>
           </div>
           <div class="term-alloc-card">
@@ -3036,25 +3049,39 @@ function renderSidebar(){
 function updateGoalBar(){
   const fill=document.getElementById('goal-fill');
   const pctEl=document.getElementById('goal-pct');
+  const ctxG=document.getElementById('chart-goal');
   const curEl=document.getElementById('goal-current');
   const tgtEl=document.getElementById('goal-target');
   const lblEl=document.getElementById('goal-label');
   const remEl=document.getElementById('goal-remaining');
   const etaEl=document.getElementById('goal-eta');
-  if(!fill||!pctEl||!curEl||!tgtEl||!lblEl||!remEl||!etaEl)return;
+  if(!pctEl||!curEl||!tgtEl||!lblEl||!remEl||!etaEl)return;
   const goal=D.goal;
-  if(!goal||!goal.amount){return;}
+  if(!goal||!goal.amount){
+    if(ovGoalChart){try{ovGoalChart.destroy();}catch(e){}ovGoalChart=null;}
+    pctEl.textContent='—%';
+    return;
+  }
   const cny=totalCNY();
   const target=goal.currency==='CNY'?Number(goal.amount):toCNY(Number(goal.amount),goal.currency||'CNY');
   if(!isFinite(target)||target<=0)return;
   const pct=Math.min(100,cny/target*100);
   const remaining=Math.max(0,target-cny);
-  fill.style.width=pct.toFixed(1)+'%';
+  if(fill)fill.style.width=pct.toFixed(1)+'%';
   pctEl.textContent=pct.toFixed(1)+'%';
   curEl.textContent=fc(cny,'CNY',0);
   tgtEl.textContent='目标 '+fc(target,'CNY',0);
   lblEl.textContent=goal.label||'财富目标';
   remEl.textContent=remaining>0?'还差 '+fc(remaining,'CNY',0):'🎉 已达成';
+  const achieved=Math.min(cny,target);
+  const gap=Math.max(0,target-cny);
+  if(ctxG){
+    if(gap>0.01){
+      ovGoalChart=upsertOvDonutChart(ovGoalChart,ctxG,['已达','差额'],[achieved,gap],['rgba(5,150,105,.85)','rgba(255,255,255,.08)'],['rgba(5,150,105,.45)','rgba(255,255,255,.06)'],target);
+    }else{
+      ovGoalChart=upsertOvDonutChart(ovGoalChart,ctxG,['已达'],[target],['rgba(5,150,105,.85)'],['rgba(5,150,105,.45)'],target);
+    }
+  }
   const snaps=(D.navHistory||[]).slice().filter(n=>n&&n.date&&n.cny!=null&&!isNaN(Number(n.cny))).sort((a,b)=>a.date.localeCompare(b.date));
   if(remaining<=0){
     etaEl.textContent='—';
@@ -3595,7 +3622,7 @@ async function fetchAiAdvice(){
 }
 
 // ══ OVERVIEW ══
-let ovChart=null,ovDashChartRegion=null,ovDashChartLiq=null,ovRange=30,__ovChartDays=null,__ovChartDark=null;
+let ovChart=null,ovDashChartRegion=null,ovDashChartLiq=null,ovGoalChart=null,ovRange=30,__ovChartDays=null,__ovChartDark=null;
 let ovEventsFilter='all';
 
 const MACRO_EVENTS_WATCH=[
