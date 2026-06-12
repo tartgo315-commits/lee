@@ -229,7 +229,7 @@ input[type=text],input[type=number],input[type=date],select,textarea{font-size:v
 .term-intel-ai{display:none!important}
 .term-intel-events #ov-events-card{background:transparent;border:none;padding:0;margin:0;box-shadow:none!important;flex:1 1 0;min-height:0;min-width:0;max-width:100%;display:grid;grid-template-rows:auto minmax(0,1fr) auto;overflow:hidden}
 .term-intel-events .ov-events-card{background:transparent;border:none;padding:0;margin:0;box-shadow:none!important;flex:1 1 0;min-height:0;min-width:0;max-width:100%;display:grid;grid-template-rows:auto minmax(0,1fr) auto;overflow:hidden}
-.term-intel-events .ov-events-hd{margin-bottom:6px;flex-shrink:0;display:flex;flex-direction:column;gap:6px;min-width:0;max-width:100%}
+.term-intel-events .ov-events-hd{grid-row:1;margin-bottom:6px;flex-shrink:0;display:flex;flex-direction:column;gap:6px;min-width:0;max-width:100%}
 .term-intel-events .ov-events-hd .card-title{font-size:var(--fs-card-lbl);margin:0;letter-spacing:.08em;text-transform:uppercase}
 .term-intel-events .ov-events-sub{display:block;font-size:var(--text-xs);font-weight:400;opacity:.6;color:var(--text-4);line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
 .term-intel-events .ov-events-filters{display:flex;flex-wrap:wrap;gap:4px;min-width:0;max-width:100%}
@@ -3710,7 +3710,7 @@ const MACRO_EVENTS_WATCH=[
     fact:'联邦基金利率目标区间维持 4.25%–4.50% 不变；声明强调通胀仍高于 2% 目标但继续回落，劳动力市场供需更趋平衡。',
     expected:'按兵不动→短债与成长股偏利好，美元偏中性；若意外鹰派则美股科技承压、美元走强。',
     actual:'决议公布当日标普 500 约 +0.6%，纳指跑赢；10Y 美债收益率下行约 4bp，DXY 小幅走弱；市场解读为「偏鸽暂停」。'},
-  {date:'2026-05-13',title:'美国 4 月 CPI 通胀数据',region:'us',cat:'market',impact:'high',
+  {date:'2026-05-12',title:'美国 4 月 CPI 通胀数据',region:'us',cat:'market',impact:'high',
     fact:'4 月核心 CPI 同比 +3.2%（预期 +3.4%），环比 +0.2%；整体 CPI 同比 +3.1%，能源与住房分项放缓。',
     expected:'低于预期→降息预期升温，利好美股与黄金，压制美元；高于预期则反向。',
     actual:'数据公布后标普期货约 +1.0%，黄金日内走强；FedWatch 显示 9 月降息概率升至约 62%；成长板块领涨。'},
@@ -3731,15 +3731,21 @@ const MACRO_EVENTS_WATCH=[
     expected:'就业降温→支撑降息叙事，利好债券与成长股；超预期强劲则推迟降息、美元反弹。',
     actual:'公布后 2Y 美债收益率约 -6bp，标普日内 +0.5%；美元对一篮子货币走弱；科技 vs 金融板块轮动加剧。'},
   {date:'2026-06-10',title:'美国 5 月 CPI 通胀数据',region:'us',cat:'market',impact:'high',
-    fact:'美国劳工统计局美东 8:30 公布 5 月 CPI：关注核心 CPI 同比/环比、住房与服务业分项；为 6/17 FOMC 前最后一次关键通胀读数。',
-    expected:'低于预期→Fed 降息预期升温，利好美债与成长股、压制美元；高于预期则收益率与美元走强，MAG7 等高估值板块承压。',
-    actualPending:true,
-    actual:''},
+    fact:'BLS 美东 6/10 08:30 公布：5 月 CPI 季调环比 +0.5%（4 月 +0.6%），未季调同比 +4.2%；核心 CPI 同比 +3.1%。',
+    expected:'高于预期→收益率与美元偏强，高估值美股承压；低于预期则相反。为 6/17 FOMC 前最后一次关键通胀读数。',
+    actual:'整体 CPI 同比 +4.2%、核心 +3.1%；环比 +0.5% 仍偏热，市场关注 6/17 FOMC 措辞。'},
+  {date:'2026-06-10',title:'中国 5 月 CPI / PPI 数据',region:'cn',cat:'market',impact:'high',
+    fact:'国家统计局 6/10 09:30：5 月 CPI 同比 +1.2%、环比 -0.1%；核心 CPI +1.1%。PPI 同比 +3.9%、环比 +0.5%。',
+    expected:'CPI 温和、PPI 回升→政策仍有空间但上游成本传导需关注；影响 A 股/港股情绪与人民币资产。',
+    actual:'CPI +1.2% 总体平稳，PPI +3.9% 为 2022 年 8 月以来同比新高，上游价格压力仍存。'},
+  {date:'2026-06-11',title:'美国 5 月 PPI 生产者价格指数',region:'us',cat:'market',impact:'high',
+    fact:'BLS 美东 6/11 08:30 公布 5 月 PPI（非 CPI，但同为关键通胀前瞻）。',
+    expected:'PPI 偏强→下游 CPI 粘性担忧、收益率上行；偏弱则缓解 Fed 鹰派压力。'},
   {date:'2026-06-17',title:'FOMC 利率决议',region:'us',cat:'monetary',impact:'high',
     expected:'公布利率决定、经济预测摘要（SEP）与鲍威尔发布会；点阵图将定调下半年降息次数预期，直接影响美元、美债与美股估值。'},
   {date:'2026-06-30',title:'二季度末 · 机构再平衡窗口',region:'global',cat:'market',impact:'medium',
     expected:'季末指数调仓、基金窗口期与流动性季节性收紧；半年度收官或放大波动，注意美股末日期权到期（6/27）。'},
-  {date:'2026-07-15',title:'美国 CPI 通胀数据',region:'us',cat:'market',impact:'high',
+  {date:'2026-07-14',title:'美国 6 月 CPI 通胀数据',region:'us',cat:'market',impact:'high',
     expected:'核心通胀走势决定 Fed 是否开启降息周期；低于预期利好美债与成长股，高于预期则美元与短端利率反弹。'},
   {date:'2026-07-29',title:'FOMC 利率决议',region:'us',cat:'monetary',impact:'high',
     expected:'关注声明对「双重使命」权衡的措辞；若释放 9 月降息信号，Risk-on 资产或迎来新一轮行情。'},
@@ -3801,7 +3807,7 @@ function eventDefaultClock(ev){
   if(ev.time)return ev.time;
   if(ev.personal)return null;
   if(ev.region==='us')return ev.cat==='monetary'?'14:00':ev.cat==='market'?'08:30':'09:00';
-  if(ev.region==='cn')return '09:00';
+  if(ev.region==='cn')return ev.cat==='market'?'09:30':'09:00';
   return null;
 }
 
@@ -6319,6 +6325,7 @@ function importCbaAuPreset(){
   }
 })();
 renderOverview();
+initIntelHeightObserver();
 renderSidebar();
 updateGoldChip();
 refreshBtcPrice();
