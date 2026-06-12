@@ -68,7 +68,7 @@ body{
   font-family:'Inter',-apple-system,sans-serif;background:var(--bg-page);color:var(--text-1);
   font-size:var(--text-base);line-height:var(--lh-body);-webkit-font-smoothing:antialiased;min-height:100%;display:flex;flex-direction:column;
 }
-.mono,.ph-main,.or-primary,.or-secondary,.or-acc-amt,.ov-head-cell-val,.ov-acc-total,.ov-prod-amt,.ov-prod-pnl,.ov-pnl-item,.pr-amt,.pr-pnl,.pr-pct,.fh-px,.fh-mkt-cny,.fh-mkt-usd,.hist-table td,.st-cny,.tc-val,.ov-hero-nav,.ov-hero-fx-item .val,.fx-chip-rate,.topbar-btc-usd,.ov-goal-pct{
+.mono,.ph-main,.or-primary,.or-secondary,.or-acc-amt,.ov-head-cell-val,.ov-acc-total,.ov-prod-amt,.ov-prod-pnl,.ov-pnl-item,.pr-amt,.pr-pnl,.pr-pct,.fh-px,.fh-mkt-cny,.fh-mkt-usd,.hist-table td,.st-cny,.tc-val,.ov-hero-nav,.ov-hero-fx-item .val,.fx-chip-rate,.ov-goal-pct{
   font-variant-numeric:tabular-nums;
 }
 #ov-cny,.ov-hero-nav{font-size:var(--fs-nav);font-weight:700;letter-spacing:-.025em;line-height:1.1;color:var(--text-1)}
@@ -130,11 +130,7 @@ input[type=text],input[type=number],input[type=date],select,textarea{font-size:v
 .fx-chip:hover{border-color:var(--card-hover-border);transform:translateY(-1px)}
 .fx-chip-pair{color:var(--text-3);font-weight:400;font-size:10px;opacity:.5;letter-spacing:.02em}
 .fx-chip-rate{font-family:var(--mono);color:var(--text-1);font-weight:600;font-size:14px;font-variant-numeric:tabular-nums}
-.topbar-btc{display:inline-flex;flex-direction:column;align-items:flex-start;gap:1px;flex-shrink:0;padding:4px 10px;border-radius:8px;border:1px solid var(--card-border);background:transparent;cursor:pointer;transition:all var(--ease-lux);line-height:1.2}
-.topbar-btc:hover{border-color:var(--card-hover-border);transform:translateY(-1px)}
-.topbar-btc-pair{font-size:10px;font-weight:400;opacity:.5;color:var(--text-3)}
-.topbar-btc-usd{font-size:14px;font-weight:600;color:var(--text-1);font-family:var(--mono)}
-.topbar-btc-cny,.topbar-btc-chg{display:none}
+.fx-chip[role="button"]{cursor:pointer}
 .topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px;flex-shrink:0}
 #theme-btn{display:none}
 .sidebar{position:static;width:100%;height:44px;min-height:44px;flex-direction:row;background:rgba(12,16,24,.88);backdrop-filter:var(--glass-blur);border-bottom:1px solid var(--border);flex-shrink:0}
@@ -769,12 +765,6 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
     <div class="topbar-brand"><span class="topbar-brand-name">LEE's Wealth</span></div>
     <div class="topbar-title" id="topbar-title">总览</div>
     <div class="fx-strip" id="fx-strip"></div>
-    <div class="topbar-btc" id="topbar-btc" title="Bitcoin · 点击刷新" onclick="refreshBtcPrice()" role="button" tabindex="0">
-      <span class="topbar-btc-pair">BTC/USD</span>
-      <span class="topbar-btc-usd" id="btc-price-usd">—</span>
-      <span class="topbar-btc-cny" id="btc-price-cny" hidden></span>
-      <span class="topbar-btc-chg" id="btc-change" hidden></span>
-    </div>
     <div class="topbar-right">
       <button type="button" class="btn btn-icon btn-sm" id="theme-btn" onclick="toggleNight()" title="深色 / 日间主题切换" aria-label="切换深浅色主题">☀️</button>
       <button type="button" class="btn btn-outline btn-sm" id="snap-btn" onclick="takeSnapshot()" title="写入今日 NAV 历史快照"><i class="ti ti-camera"></i> 快照</button>
@@ -3043,6 +3033,7 @@ function renderSidebar(){
   fxParts.push(`<div class="fx-chip" title="1 澳元 = ${audUsd} 美元"><span class="fx-chip-pair">AUD/USD</span><span class="fx-chip-rate">${audUsd}</span></div>`);
   fxParts.push(`<div class="fx-chip" id="gold-price-chip" title="上海金 AU9999 · 点击刷新" onclick="refreshGoldChip()" style="cursor:pointer"><span class="fx-chip-pair">Au/g</span><span class="fx-chip-rate" id="fc-gold">—</span></div>`);
   fxParts.push('<div class="fx-chip" id="td-expiry-chip" style="display:none" aria-live="polite"><span class="fx-chip-pair">近到期</span><span class="fx-chip-rate" id="fc-td-expiry">—</span></div>');
+  fxParts.push('<div class="fx-chip" id="topbar-btc" title="Bitcoin · 点击刷新" onclick="refreshBtcPrice()" role="button" tabindex="0"><span class="fx-chip-pair">BTC/USD</span><span class="fx-chip-rate" id="btc-price-usd">—</span><span id="btc-price-cny" hidden></span><span id="btc-change" hidden></span></div>');
   document.getElementById('fx-strip').innerHTML=fxParts.join('');
   updateGoldChip();
   updateBtcTicker(D.btcQuote||null);
