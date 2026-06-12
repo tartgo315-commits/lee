@@ -3025,16 +3025,6 @@ function buildAuTdBanners(ps){
       parts.push(`<div class="au-td-alert">⏰ <strong>定存到期提醒（7天内）</strong> · ${escOvHtml(p.name||'定存')} · 当前约 ${fc(tdCurVal(p),cur,2)} · 还剩 <strong>${dl}</strong> 天 · 到期日 ${escOvHtml(String(p.tdContractEnd||p.tdEnd||''))}</div>`);
     }
   }
-  if(tds.length){
-    let wsumCny=0;
-    const wlines=tds.map(p=>{
-      const cv=tdCurVal(p),w=cv*(p.rate||0)/100/52,cur=p.tdCur||'AUD';
-      wsumCny+=toCNY(w,cur);
-      return `${escOvHtml((p.name||'定存').slice(0,18))} ${p.rate||0}% · ~${fc(w,cur,2)}`;
-    });
-    const wsumAud=fromCNY(wsumCny,'AUD');
-    parts.push(`<div class="au-td-weekly"><strong>定存本周估算利息（合计）</strong> ${fc(wsumAud,'AUD',2)} <span class="dim">年利率÷52×当前本息，非银行精确结息</span><div class="tw">${wlines.join(' · ')}</div></div>`);
-  }
   return parts.join('');
 }
 /** 美国区：手填账户闲置 USD 替换该账户内美元现金条时的 CNY 调整量（须与分账户合计逻辑一致，否则总览顶部 ≠ 三区之和） */
@@ -4431,7 +4421,7 @@ function renderOverview(){
           const cur=p.tdCur||'AUD',curVal=tdCurVal(p),acc=tdAccruedVsOrig(p),daysLeft=tdDaysLeft(p);
           const wk=curVal*(p.rate||0)/100/52;
           name=p.name||'定期存款';
-          sub=`定存利率 ${p.rate||0}% p.a.${daysLeft!==null?` · ${daysLeft}天后到期`:''} · 本周约 +${fc(wk,cur,2)}`;
+          sub=`定存利率 ${p.rate||0}% p.a. · 本周约 +${fc(wk,cur,2)}${daysLeft!==null?` · ${daysLeft}天后到期`:''}`;
           amt=fc(curVal,cur,2);
           cnyStr=`≈ ${fc(cny,'CNY',0)}`;
           pnl=`<div class="ov-prod-pnl pos">+${fc(acc,cur,2)} 应计</div>`;
