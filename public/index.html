@@ -306,6 +306,8 @@ input[type=text],input[type=number],input[type=date],select,textarea{font-size:v
 #page-overview .ov-prod-sub{display:none}
 #page-overview .ov-prod-row[data-ov-ticker] .ov-prod-sub{display:block;font-size:10px;line-height:1.35;margin-top:2px;color:var(--text-4)}
 #page-overview .ov-prod-row[data-ov-ticker]{align-items:flex-start;min-height:auto;padding:6px 8px}
+#page-overview .ov-prod-row[data-ov-td] .ov-prod-sub{display:block;font-size:10px;line-height:1.35;margin-top:2px;color:var(--text-4)}
+#page-overview .ov-prod-row[data-ov-td]{align-items:flex-start;min-height:auto;padding:6px 8px}
 #page-overview .ov-prod-cny{display:none}
 #page-overview .ov-prod-ticktag{display:none}
 #page-overview .ov-prod-px{display:none}
@@ -3028,7 +3030,7 @@ function buildAuTdBanners(ps){
     const wlines=tds.map(p=>{
       const cv=tdCurVal(p),w=cv*(p.rate||0)/100/52,cur=p.tdCur||'AUD';
       wsumCny+=toCNY(w,cur);
-      return `${escOvHtml((p.name||'定存').slice(0,18))} ~${fc(w,cur,2)}`;
+      return `${escOvHtml((p.name||'定存').slice(0,18))} ${p.rate||0}% · ~${fc(w,cur,2)}`;
     });
     const wsumAud=fromCNY(wsumCny,'AUD');
     parts.push(`<div class="au-td-weekly"><strong>定存本周估算利息（合计）</strong> ${fc(wsumAud,'AUD',2)} <span class="dim">年利率÷52×当前本息，非银行精确结息</span><div class="tw">${wlines.join(' · ')}</div></div>`);
@@ -4374,7 +4376,7 @@ function renderOverview(){
         const cny=pCNY(p);
         const local=fromCNY(cny,r.cur);
         let name,sub,amt,cnyStr,pnl='',nameHtml='';
-        let perfBar='';
+        let perfBar='',ovRowExtra='';
         if(p.type==='gold'){
           const price=p.goldPrice||0,grams=p.grams||0,cost=p.goldCost||0;
           const mkt=grams*price,pnlVal=mkt-grams*cost,pct=(cost>0&&grams>0)?pnlVal/(grams*cost)*100:0;
@@ -4429,10 +4431,11 @@ function renderOverview(){
           const cur=p.tdCur||'AUD',curVal=tdCurVal(p),acc=tdAccruedVsOrig(p),daysLeft=tdDaysLeft(p);
           const wk=curVal*(p.rate||0)/100/52;
           name=p.name||'定期存款';
-          sub=`${p.rate}%p.a. · ${daysLeft!==null?daysLeft+'天后到期':''} · 本周约 +${fc(wk,cur,2)}`;
+          sub=`定存利率 ${p.rate||0}% p.a.${daysLeft!==null?` · ${daysLeft}天后到期`:''} · 本周约 +${fc(wk,cur,2)}`;
           amt=fc(curVal,cur,2);
           cnyStr=`≈ ${fc(cny,'CNY',0)}`;
           pnl=`<div class="ov-prod-pnl pos">+${fc(acc,cur,2)} 应计</div>`;
+          ovRowExtra=' data-ov-td="1"';
         } else {
           name=p.name||'—';
           sub=p.note||(r.id==='us'&&p.type==='cash'&&(p.currency||'CNY')==='USD'?'美元现金 · 可与 Tiger 预估现金/应计利息对应':'');
@@ -4442,7 +4445,7 @@ function renderOverview(){
             sub=(sub?sub+' · ':'')+`占账户 ${(cny/acny*100).toFixed(1)}%`;
           }
         }
-        return `<div class="ov-prod-row">
+        return `<div class="ov-prod-row${ovRowExtra}">
           <div class="ov-prod-main">
             ${nameHtml||`<div class="ov-prod-name">${escOvHtml(name)}</div>`}
             ${sub?`<div class="ov-prod-sub">${escOvHtml(sub)}</div>`:''}
@@ -4845,7 +4848,7 @@ function buildProductRow(p,region,primaryCur,accountTotalCNY){
     const wkEst=curVal*(p.rate||0)/100/52;
     nameCell=`<div>
       <div class="pr-name">${p.name||'定期存款'}</div>
-      <div class="pr-sub">${p.rate}% p.a. · ${cur} 本金滚存 ${fmt(p.principal,2)}${p.tdOrigPrincipal!=null?' · 开户本金 '+fmt(p.tdOrigPrincipal,2):''}</div>
+      <div class="pr-sub">定存利率 ${p.rate||0}% p.a. · ${cur} 本金滚存 ${fmt(p.principal,2)}${p.tdOrigPrincipal!=null?' · 开户本金 '+fmt(p.tdOrigPrincipal,2):''}</div>
       <div class="pr-sub" style="margin-top:4px;color:var(--text3)">本周估算利息 ~${fc(wkEst,cur,2)} · 累计应计 +${fc(acc,cur,2)}</div>
       <div style="margin-top:5px">
         <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--text3);font-family:var(--mono);margin-bottom:2px"><span>进度</span><span>${prog.toFixed(0)}%${daysLeft!==null?' · '+daysLeft+'天后到期':''}</span></div>
