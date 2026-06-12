@@ -133,10 +133,15 @@ input[type=text],input[type=number],input[type=date],select,textarea{font-size:v
 .fx-chip-pair{color:var(--text-3);font-weight:400;font-size:var(--fs-fx-lbl);opacity:.6;letter-spacing:.02em}
 .fx-chip-rate{font-family:var(--mono);color:var(--text-1);font-weight:600;font-size:var(--fs-fx-val);font-variant-numeric:tabular-nums}
 .fx-chip[role="button"]{cursor:pointer}
-.topbar-ai{display:inline-flex;align-items:center;gap:8px;flex:1;min-width:0;max-width:min(420px,36vw);margin-left:6px;padding:5px 12px;border-radius:8px;border:1px solid rgba(16,185,129,.18);background:rgba(16,185,129,.04);cursor:pointer;transition:all var(--ease-lux);text-align:left;line-height:1.2}
+.topbar-ai{display:inline-flex;align-items:center;gap:8px;flex:0 1 auto;min-width:0;max-width:min(420px,36vw);margin-left:6px;padding:5px 12px;border-radius:8px;border:1px solid rgba(16,185,129,.18);background:rgba(16,185,129,.04);cursor:pointer;transition:all var(--ease-lux);text-align:left;line-height:1.2}
 .topbar-ai:hover{border-color:var(--card-hover-border);background:rgba(16,185,129,.07);transform:translateY(-1px)}
 .topbar-ai-lbl{font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--up);opacity:.85;flex-shrink:0}
 .topbar-ai-summary{flex:1;min-width:0;font-size:12px;font-weight:400;color:var(--text-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar-cmdk{display:inline-flex;align-items:center;gap:8px;flex:0 1 auto;min-width:0;max-width:min(280px,28vw);margin-left:6px;padding:5px 12px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.03);cursor:pointer;transition:all var(--ease-lux);text-align:left;line-height:1.2;color:var(--text-4)}
+.topbar-cmdk:hover{border-color:var(--card-hover-border);background:rgba(255,255,255,.05);color:var(--text-3);transform:translateY(-1px)}
+.topbar-cmdk .ti{font-size:14px;flex-shrink:0;opacity:.7}
+.topbar-cmdk-label{flex:1;min-width:0;font-size:12px;font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar-cmdk-kbd{font-size:10px;font-family:var(--mono);color:var(--text-4);opacity:.65;flex-shrink:0;padding:1px 5px;border-radius:4px;border:1px solid var(--border);background:rgba(255,255,255,.02)}
 .topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px;flex-shrink:0}
 #theme-btn{display:none}
 .sidebar{position:static;width:100%;height:44px;min-height:44px;flex-direction:row;background:rgba(12,16,24,.88);backdrop-filter:var(--glass-blur);border-bottom:1px solid var(--border);flex-shrink:0}
@@ -687,12 +692,26 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--border-a
 .alert-info{background:var(--purple-bg);color:var(--purple);border:1px solid rgba(167,139,250,.15)}
 .alert-warn{background:var(--warn-bg);color:var(--warn);border:1px solid rgba(212,168,67,.2)}
 .alert-ok{background:var(--up-bg);color:var(--up-soft);border:1px solid var(--border-accent)}
-.app-footer{height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 var(--gutter-x);background:var(--bg-card);border-top:1px solid var(--border);flex-shrink:0}
+.app-footer{display:none!important}
 .app-footer-time{font-size:var(--text-xs);color:var(--text-4)}
 .global-refresh-strip{padding:0 var(--gutter-x) 8px;background:var(--bg-card);border-bottom:1px solid var(--border-light)}
 #toast-root .wo-toast{background:var(--bg-card);border:1px solid var(--border);color:var(--text-1);box-shadow:var(--shadow-md)}
-#cmdk-panel{background:var(--bg-card);border:1px solid var(--border)}
-#cmdk-search{background:var(--bg-page);border:1px solid var(--border);color:var(--text-1)}
+#cmdk-root{position:fixed;inset:0;z-index:260;pointer-events:none}
+#cmdk-root.open{pointer-events:auto}
+#cmdk-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);opacity:0;visibility:hidden;transition:opacity .18s ease,visibility .18s}
+#cmdk-root.open #cmdk-backdrop{opacity:1;visibility:visible}
+#cmdk-panel{position:absolute;left:50%;top:56px;transform:translate(-50%,-8px) scale(.98);z-index:1;width:min(520px,calc(100vw - 24px));max-height:min(72vh,560px);display:flex;flex-direction:column;border-radius:12px;border:1px solid var(--border);background:var(--bg-card);box-shadow:var(--shadow-md);opacity:0;visibility:hidden;transition:opacity .18s ease,transform .18s ease,visibility .18s}
+#cmdk-root.open #cmdk-panel{opacity:1;visibility:visible;transform:translate(-50%,0) scale(1)}
+#cmdk-panel .cmdk-hd{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
+#cmdk-search{flex:1;min-width:0;background:var(--bg-page);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:var(--text-sm);color:var(--text-1);font-family:inherit}
+#cmdk-search:focus{outline:none;border-color:var(--border-hover)}
+#cmdk-panel .cmdk-hint{font-size:11px;color:var(--text-4);font-family:var(--mono);white-space:nowrap}
+#cmdk-list{overflow-y:auto;max-height:min(56vh,480px);padding:6px}
+.cmdk-item{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:10px 12px;border:none;border-radius:8px;background:transparent;color:var(--text-3);font-size:var(--text-sm);font-family:inherit;cursor:pointer;transition:background .12s,color .12s}
+.cmdk-item:hover,.cmdk-item.cmdk-item-active{background:var(--bg-hover);color:var(--text-1)}
+.cmdk-item-ico{width:28px;text-align:center;flex-shrink:0;font-size:18px}
+.cmdk-item-meta{margin-left:auto;font-size:11px;color:var(--text-4);font-family:var(--mono)}
+.cmdk-empty{padding:24px 16px;text-align:center;color:var(--text-4);font-size:var(--text-sm)}
 .total-bar{display:grid;gap:16px}
 .total-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px}
 .ov-head-triple{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:1px solid var(--border-light);border-radius:var(--radius-md);overflow:visible;margin-top:12px}
@@ -779,6 +798,8 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
   .card,.ov-hero-card{padding:20px}
   .topbar-ai{flex:0 0 auto;max-width:52px;padding:4px 10px}
   .topbar-ai-summary{display:none}
+  .topbar-cmdk{max-width:36px;padding:4px 10px}
+  .topbar-cmdk-label,.topbar-cmdk-kbd{display:none}
 }
 </style>
 </head>
@@ -812,11 +833,17 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
     <div class="topbar-brand"><span class="topbar-brand-name">LEE's Wealth</span></div>
     <div class="topbar-title" id="topbar-title">总览</div>
     <div class="fx-strip" id="fx-strip"></div>
+    <button type="button" class="topbar-cmdk" id="topbar-cmdk" onclick="openCmdk()" title="搜索页面与操作 (Ctrl+K)" aria-label="打开命令面板">
+      <i class="ti ti-search"></i>
+      <span class="topbar-cmdk-label">搜索页面与操作…</span>
+      <span class="topbar-cmdk-kbd">Ctrl+K</span>
+    </button>
     <button type="button" class="topbar-ai" id="topbar-ai" onclick="openAiModal()" title="打开 AI 详细分析" aria-label="AI 今日解读">
       <span class="topbar-ai-lbl">AI</span>
       <span class="topbar-ai-summary" id="topbar-ai-summary">加载今日解读…</span>
     </button>
     <div class="topbar-right">
+      <button type="button" class="btn btn-icon btn-sm" onclick="exportData()" title="导出 JSON"><i class="ti ti-download"></i></button>
       <button type="button" class="btn btn-icon btn-sm" id="theme-btn" onclick="toggleNight()" title="深色 / 日间主题切换" aria-label="切换深浅色主题">☀️</button>
       <button type="button" class="btn btn-outline btn-sm" id="snap-btn" onclick="takeSnapshot()" title="写入今日 NAV 历史快照"><i class="ti ti-camera"></i> 快照</button>
       <button type="button" class="btn btn-outline btn-sm" id="refresh-all-btn" onclick="refreshAllQuotes()" title="刷新汇率与各类行情，并写入今日快照、拉取资讯"><i class="ti ti-refresh"></i> 刷新行情</button>
@@ -1220,13 +1247,6 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
       </div>
     </div>
 
-  <footer class="app-footer">
-    <span class="app-footer-time" id="app-footer-time">—</span>
-    <div class="app-footer-actions">
-      <button type="button" class="btn btn-icon btn-sm" onclick="exportData()" title="导出"><i class="ti ti-download"></i></button>
-      <button type="button" class="btn btn-icon btn-sm" onclick="openModal()" title="添加资产"><i class="ti ti-plus"></i></button>
-    </div>
-  </footer>
   </div>
 </div>
 
