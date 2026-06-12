@@ -1679,6 +1679,15 @@ if(!D.goal||typeof D.goal!=='object'||!(Number(D.goal.amount)>0))
   D.settings.crclStop82Applied=true;
   if(patched)save();
 })();
+(function migrateGoldStrayFundFields(){
+  let patched=false;
+  for(const p of D.products||[]){
+    if(!goldHasStrayFundFields(p))continue;
+    for(const k of GOLD_STRAY_FUND_KEYS)delete p[k];
+    patched=true;
+  }
+  if(patched)save();
+})();
 maybeRollAuWeeklyCompound();
 function maybeShowHttpDataTip(){
   var el=document.getElementById('http-data-migrate-banner');
@@ -2790,6 +2799,16 @@ function pCNY(p){
     return toCNY(p.amount||0,cur);
   }
   return toCNY(p.amount||0,p.currency||'CNY');
+}
+const GOLD_STRAY_FUND_KEYS=['fundCode','fundShares','fundCost','fundPrice','fundCurrency'];
+function sanitizeGoldProduct(p){
+  if(!p||p.type!=='gold')return p;
+  const out={...p};
+  for(const k of GOLD_STRAY_FUND_KEYS)delete out[k];
+  return out;
+}
+function goldHasStrayFundFields(p){
+  return p?.type==='gold'&&GOLD_STRAY_FUND_KEYS.some(k=>p[k]!=null&&p[k]!=='');
 }
 /** 美国账户内：证券持仓（美股）人民币市值 */
 function sumStockUsCNY(aps){return aps.filter(p=>p.type==='stock_us').reduce((s,p)=>s+pCNY(p),0);}
@@ -5418,6 +5437,16 @@ function refreshOVTotals(){
 
 // ══ NAV HISTORY ══
 const SNAP_TYPE_LBL={cash:'现金',fund_cn:'国内基金',gold:'黄金',stock_us:'美股',term_deposit:'定期',other:'其它'};
+/** Tiger 手填闲置 USD 并入现金分类（扣掉同账户重复计的美元现金条） */
+function applyUsIdleCashToByType(byType){
+  const usPs=D.products.filter(p=>p.region==='us');
+  const accs=[...new Set(usPs.map(p=>p.account||'未分类'))];
+  for(const acc of accs){
+    const m=usManualIdleUsd(acc);
+    if(m==null)continue;
+    byType.cash+=toCNY(m,'USD')-sumUsdCashCNY(usPs.filter(p=>p.account===acc));
+  }
+}
 function snapshotBreakdown(){
   const byRegion={cn:totalCNY('cn'),us:totalCNY('us'),au:totalCNY('au')};
   const keys=['cash','fund_cn','gold','stock_us','term_deposit','other'];
@@ -5426,6 +5455,7 @@ function snapshotBreakdown(){
     const k=keys.includes(p.type)?p.type:'other';
     byType[k]+=pCNY(p);
   }
+  applyUsIdleCashToByType(byType);
   return{
     cny:totalCNY(),
     byRegion,
@@ -5433,18 +5463,9 @@ function snapshotBreakdown(){
     fx:{USD:D.fx.USD,AUD:D.fx.AUD}
   };
 }
-/** 总览图表：与快照同类口径，并把 Tiger 手填闲置（扣掉重复计的美元现金）并入现金 */
+/** 总览流动性/类型饼图：与 snapshotBreakdown 同口径 */
 function typeBreakdownForCharts(){
-  const o=snapshotBreakdown();
-  const bd={...o.byType};
-  const usPs=D.products.filter(p=>p.region==='us');
-  const accs=[...new Set(usPs.map(p=>p.account||'未分类'))];
-  for(const acc of accs){
-    const m=usManualIdleUsd(acc);
-    if(m==null)continue;
-    bd.cash+=toCNY(m,'USD')-sumUsdCashCNY(usPs.filter(p=>p.account===acc));
-  }
-  return bd;
+  return{...snapshotBreakdown().byType};
 }
 function renderPieLegend(el,parts,cny){
   if(!el)return;
@@ -6016,7 +6037,7 @@ function saveProduct(){
     const gcost=parseFloat(document.getElementById('m-gcost').value);
     const gprice=parseFloat(document.getElementById('m-gprice').value)||0;
     if(isNaN(grams)||isNaN(gcost)){status.innerHTML='<div class="alert alert-warn">请填写持有克数和持仓均价</div>';return;}
-    p={...p,grams,goldCost:gcost,goldPrice:gprice};
+    p=sanitizeGoldProduct({...p,grams,goldCost:gcost,goldPrice:gprice});
     if(!gprice)setTimeout(async()=>{
       try{const price=await fetchGoldPrice();if(price>0){const idx=D.products.findIndex(x=>x.id===p.id);if(idx>=0){D.products[idx].goldPrice=price;D.products[idx].goldUpdated=today();}save();renderOverview();renderSidebar();}}catch(e){}
     },400);
@@ -6061,8 +6082,14 @@ function saveProduct(){
     p={...p,amount,currency,updatedAt:date};
   }
 
-  if(editId){const idx=D.products.findIndex(x=>x.id===parseInt(editId));if(idx>=0)D.products[idx]={...D.products[idx],...p};}
-  else D.products.push(p);
+  if(editId){
+    const idx=D.products.findIndex(x=>x.id===parseInt(editId));
+    if(idx>=0){
+      let merged={...D.products[idx],...p};
+      if(type==='gold')merged=sanitizeGoldProduct(merged);
+      D.products[idx]=merged;
+    }
+  }else D.products.push(type==='gold'?sanitizeGoldProduct(p):p);
   save();closeModal('modal');renderRegion(region);renderSidebar();
   if(document.getElementById('page-overview').classList.contains('active'))renderOverview();
 }

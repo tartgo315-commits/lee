@@ -95,19 +95,17 @@ function snapshotBreakdown() {
     const k = keys.includes(p.type) ? p.type : 'other';
     byType[k] += pCNY(p);
   }
-  return { cny: totalCNY(), byRegion, byType, fx: { USD: D.fx.USD, AUD: D.fx.AUD } };
-}
-function typeBreakdownForCharts() {
-  const o = snapshotBreakdown();
-  const bd = { ...o.byType };
   const usPs = D.products.filter((p) => p.region === 'us');
   const accs = [...new Set(usPs.map((p) => p.account || '未分类'))];
   for (const acc of accs) {
     const m = usManualIdleUsd(acc);
     if (m == null) continue;
-    bd.cash += toCNY(m, 'USD') - sumUsdCashCNY(usPs.filter((p) => p.account === acc));
+    byType.cash += toCNY(m, 'USD') - sumUsdCashCNY(usPs.filter((p) => p.account === acc));
   }
-  return bd;
+  return { cny: totalCNY(), byRegion, byType, fx: { USD: D.fx.USD, AUD: D.fx.AUD } };
+}
+function typeBreakdownForCharts() {
+  return { ...snapshotBreakdown().byType };
 }
 function accountTotalCny(aps, region) {
   const productCashCny = region === 'us' ? sumUsdCashCNY(aps) : 0;
@@ -171,11 +169,7 @@ ok(approx(typeSum, nav), '流动性/类型饼图合计 = NAV');
 
 const snap = snapshotBreakdown();
 const snapTypeSum = Object.values(snap.byType).reduce((a, b) => a + b, 0);
-if (adj !== 0) {
-  ok(!approx(snapTypeSum, snap.cny), '已知问题：快照 byType 不含闲置调整（与 cny 可能不等）');
-} else {
-  ok(approx(snapTypeSum, snap.cny), '无闲置调整时快照 byType = cny');
-}
+ok(approx(snapTypeSum, snap.cny), '快照 byType 合计 = cny（含 Tiger 闲置）');
 
 console.log('\n=== 3. 积存金盈亏公式 ===');
 const g = D.products.find((p) => p.type === 'gold');
@@ -230,6 +224,13 @@ if (exportPath && fs.existsSync(exportPath)) {
   const userBd = typeBreakdownForCharts();
   const userTypeSum = Object.values(userBd).reduce((a, b) => a + b, 0);
   ok(approx(userTypeSum, userNav, 1), `[导出] 类型饼图 = NAV`);
+  const rawGold = D.products.find((p) => p.type === 'gold' && ['fundShares', 'fundPrice'].some((k) => p[k] != null));
+  if (rawGold) {
+    const STRAYS = ['fundCode', 'fundShares', 'fundCost', 'fundPrice', 'fundCurrency'];
+    const cleaned = { ...rawGold };
+    for (const k of STRAYS) delete cleaned[k];
+    ok(!STRAYS.some((k) => cleaned[k] != null), `[导出] 积存金 sanitize 后无 fund* 残留`);
+  }
   console.log(`  → 导出资产 ${D.products.length} 条，NAV ¥${userNav.toFixed(0)}，目标 ${(userNav / D.goal.amount * 100).toFixed(1)}%`);
 } else if (exportPath) {
   console.log('  ⚠ 未找到导出文件，跳过实盘校验');
