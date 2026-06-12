@@ -229,7 +229,7 @@ input[type=text],input[type=number],input[type=date],select,textarea{font-size:v
 .term-intel-ai{display:none!important}
 .term-intel-events #ov-events-card{background:transparent;border:none;padding:0;margin:0;box-shadow:none!important;flex:1 1 0;min-height:0;min-width:0;max-width:100%;display:grid;grid-template-rows:auto minmax(0,1fr) auto;overflow:hidden}
 .term-intel-events .ov-events-card{background:transparent;border:none;padding:0;margin:0;box-shadow:none!important;flex:1 1 0;min-height:0;min-width:0;max-width:100%;display:grid;grid-template-rows:auto minmax(0,1fr) auto;overflow:hidden}
-.term-intel-events .ov-events-hd{margin-bottom:6px;flex-shrink:0;display:flex;flex-direction:column;gap:6px;min-width:0;max-width:100%}
+.term-intel-events .ov-events-hd{grid-row:1;margin-bottom:6px;flex-shrink:0;display:flex;flex-direction:column;gap:6px;min-width:0;max-width:100%}
 .term-intel-events .ov-events-hd .card-title{font-size:var(--fs-card-lbl);margin:0;letter-spacing:.08em;text-transform:uppercase}
 .term-intel-events .ov-events-sub{display:block;font-size:var(--text-xs);font-weight:400;opacity:.6;color:var(--text-4);line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
 .term-intel-events .ov-events-filters{display:flex;flex-wrap:wrap;gap:4px;min-width:0;max-width:100%}
@@ -6319,6 +6319,7 @@ function importCbaAuPreset(){
   }
 })();
 renderOverview();
+initIntelHeightObserver();
 renderSidebar();
 updateGoldChip();
 refreshBtcPrice();
