@@ -33,13 +33,13 @@ tailwind.config={
 <style>
 /* LEE Wealth · Private banking terminal */
 :root{
-  --bg-page:#080B12;--bg-card:rgba(16,20,28,.78);--bg-muted:rgba(20,25,34,.65);--bg-hover:rgba(26,32,44,.85);
-  --border:rgba(255,255,255,.06);--border-light:rgba(255,255,255,.04);--border-hover:rgba(255,255,255,.1);--border-accent:rgba(16,185,129,.18);
-  --text-1:#F3F4F6;--text-2:#D1D5DB;--text-3:#9CA3AF;--text-4:#6B7280;
+  --bg-page:#080B12;--bg-card:rgba(15,15,20,.7);--bg-muted:rgba(18,18,24,.55);--bg-hover:rgba(24,24,32,.75);
+  --border:rgba(255,255,255,.05);--border-light:rgba(255,255,255,.04);--border-hover:rgba(255,255,255,.08);--border-accent:rgba(5,150,105,.2);
+  --text-1:#F9FAFB;--text-2:#D1D5DB;--text-3:#9CA3AF;--text-4:#6B7280;
   --accent:#E5E7EB;--accent-blue:#60A5FA;--accent-gold:#C9A227;
-  --up:#10B981;--up-soft:#34D399;--up-bg:rgba(16,185,129,.12);--dn:#EF4444;--dn-soft:#F87171;--dn-bg:rgba(239,68,68,.1);
-  --warn:#D4A843;--warn-bg:rgba(212,168,67,.1);--purple:#A78BFA;--purple-bg:rgba(167,139,250,.1);
-  --glass-blur:blur(14px);--glow-emerald:0 0 24px rgba(16,185,129,.12);
+  --up:#059669;--up-soft:#00A86B;--up-bg:rgba(5,150,105,.1);--dn:#DC2626;--dn-soft:#EF4444;--dn-bg:rgba(220,38,38,.08);
+  --warn:#D97706;--warn-bg:rgba(217,119,6,.08);--purple:#A78BFA;--purple-bg:rgba(167,139,250,.08);
+  --glass-blur:blur(12px);--glow-emerald:none;
   --radius-sm:10px;--radius-md:14px;--radius-lg:20px;
   --bg:var(--bg-page);--bg2:var(--bg-card);--bg3:var(--bg-muted);--bg4:var(--bg-hover);
   --surface:var(--bg-card);--surface-muted:var(--bg-muted);--surface-header:var(--bg-card);
@@ -65,7 +65,6 @@ tailwind.config={
 html{height:100%;overflow-x:hidden;color-scheme:dark}
 body{
   font-family:'Inter',-apple-system,sans-serif;background:var(--bg-page);color:var(--text-1);
-  background-image:radial-gradient(ellipse 90% 60% at 50% -10%,rgba(16,185,129,.07),transparent 55%),radial-gradient(ellipse 50% 40% at 100% 0%,rgba(96,165,250,.04),transparent);
   font-size:var(--text-base);line-height:var(--lh-body);-webkit-font-smoothing:antialiased;min-height:100%;display:flex;flex-direction:column;
 }
 .mono,.ph-main,.or-primary,.or-secondary,.or-acc-amt,.ov-head-cell-val,.ov-acc-total,.ov-prod-amt,.ov-prod-pnl,.ov-pnl-item,.pr-amt,.pr-pnl,.pr-pct,.fh-px,.fh-mkt-cny,.fh-mkt-usd,.hist-table td,.st-cny,.tc-val,.ov-hero-nav,.ov-hero-fx-item .val,.fx-chip-rate,.topbar-btc-usd,.ov-goal-pct{
@@ -97,7 +96,8 @@ input[type=text],input[type=number],input[type=date],select,textarea{font-size:v
 .modal-title{font-size:var(--text-lg)}
 .sr-only-totals,.visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
 .card,.ov-top-unified,.ov-hero-card,.account-block,.page-header,.ai-pb-panel,.news-item,.total-card,.ov-col,.ov-goal-card,.fx-input-block,.fx-reverse-block,#nav-chart-wrap{transition:all var(--ease-lux)}
-.card:hover,.ov-top-unified:hover,.ov-hero-card:hover,.account-block:hover,.page-header:hover,.ai-pb-panel:hover,.news-item:hover,.total-card:hover,.ov-col:hover,.ov-goal-card:hover,.fx-input-block:hover,.fx-reverse-block:hover,#nav-chart-wrap:hover,.glass-panel:hover,.term-alloc-card:hover,.ov-prod-row:hover{transform:translateY(-2px);border-color:var(--border-hover)!important;box-shadow:var(--shadow-card-hover)}
+.card:hover,.ov-top-unified:hover,.ov-hero-card:hover,.account-block:hover,.page-header:hover,.ai-pb-panel:hover,.news-item:hover,.total-card:hover,.ov-col:hover,.ov-goal-card:hover,.fx-input-block:hover,.fx-reverse-block:hover,#nav-chart-wrap:hover{transform:translateY(-2px);border-color:var(--border-hover)!important;box-shadow:var(--shadow-card-hover)}
+#page-overview .glass-panel:hover,#page-overview .term-alloc-card:hover,#page-overview .ov-col:hover,#page-overview .ov-prod-row:hover{transform:none;box-shadow:var(--shadow-sm)!important}
 .pin-overlay{position:fixed;inset:0;z-index:9999;background:var(--bg-page);display:none;flex-direction:column;align-items:center;justify-content:center}
 .pin-overlay[style*="flex"]{display:flex!important}
 .pin-shell{display:flex;flex-direction:column;align-items:center;gap:24px;max-width:300px;width:100%;padding:32px}
