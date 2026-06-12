@@ -1,0 +1,50 @@
+---
+description: UI 基准「原版1」— 用户指定的 Wealth Dashboard 参考版本，回退或对比时以此为准
+alwaysApply: false
+---
+
+# 原版1（UI Baseline v1）
+
+用户将某一版总览页称为 **「原版1」**。后续若用户说「回到原版1」「按原版1」或「对比原版1」，指恢复/对齐此基准，而非重新设计。
+
+## Git 锚点
+
+- **Tag**: `ui-yuanban-1`
+- **Commit**: `7d50c75` — *Fix NAV hero overflow overlapping adjacent chart card*
+- **主文件**: `index.html`（同步 `public/index.html`、`lee wealth.html`）
+
+回退示例：`git checkout ui-yuanban-1 -- index.html public/index.html "lee wealth.html"`
+
+## 布局结构（勿改信息架构）
+
+```
+terminal-dashboard grid:
+  "head head intel"
+  "portfolio portfolio intel"
+```
+
+- **head 五列**: Total NAV · NAV Trend · 存款目标 · Regional · Liquidity
+- **portfolio**: CN / US / AU 三列，持仓全部展开、列内不滚动
+- **intel 右侧**: Upcoming Events（含筛选）· Risk Monitor · AI Insights
+
+## 原版1 视觉与交互要点
+
+| 区域 | 特征 |
+|------|------|
+| 整体 | Institutional dark luxury；卡片 16px 圆角、细边框、无发光 |
+| 字体 | 桌面偏大：body 15px；NAV 48px（容器内 `min(48px,17cqi)` 防溢出） |
+| head 卡片 | 圆环/折线图在上、文字图例在下；head 行高约 168px |
+| 行情条 | BTC 在 `fx-strip` 内；chip 上下标签/数值 |
+| 大事件 | 显示筛选栏（全部/宏观/我的持仓/高影响/资讯）；过去30天+未来全列表可滚动；非仅 3 条 |
+| 盈亏色 | `#10b981` / `#ef4444` 统一 |
+| Portfolio | 区域名 16px；汇总 20px；持仓行高 48px |
+
+## 明确不属于原版1的实验（勿默认恢复）
+
+- 终端化之前的大 cockpit 三列滚动布局
+- 大事件仅 3 条、隐藏筛选栏的精简版
+- 大事件单行横排且隐藏过去事件的版本
+
+## 修改原则
+
+用户要求「回到原版1」时：**只恢复 UI/CSS/布局与上述交互**，不改业务逻辑、API、计算与数据模型。若原版1 有已知小缺陷（如 NAV 曾溢出），以 **tag 所在 commit** 为准，除非用户另说「原版1 + 某修复」。
