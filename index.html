@@ -2967,13 +2967,14 @@ function buildAuTdBanners(ps){
     }
   }
   if(tds.length){
-    let wsum=0;
+    let wsumCny=0;
     const wlines=tds.map(p=>{
       const cv=tdCurVal(p),w=cv*(p.rate||0)/100/52,cur=p.tdCur||'AUD';
-      wsum+=w;
+      wsumCny+=toCNY(w,cur);
       return `${escOvHtml((p.name||'定存').slice(0,18))} ~${fc(w,cur,2)}`;
     });
-    parts.push(`<div class="au-td-weekly"><strong>定存本周估算利息（合计）</strong> ${fc(wsum,'AUD',2)} <span class="dim">年利率÷52×当前本息，非银行精确结息</span><div class="tw">${wlines.join(' · ')}</div></div>`);
+    const wsumAud=fromCNY(wsumCny,'AUD');
+    parts.push(`<div class="au-td-weekly"><strong>定存本周估算利息（合计）</strong> ${fc(wsumAud,'AUD',2)} <span class="dim">年利率÷52×当前本息，非银行精确结息</span><div class="tw">${wlines.join(' · ')}</div></div>`);
   }
   return parts.join('');
 }
