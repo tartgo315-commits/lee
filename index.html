@@ -67,7 +67,7 @@ body{
   font-family:'Inter',-apple-system,sans-serif;background:var(--bg-page);color:var(--text-1);
   font-size:var(--text-base);line-height:var(--lh-body);-webkit-font-smoothing:antialiased;min-height:100%;display:flex;flex-direction:column;
 }
-.mono,.ph-main,.or-primary,.or-secondary,.or-acc-amt,.ov-head-cell-val,.ov-acc-total,.ov-prod-amt,.ov-prod-pnl,.ov-pnl-item,.pr-amt,.pr-pnl,.pr-pct,.fh-px,.fh-mkt-cny,.fh-mkt-usd,.hist-table td,.st-cny,.tc-val,.ov-hero-nav,.ov-hero-fx-item .val,.fx-chip-rate,.topbar-btc-usd,.topbar-wealth-val,.topbar-wealth-delta,.ov-goal-pct{
+.mono,.ph-main,.or-primary,.or-secondary,.or-acc-amt,.ov-head-cell-val,.ov-acc-total,.ov-prod-amt,.ov-prod-pnl,.ov-pnl-item,.pr-amt,.pr-pnl,.pr-pct,.fh-px,.fh-mkt-cny,.fh-mkt-usd,.hist-table td,.st-cny,.tc-val,.ov-hero-nav,.ov-hero-fx-item .val,.fx-chip-rate,.topbar-btc-usd,.ov-goal-pct{
   font-variant-numeric:tabular-nums;
 }
 #ov-cny,.ov-hero-nav{font-size:var(--fs-nav);font-weight:700;letter-spacing:-.025em;line-height:1.1;color:var(--text-1)}
@@ -121,11 +121,6 @@ input[type=text],input[type=number],input[type=date],select,textarea{font-size:v
 .page{display:none}.page.active{display:block}
 #page-overview.active{display:flex;flex-direction:column;height:auto;max-height:none;overflow:visible}
 .topbar{height:52px;min-height:52px;max-height:52px;padding:0 var(--gutter-x);background:rgba(15,15,20,.85);backdrop-filter:var(--glass-blur);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:60;overflow:hidden;flex-shrink:0}
-.topbar-wealth{display:inline-flex;align-items:baseline;gap:10px;padding:0 4px 0 0;border:none;background:transparent;cursor:pointer;flex-shrink:0;min-width:0;max-height:100%}
-.topbar-wealth:hover .topbar-wealth-val{color:var(--up-soft)}
-.topbar-wealth-lbl{display:block;font-size:9px;font-weight:500;text-transform:uppercase;letter-spacing:.12em;color:var(--text-4);line-height:1;margin-bottom:2px}
-.topbar-wealth-val{display:block;font-family:var(--mono);font-size:34px;font-weight:600;letter-spacing:-.03em;color:var(--text-1);line-height:1;font-variant-numeric:tabular-nums;transition:color .35s ease}
-.topbar-wealth-delta{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--text-3);white-space:nowrap;font-variant-numeric:tabular-nums;transition:color .35s ease}
 .topbar-brand{display:flex;align-items:center;gap:8px;flex-shrink:0}
 .topbar-brand-name{font-weight:600;color:var(--text-1);letter-spacing:-.01em}
 .topbar-title{font-size:var(--text-xs);color:var(--text-4);font-weight:400}
@@ -713,7 +708,6 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
   .main:has(#page-overview.active){overflow-y:auto}
   .term-zone-nav{grid-template-columns:1fr}
   .term-zone-alloc{grid-template-columns:1fr}
-  .topbar-wealth-val{font-size:22px}
   #ov-regions{grid-template-columns:1fr}
   .ov-col-body{max-height:none}
   .ov-event-row{grid-template-columns:1fr}
@@ -751,13 +745,6 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
     <button type="button" class="mobile-menu-btn" id="mobile-menu-btn" aria-label="打开导航菜单" aria-controls="main-sidebar" aria-expanded="false"><i class="ti ti-menu-2"></i></button>
     <div class="topbar-brand"><span class="topbar-brand-name">LEE's Wealth</span></div>
     <div class="topbar-title" id="topbar-title">总览</div>
-    <div class="topbar-wealth" onclick="showPage('overview')" role="button" tabindex="0" title="总净值 NAV">
-      <div>
-        <span class="topbar-wealth-lbl">Total Wealth</span>
-        <span class="topbar-wealth-val" id="topbar-wealth-val">¥ —</span>
-      </div>
-      <span class="topbar-wealth-delta" id="topbar-wealth-delta"></span>
-    </div>
     <div class="fx-strip" id="fx-strip"></div>
     <div class="topbar-btc" id="topbar-btc" title="Bitcoin · 点击刷新" onclick="refreshBtcPrice()" role="button" tabindex="0">
       <i class="ti ti-currency-bitcoin topbar-btc-pair" aria-hidden="true"></i>
@@ -3019,7 +3006,6 @@ function updateTdExpiryChip(){
 function renderSidebar(){
   const cny=totalCNY();
   document.getElementById('sb-cny').textContent=fc(cny,'CNY');
-  const tw=document.getElementById('topbar-wealth-val');if(tw)tw.textContent=fc(cny,'CNY');
   document.getElementById('sb-usd').textContent=fc(fromCNY(cny,'USD'),'USD');
   document.getElementById('sb-aud').textContent=fc(fromCNY(cny,'AUD'),'AUD');
   ['cn','us','au'].forEach(r=>{const el=document.getElementById('nc-'+r);if(el)el.textContent=D.products.filter(p=>p.region===r).length;});
@@ -4367,8 +4353,6 @@ function renderNavMiniChart(days,opts){
     const sign=chg>=0?'+':'';
     lbl.textContent=vals.length>1&&chg!==0?sign+fc(chg,'CNY')+'  '+sign+Math.abs(pct).toFixed(1)+'%':'';
     lbl.style.color=chg>=0?'var(--up-soft)':chg<0?'var(--dn-soft)':'var(--text-4)';
-    const td=document.getElementById('topbar-wealth-delta');
-    if(td){td.textContent=lbl.textContent;td.style.color=lbl.style.color;}
   }
   const ctx=document.getElementById('chart-ov');if(!ctx)return;
   const isDark=!document.body.classList.contains('light');
