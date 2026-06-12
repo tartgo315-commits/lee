@@ -195,7 +195,7 @@ input[type=text],input[type=number],input[type=date],select,textarea{font-size:v
 .term-nav-goal .term-goal-meta-col{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:3px;font-size:var(--text-xs);line-height:1.4;color:var(--text-4)}
 .term-nav-goal #goal-current{font-family:var(--mono);font-size:var(--text-sm);font-weight:600;color:var(--text-2)}
 .term-nav-goal #goal-target,#goal-remaining,#goal-eta{font-size:var(--text-xs)}
-.term-nav-goal .ov-goal-aside{display:none}
+.term-nav-goal .ov-goal-aside{display:none!important}
 .term-nav-goal .ov-goal-track,.term-nav-goal .ov-goal-meta{display:none}
 .term-nav-goal .ov-goal-edit{position:static;width:22px;height:22px;flex-shrink:0}
 .term-alloc-card{min-height:0;justify-content:space-between;gap:6px}
@@ -875,9 +875,6 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
                   <span id="goal-remaining">—</span>
                   <span id="goal-eta">预计达成 —</span>
                 </div>
-              </div>
-              <div class="ov-goal-aside" aria-hidden="true">
-                <span class="ov-goal-aside-lbl">还差 <span class="ov-goal-remaining">—</span></span>
               </div>
               <div id="goal-fill" style="display:none" aria-hidden="true"></div>
             </div>
@@ -3086,7 +3083,12 @@ function updateGoalBar(){
   curEl.textContent=fc(cny,'CNY',0);
   tgtEl.textContent='目标 '+fc(target,'CNY',0);
   lblEl.textContent=goal.label||'财富目标';
-  remEl.textContent=remaining>0?'还差 '+fc(remaining,'CNY',0):'🎉 已达成';
+  const remTxt=remaining>0?'还差 '+fc(remaining,'CNY',0):'🎉 已达成';
+  remEl.textContent=remTxt;
+  document.querySelectorAll('.ov-goal-remaining').forEach(el=>{
+    if(el.id==='goal-remaining')return;
+    el.textContent=remaining>0?fc(remaining,'CNY',0):'已达成';
+  });
   const achieved=Math.min(cny,target);
   const gap=Math.max(0,target-cny);
   if(ctxG){
