@@ -4278,9 +4278,9 @@ function renderOverview(){
           const price=p.goldPrice||0,grams=p.grams||0,cost=p.goldCost||0;
           const mkt=grams*price,pnlVal=mkt-grams*cost,pct=(cost>0&&grams>0)?pnlVal/(grams*cost)*100:0;
           name=p.name||'黄金积存';
-          sub=`${fmt(grams,4)}克 · 均价¥${fmt(cost,2)}/克`;
-          amt=price?`¥${fmt(price,2)}/克`:'待刷新';
-          cnyStr=price?`市值 ${fc(mkt,'CNY',2)}`:'';
+          sub=`${fmt(grams,4)}克 · ${price?`¥${fmt(price,2)}/克 · `:'待刷新 · '}均价¥${fmt(cost,2)}/克`;
+          amt=price?fc(mkt,'CNY',2):'待刷新';
+          cnyStr='';
           pnl=price?`<div class="ov-prod-pnl ${pnlVal>=0?'pos':'neg'}">${pnlVal>=0?'+':''}${fc(pnlVal,'CNY',2)} (${pnlVal>=0?'+':''}${safePctFixed(pct,1)}%)</div>`:'';
           perfBar=price?ovPerfBarHtml(pct):'';
         } else if(p.type==='stock_us'){
