@@ -129,7 +129,7 @@ assert(html.includes('FX_RATES'), 'FX_RATES 存在');
 assert(html.includes('prepareSanitizedPayload'), 'prepareSanitizedPayload 存在');
 assert(html.includes('productToAssetV2'), 'asset v2 导出');
 assert(html.includes('portfolioPayload'), 'AI 请求携带 portfolioPayload');
-assert(html.includes('--fs-nav:42px'), 'NAV 字号变量');
+assert(html.includes('--fs-nav:48px'), 'NAV 字号变量');
 assert(!html.match(/<style><\/style>/), 'style 块非空');
 
 console.log('\n=== api/ai-advisor.js ===');
