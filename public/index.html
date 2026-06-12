@@ -4449,6 +4449,7 @@ function syncIntelColumnHeight(){
 function scheduleIntelHeightSync(){
   requestAnimationFrame(function(){requestAnimationFrame(syncIntelColumnHeight);});
 }
+function setRange(days,btn){
   ovRange=days;
   document.querySelectorAll('.rt').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
