@@ -306,8 +306,9 @@ input[type=text],input[type=number],input[type=date],select,textarea{font-size:v
 #page-overview .ov-prod-sub{display:none}
 #page-overview .ov-prod-row[data-ov-ticker] .ov-prod-sub{display:block;font-size:10px;line-height:1.35;margin-top:2px;color:var(--text-4)}
 #page-overview .ov-prod-row[data-ov-ticker]{align-items:flex-start;min-height:auto;padding:6px 8px}
-#page-overview .ov-prod-row[data-ov-td]{grid-template-columns:minmax(0,1fr) auto auto auto;align-items:center;min-height:auto;padding:6px 8px}
-#page-overview .ov-prod-rate{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--accent-gold);white-space:nowrap;text-align:right;min-width:42px;padding:0 4px}
+#page-overview .ov-prod-row[data-ov-td] .ov-prod-sub{display:block;font-size:10px;line-height:1.35;margin-top:2px;color:var(--text-4)}
+#page-overview .ov-prod-row[data-ov-td]{grid-template-columns:minmax(0,1fr) auto auto auto;gap:6px 8px;align-items:flex-start;min-height:auto;padding:6px 8px}
+#page-overview .ov-prod-row[data-ov-td] .ov-prod-rate{font-family:var(--mono);font-size:12px;font-weight:600;color:rgba(167,139,250,.95);text-align:center;min-width:42px;align-self:start;margin-top:1px;line-height:1.4;flex-shrink:0}
 #page-overview .ov-prod-cny{display:none}
 #page-overview .ov-prod-ticktag{display:none}
 #page-overview .ov-prod-px{display:none}
@@ -4418,14 +4419,19 @@ function renderOverview(){
           pnl=price?`<div class="ov-prod-pnl ${pnlVal>=0?'pos':'neg'}">${pnlVal>=0?'+':''}${fc(pnlVal,cur,2)} (${pnlVal>=0?'+':''}${safePctFixed(pct,1)}%)</div>`:'';
           perfBar=price?ovPerfBarHtml(pct):'';
         } else if(p.type==='term_deposit'){
-          const cur=p.tdCur||'AUD',curVal=tdCurVal(p),acc=tdAccruedVsOrig(p);
+          const cur=p.tdCur||'AUD',curVal=tdCurVal(p),acc=tdAccruedVsOrig(p),daysLeft=tdDaysLeft(p);
+          const wk=curVal*(p.rate||0)/100/52;
+          const ratePct=p.rate||0;
           name=p.name||'定期存款';
-          const rateLbl=`${p.rate||0}%`;
+          sub=`本周约 +${fc(wk,cur,2)}${daysLeft!==null?` · ${daysLeft}天后到期`:''}`;
           amt=fc(curVal,cur,2);
           pnl=`<div class="ov-prod-pnl pos">+${fc(acc,cur,2)} 应计</div>`;
           return `<div class="ov-prod-row" data-ov-td="1">
-          <div class="ov-prod-main"><div class="ov-prod-name">${escOvHtml(name)}</div></div>
-          <div class="ov-prod-rate">${escOvHtml(rateLbl)}</div>
+          <div class="ov-prod-main">
+            <div class="ov-prod-name">${escOvHtml(name)}</div>
+            ${sub?`<div class="ov-prod-sub">${escOvHtml(sub)}</div>`:''}
+          </div>
+          <div class="ov-prod-rate">${ratePct}%</div>
           <div class="ov-prod-right">
             <div class="ov-prod-metrics">
               <div class="ov-prod-amt">${amt}</div>
