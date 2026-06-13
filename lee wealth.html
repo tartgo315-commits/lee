@@ -3433,6 +3433,136 @@ function getSanitizedPortfolioPayload(){
   const cny=totalCNY();
   return prepareSanitizedPayload(buildRawAssetsFromProducts(),cny);
 }
+function describeProductForAi(p){
+  if(!p)return null;
+  const cny=pCNY(p);
+  const base={
+    id:p.id,region:p.region,type:p.type,account:p.account||'',name:p.name||'',
+    note:p.note||'',currency:p.currency||p.tdCur||p.fundCurrency||'CNY',
+    marketValueCny:Math.round(cny*100)/100,updatedAt:p.updatedAt||'',importTag:p.importTag||''
+  };
+  if(p.type==='stock_us'){
+    const mkt=(p.shares||0)*(p.currentPrice||0);
+    const pct=p.costPrice>0&&p.currentPrice?((p.currentPrice-p.costPrice)/p.costPrice*100):null;
+    return{...base,ticker:String(p.ticker||'').trim().toUpperCase(),shares:p.shares||0,
+      costPrice:p.costPrice||0,currentPrice:p.currentPrice||0,marketValueUsd:mkt,pnlPct:pct,
+      stopLoss:p.stopLoss!=null&&isFinite(Number(p.stopLoss))?Number(p.stopLoss):null};
+  }
+  if(p.type==='gold'){
+    const gp=p.goldPrice||0,gc=p.goldCost||0,grams=p.grams||0;
+    return{...base,grams,costPerGram:gc,pricePerGram:gp,marketValueCny:grams*gp,
+      pnlPct:gc>0&&gp?((gp-gc)/gc*100):null,goldUpdated:p.goldUpdated||''};
+  }
+  if(p.type==='fund_cn'){
+    const cur=p.fundCurrency||'CNY',sh=p.fundShares||0,fp=p.fundPrice||0,fc=p.fundCost||0;
+    return{...base,fundCode:p.fundCode||'',fundShares:sh,fundCost:fc,fundPrice:fp,fundCurrency:cur,
+      pnlPct:fc>0&&fp?((fp-fc)/fc*100):null};
+  }
+  if(p.type==='term_deposit'){
+    const cur=p.tdCur||p.currency||'AUD';
+    return{...base,principal:p.principal||0,rate:p.rate||0,tdStart:p.tdStart||'',tdEnd:p.tdEnd||'',
+      tdContractStart:p.tdContractStart||'',tdContractEnd:p.tdContractEnd||'',
+      tdOrigPrincipal:p.tdOrigPrincipal??null,tdCompoundWeekly:!!p.tdCompoundWeekly,
+      accrued:tdAccruedVsOrig(p),currentValue:tdCurVal(p),daysToMaturity:tdDaysLeft(p),tdCur:cur};
+  }
+  if(p.type==='cash')return{...base,amount:p.amount||0};
+  return{...base,amount:p.amount||0};
+}
+function buildFullPortfolioPayload(){
+  return(D.products||[]).map(describeProductForAi).filter(Boolean);
+}
+function formatProductLineForAi(p){
+  const note=p.note?` · 备注：${p.note}`:'';
+  if(p.type==='stock_us'){
+    const tick=String(p.ticker||'').trim().toUpperCase()||'—';
+    const sh=p.shares||0,cost=p.costPrice||0,px=p.currentPrice||0,mkt=sh*px;
+    const pct=cost>0&&px?((px-cost)/cost*100):null;
+    const sl=p.stopLoss!=null&&isFinite(Number(p.stopLoss))?Number(p.stopLoss):null;
+    return `${p.account||'—'} · ${tick}${p.name&&p.name!==tick?' ('+p.name+')':''} · ${fmt(sh,4)}股 · 成本 $${fmt(cost,2)} · 现价 $${fmt(px,2)} · 市值 $${fmt(mkt,2)} · 盈亏 ${pct!=null?(pct>=0?'+':'')+pct.toFixed(2)+'%':'—'} · 止损 ${sl!=null?'$'+sl.toFixed(2):'未设'} · 市值约 ${fc(pCNY(p),'CNY',0)}${note}`;
+  }
+  if(p.type==='gold'){
+    const gp=p.goldPrice||0,gc=p.goldCost||0,grams=p.grams||0,mkt=grams*gp;
+    const pct=gc>0&&gp?((gp-gc)/gc*100):null;
+    return `${p.account||'—'} · ${p.name||'黄金积存'} · ${fmt(grams,4)}克 · 均价 ¥${fmt(gc,2)}/克 · 现价 ¥${fmt(gp,2)}/克 · 市值 ¥${fmt(mkt,2)} · 盈亏 ${pct!=null?pct.toFixed(2)+'%':'—'}${note}`;
+  }
+  if(p.type==='fund_cn'){
+    const cur=p.fundCurrency||'CNY',sh=p.fundShares||0,fp=p.fundPrice||0,fcost=p.fundCost||0,mkt=sh*fp;
+    const pct=fcost>0&&fp?((fp-fcost)/fcost*100):null;
+    return `${p.account||'—'} · ${p.name||p.fundCode||'基金'} · 代码 ${p.fundCode||'—'} · ${fmt(sh,4)}份 · 成本 ${fc(fcost,cur,4)} · 净值 ${fc(fp,cur,4)} · 市值 ${fc(mkt,cur,2)} · 盈亏 ${pct!=null?pct.toFixed(2)+'%':'—'}${note}`;
+  }
+  if(p.type==='term_deposit'){
+    const cur=p.tdCur||p.currency||'AUD',acc=tdAccruedVsOrig(p),cv=tdCurVal(p),dl=tdDaysLeft(p);
+    return `${p.account||'—'} · ${p.name||'定存'} · 本金 ${fc(p.principal||0,cur,2)} · 利率 ${p.rate||0}% p.a. · 当前本息 ${fc(cv,cur,2)} · 应计 +${fc(acc,cur,2)} · 起息 ${p.tdStart||'—'} · 到期 ${p.tdContractEnd||p.tdEnd||'—'} · 距到期 ${dl!=null?dl+'天':'—'} · 周复利 ${p.tdCompoundWeekly?'是':'否'}${p.tdOrigPrincipal!=null?' · 开户本金 '+fc(p.tdOrigPrincipal,cur,2):''}${note}`;
+  }
+  if(p.type==='cash'){
+    const cur=p.currency||'CNY';
+    return `${p.account||'—'} · ${p.name||'现金'} · ${fc(p.amount||0,cur,2)} · 约 ${fc(pCNY(p),'CNY',0)}${note}`;
+  }
+  const cur=p.currency||'CNY';
+  return `${p.account||'—'} · ${p.name||'其它'} · ${fc(p.amount||0,cur,2)} · 约 ${fc(pCNY(p),'CNY',0)}${note}`;
+}
+function buildFullPortfolioText(){
+  const fx=D.fx||{};
+  const cny=totalCNY();
+  const cnCny=totalCNY('cn'),usCny=totalCNY('us'),auCny=totalCNY('au');
+  const goalAmt=D.goal?.amount||0;
+  const goalPct=goalAmt>0?(cny/goalAmt*100):null;
+  const principalUSD=D.settings?.usPrincipalUSD||46490;
+  const lines=[
+    `总净值：${fc(cny,'CNY',2)}（≈ ${fc(fromCNY(cny,'USD'),'USD',2)} · ≈ ${fc(fromCNY(cny,'AUD'),'AUD',2)}）`,
+    `汇率：USD/CNY=${fx.USD||'—'} · AUD/CNY=${fx.AUD||'—'}`,
+    `区域：中国 ${fc(cnCny,'CNY',0)}（${cny>0?(cnCny/cny*100).toFixed(1):'0'}%）· 美国 ${fc(usCny,'CNY',0)} / ${fc(fromCNY(usCny,'USD'),'USD',2)}（${cny>0?(usCny/cny*100).toFixed(1):'0'}%）· 澳洲 ${fc(auCny,'CNY',0)} / ${fc(fromCNY(auCny,'AUD'),'AUD',2)}（${cny>0?(auCny/cny*100).toFixed(1):'0'}%）`,
+    `美股成本基准（usPrincipalUSD）：$${fmt(principalUSD,2)}`,
+    goalAmt>0?`财富目标：${fc(goalAmt,'CNY',0)} · 进度 ${goalPct!=null?goalPct.toFixed(1)+'%':'—'}`:'财富目标：未设定',
+  ];
+  const btc=D.btcQuote;
+  if(btc?.usd>0){
+    const ch=btc.change24hPct!=null&&isFinite(btc.change24hPct)?(btc.change24hPct>=0?'+':'')+btc.change24hPct.toFixed(2)+'%':'—';
+    lines.push(`BTC 行情：$${fmt(btc.usd,2)} · 24h ${ch}${btc.updatedAt?' · 更新 '+new Date(btc.updatedAt).toLocaleString('zh-CN'):''}`);
+  }else lines.push('BTC 行情：暂无（未刷新）');
+  const accounts=[...new Set((D.products||[]).map(p=>`${p.region}/${p.account||'未分类'}`))];
+  lines.push('','【持仓明细（含账户名、精确数量与金额）】');
+  if(!(D.products||[]).length)lines.push('无持仓');
+  else{
+    accounts.forEach(key=>{
+      const [reg,acc]=key.split('/');
+      const aps=D.products.filter(p=>p.region===reg&&(p.account||'未分类')===acc);
+      lines.push(`— ${acc}（${reg.toUpperCase()}）`);
+      aps.forEach(p=>lines.push('  '+formatProductLineForAi(p)));
+    });
+  }
+  const idleLines=[];
+  for(const k of Object.keys(D.usAccountMeta||{})){
+    const idle=D.usAccountMeta[k]?.idleUsd;
+    if(idle>0)idleLines.push(`${k.replace(/^us::/,'')} · 手填闲置资金 $${fmt(idle,2)}`);
+  }
+  if(idleLines.length){
+    lines.push('','【美股账户手填闲置 USD】');
+    idleLines.forEach(l=>lines.push('  '+l));
+  }
+  const snaps=[...(D.navHistory||[])].filter(n=>n&&n.date&&n.cny!=null&&!isNaN(Number(n.cny))).sort((a,b)=>a.date.localeCompare(b.date));
+  lines.push('','【NAV 快照历史（完整 '+snaps.length+' 条）】');
+  if(!snaps.length)lines.push('无快照');
+  else snaps.forEach(s=>{
+    const br=s.byRegion||{};
+    const extra=[br.cn!=null?`CN ¥${Math.round(br.cn)}`:null,br.us!=null?`US ¥${Math.round(br.us)}`:null,br.au!=null?`AU ¥${Math.round(br.au)}`:null].filter(Boolean).join(' · ');
+    lines.push(`${s.date} · NAV ¥${Math.round(Number(s.cny))}${extra?' · '+extra:''}`);
+  });
+  return lines.join('\n');
+}
+/** AI 诊断/追问：完整持仓 + 大事件日历 + RSS 资讯 */
+function buildAiPortfolioContext(){
+  return[
+    buildFullPortfolioText(),
+    '',
+    '═══════════════════════════════════════',
+    '【大事件日历 + 持仓相关新闻 RSS】',
+    buildEventsCalendarContext()
+  ].join('\n');
+}
+function getAiPortfolioPayload(){
+  return buildFullPortfolioPayload();
+}
 
 function runAiAdvisor(){
   const result=document.getElementById('ai-advisor-result');
@@ -3714,11 +3844,11 @@ async function sendAiChatMessage(){
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
         mode:'chat',
-        portfolio:aiChatState.portfolio,
-        portfolioPayload:getSanitizedPortfolioPayload(),
+        portfolio:buildAiPortfolioContext(),
+        portfolioPayload:getAiPortfolioPayload(),
         messages:aiChatState.messages,
         provider,
-        sanitized:true
+        sanitized:false
       })
     });
     const data=await r.json();
@@ -3773,23 +3903,23 @@ async function fetchAiAdvice(){
   btn.disabled=true;btn.textContent='🔄 诊断中…';
   result.style.display='block';
   updateCopilotWealthEmpty();
-  diagnosis.innerHTML='<div class="ai-pb-loading">💎 CIO 正在审阅脱敏持仓摘要，约需 5–15 秒…</div>';
+  diagnosis.innerHTML='<div class="ai-pb-loading">💎 CIO 正在审阅完整持仓、大事件与资讯，约需 5–15 秒…</div>';
 
-  const portfolio=buildSanitizedPortfolio();
-  const portfolioPayload=getSanitizedPortfolioPayload();
+  const portfolio=buildAiPortfolioContext();
+  const portfolioPayload=getAiPortfolioPayload();
 
   try{
     const r=await fetch('/api/ai-advisor',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({mode:'diagnose',portfolio,portfolioPayload,provider,sanitized:true})
+      body:JSON.stringify({mode:'diagnose',portfolio,portfolioPayload,provider,sanitized:false})
     });
     const data=await r.json();
     if(data.advice){
       diagnosis.innerHTML=
-        `<div class="ai-pb-meta">🤖 ${escOvHtml(String(data.model||''))} · 脱敏传输 · ${new Date().toLocaleTimeString('zh-CN')}</div>`+
+        `<div class="ai-pb-meta">🤖 ${escOvHtml(String(data.model||''))} · 完整上下文 · ${new Date().toLocaleTimeString('zh-CN')}</div>`+
         `<div class="ai-pb-body">${formatAiAdviceHtml(data.advice)}</div>`+
-        `<div class="ai-pb-disclaimer">🔒 本次分析基于脱敏摘要 · 可在下方继续追问 · 仅供参考，不构成投资建议</div>`;
+        `<div class="ai-pb-disclaimer">🔒 含真实持仓、账户、NAV 历史、大事件与 RSS；数据经 HTTPS 传输至 AI 服务商 · 仅供参考，不构成投资建议</div>`;
       initAiChatSession(portfolio,provider,data.model||'',data.advice);
       setAiDailyBriefFromText(data.advice);
     }else{
@@ -4162,7 +4292,7 @@ function renderEventsAiMsgs(){
   const box=document.getElementById('ov-events-ai-msgs');
   if(!box)return;
   if(!eventsAiChat.messages.length){
-    box.innerHTML='<div style="font-size:13px;color:var(--text3);padding:8px 2px;font-family:var(--mono)">输入问题，AI 将结合上方大事件日历与你的脱敏持仓解读。</div>';
+    box.innerHTML='<div style="font-size:13px;color:var(--text3);padding:8px 2px;font-family:var(--mono)">输入问题，AI 将结合大事件日历、RSS 资讯与你的完整持仓解读。</div>';
     return;
   }
   box.innerHTML=eventsAiChat.messages.map(m=>`<div class="ov-events-ai-msg ${m.role==='user'?'user':'bot'}">${m.role==='user'?escOvHtml(m.content).replace(/\n/g,'<br>'):escOvHtml(m.content).replace(/\n/g,'<br>')}</div>`).join('');
@@ -4185,14 +4315,14 @@ async function sendEventsAiChat(){
   renderEventsAiMsgs();
   if(sendBtn){sendBtn.disabled=true;sendBtn.textContent='…';}
 
-  const portfolio=buildSanitizedPortfolio();
-  const portfolioPayload=getSanitizedPortfolioPayload();
+  const portfolio=buildAiPortfolioContext();
+  const portfolioPayload=getAiPortfolioPayload();
   const eventsContext=buildEventsCalendarContext();
   try{
     const r=await fetch('/api/ai-advisor',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({mode:'events',eventsContext,portfolio,portfolioPayload,messages:eventsAiChat.messages,provider,sanitized:true})
+      body:JSON.stringify({mode:'events',eventsContext,portfolio,portfolioPayload,messages:eventsAiChat.messages,provider,sanitized:false})
     });
     const data=await r.json();
     if(data.advice){
