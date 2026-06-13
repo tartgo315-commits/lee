@@ -3531,6 +3531,15 @@ function buildFullPortfolioText(){
       aps.forEach(p=>lines.push('  '+formatProductLineForAi(p)));
     });
   }
+  const idleLines=[];
+  for(const k of Object.keys(D.usAccountMeta||{})){
+    const idle=D.usAccountMeta[k]?.idleUsd;
+    if(idle>0)idleLines.push(`${k.replace(/^us::/,'')} · 手填闲置资金 $${fmt(idle,2)}`);
+  }
+  if(idleLines.length){
+    lines.push('','【美股账户手填闲置 USD】');
+    idleLines.forEach(l=>lines.push('  '+l));
+  }
   const snaps=[...(D.navHistory||[])].filter(n=>n&&n.date&&n.cny!=null&&!isNaN(Number(n.cny))).sort((a,b)=>a.date.localeCompare(b.date));
   lines.push('','【NAV 快照历史（完整 '+snaps.length+' 条）】');
   if(!snaps.length)lines.push('无快照');
