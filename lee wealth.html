@@ -306,8 +306,8 @@ input[type=text],input[type=number],input[type=date],select,textarea{font-size:v
 #page-overview .ov-prod-sub{display:none}
 #page-overview .ov-prod-row[data-ov-ticker] .ov-prod-sub{display:block;font-size:10px;line-height:1.35;margin-top:2px;color:var(--text-4)}
 #page-overview .ov-prod-row[data-ov-ticker]{align-items:flex-start;min-height:auto;padding:6px 8px}
-#page-overview .ov-prod-row[data-ov-td] .ov-prod-sub{display:block;font-size:10px;line-height:1.35;margin-top:2px;color:var(--text-4)}
-#page-overview .ov-prod-row[data-ov-td]{align-items:flex-start;min-height:auto;padding:6px 8px}
+#page-overview .ov-prod-row[data-ov-td]{grid-template-columns:minmax(0,1fr) auto auto auto;align-items:center;min-height:auto;padding:6px 8px}
+#page-overview .ov-prod-rate{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--accent-gold);white-space:nowrap;text-align:right;min-width:42px;padding:0 4px}
 #page-overview .ov-prod-cny{display:none}
 #page-overview .ov-prod-ticktag{display:none}
 #page-overview .ov-prod-px{display:none}
@@ -4418,14 +4418,25 @@ function renderOverview(){
           pnl=price?`<div class="ov-prod-pnl ${pnlVal>=0?'pos':'neg'}">${pnlVal>=0?'+':''}${fc(pnlVal,cur,2)} (${pnlVal>=0?'+':''}${safePctFixed(pct,1)}%)</div>`:'';
           perfBar=price?ovPerfBarHtml(pct):'';
         } else if(p.type==='term_deposit'){
-          const cur=p.tdCur||'AUD',curVal=tdCurVal(p),acc=tdAccruedVsOrig(p),daysLeft=tdDaysLeft(p);
-          const wk=curVal*(p.rate||0)/100/52;
+          const cur=p.tdCur||'AUD',curVal=tdCurVal(p),acc=tdAccruedVsOrig(p);
           name=p.name||'定期存款';
-          sub=`定存利率 ${p.rate||0}% p.a. · 本周约 +${fc(wk,cur,2)}${daysLeft!==null?` · ${daysLeft}天后到期`:''}`;
+          const rateLbl=`${p.rate||0}%`;
           amt=fc(curVal,cur,2);
-          cnyStr=`≈ ${fc(cny,'CNY',0)}`;
           pnl=`<div class="ov-prod-pnl pos">+${fc(acc,cur,2)} 应计</div>`;
-          ovRowExtra=' data-ov-td="1"';
+          return `<div class="ov-prod-row" data-ov-td="1">
+          <div class="ov-prod-main"><div class="ov-prod-name">${escOvHtml(name)}</div></div>
+          <div class="ov-prod-rate">${escOvHtml(rateLbl)}</div>
+          <div class="ov-prod-right">
+            <div class="ov-prod-metrics">
+              <div class="ov-prod-amt">${amt}</div>
+              ${pnl}
+            </div>
+          </div>
+          <div class="ov-prod-actions">
+            <button class="ov-row-btn" onclick="event.stopPropagation();editProduct(${p.id})">✏️</button>
+            <button class="ov-row-btn danger" onclick="event.stopPropagation();deleteProduct(${p.id})">✕</button>
+          </div>
+        </div>`;
         } else {
           name=p.name||'—';
           sub=p.note||(r.id==='us'&&p.type==='cash'&&(p.currency||'CNY')==='USD'?'美元现金 · 可与 Tiger 预估现金/应计利息对应':'');
