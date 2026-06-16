@@ -139,10 +139,21 @@ export async function onRequest(context) {
   const isEventsChat = mode === 'events';
   const isChat = mode === 'chat' || isEventsChat;
 
+  const MAX_EVENTS_CHARS = 8000;
+  const eventsContextTrimmed = eventsContext
+    ? String(eventsContext).slice(0, MAX_EVENTS_CHARS)
+    : '';
+
   if (isEventsChat) {
     if (!eventsContext) {
       return jsonResponse({ error: 'missing eventsContext' }, 400);
     }
+    console.log(
+      'events mode: eventsContext length:',
+      eventsContext?.length,
+      'portfolio length:',
+      portfolio?.length
+    );
   } else if (!portfolio) {
     return jsonResponse({ error: 'missing portfolio' }, 400);
   }
@@ -157,7 +168,7 @@ export async function onRequest(context) {
 
   let chatSystem = `${pickChatPrompt(sanitized)}\n\n${ctx}`;
   if (isEventsChat) {
-    chatSystem = `${pickEventsPrompt(sanitized)}\n\n${eventsContext}`;
+    chatSystem = `${pickEventsPrompt(sanitized)}\n\n${eventsContextTrimmed}`;
     if (portfolio) chatSystem += `\n\n${ctx}`;
   }
 
@@ -285,14 +296,17 @@ export async function onRequest(context) {
         ? [tryCohere, tryGemini, tryGroq]
         : [tryGemini, tryGroq, tryCohere];
 
+  const errors = [];
   for (const fn of order) {
     try {
       const result = await fn();
       return jsonResponse(result);
-    } catch {
+    } catch (e) {
+      errors.push(fn.name + ': ' + (e?.message || String(e)));
       continue;
     }
   }
-
-  return jsonResponse({ error: '所有AI服务均不可用，请检查环境变量' }, 502);
+  const detail = errors.join(' | ');
+  console.error('All AI providers failed:', detail);
+  return jsonResponse({ error: '所有AI服务均不可用，请检查环境变量', detail }, 502);
 }

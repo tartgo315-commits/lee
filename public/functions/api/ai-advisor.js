@@ -139,10 +139,21 @@ export async function onRequest(context) {
   const isEventsChat = mode === 'events';
   const isChat = mode === 'chat' || isEventsChat;
 
+  const MAX_EVENTS_CHARS = 8000;
+  const eventsContextTrimmed = eventsContext
+    ? String(eventsContext).slice(0, MAX_EVENTS_CHARS)
+    : '';
+
   if (isEventsChat) {
     if (!eventsContext) {
       return jsonResponse({ error: 'missing eventsContext' }, 400);
     }
+    console.log(
+      'events mode: eventsContext length:',
+      eventsContext?.length,
+      'portfolio length:',
+      portfolio?.length
+    );
   } else if (!portfolio) {
     return jsonResponse({ error: 'missing portfolio' }, 400);
   }
@@ -253,7 +264,7 @@ export async function onRequest(context) {
         .join('\n\n');
       prompt = `${chatSystem}\n\n--- 对话 ---\n${transcript}\n\n顾问:`;
     } else {
-      prompt = `${DIAGNOSE_PROMPT}\n\n${sanitized ? '（以下为用户脱敏持仓摘要）' : '（以下为用户持仓数据）'}\n\n${portfolio}`;
+      prompt = `${pickDiagnosePrompt(sanitized)}\n\n${sanitized ? '（以下为用户脱敏持仓摘要）' : '（以下为完整持仓与市场上下文）'}\n\n${diagCtx}`;
     }
 
     const r = await fetch('https://api.cohere.ai/v1/generate', {
@@ -262,7 +273,7 @@ export async function onRequest(context) {
       body: JSON.stringify({
         model: 'command-r',
         prompt,
-        max_tokens: isChat ? 1200 : 1400,
+        max_tokens: outTokens,
         temperature: 0.55,
       }),
     });
