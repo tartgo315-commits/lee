@@ -198,7 +198,7 @@ export async function onRequest(context) {
     }
 
     const r = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -214,7 +214,7 @@ export async function onRequest(context) {
     const text = d?.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!text) throw new Error('empty');
     const tag = isEventsChat ? 'Events' : isChat ? 'Chat' : 'CIO';
-    return { advice: text, model: `Gemini 1.5 Flash · ${tag}` };
+    return { advice: text, model: `Gemini 2.5 Flash · ${tag}` };
   }
 
   async function tryGroq() {

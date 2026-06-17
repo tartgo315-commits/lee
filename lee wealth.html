@@ -3610,6 +3610,21 @@ function buildAiPortfolioContext(){
 function getAiPortfolioPayload(){
   return buildFullPortfolioPayload();
 }
+function aiAdvisorErrorText(data){
+  const base=data?.error||'未知';
+  const d=data?.detail;
+  return d?`${base}（${d}）`:base;
+}
+async function postAiAdvisor(body){
+  const opts={method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)};
+  let r=await fetch('/api/ai-advisor',opts);
+  if(r.ok)return r;
+  const ro=(typeof WO_REMOTE_PROXY_ORIGIN==='string'&&WO_REMOTE_PROXY_ORIGIN.trim())?WO_REMOTE_PROXY_ORIGIN.replace(/\/$/,''):'';
+  if(ro&&r.status>=500){
+    try{r=await fetch(`${ro}/api/ai-advisor`,opts);}catch(e){}
+  }
+  return r;
+}
 
 function runAiAdvisor(){
   const result=document.getElementById('ai-advisor-result');
@@ -3886,17 +3901,13 @@ async function sendAiChatMessage(){
   if(sendBtn){sendBtn.disabled=true;}
 
   try{
-    const r=await fetch('/api/ai-advisor',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        mode:'chat',
-        portfolio:buildAiPortfolioContext(),
-        portfolioPayload:getAiPortfolioPayload(),
-        messages:aiChatState.messages,
-        provider,
-        sanitized:false
-      })
+    const r=await postAiAdvisor({
+      mode:'chat',
+      portfolio:buildAiPortfolioContext(),
+      portfolioPayload:getAiPortfolioPayload(),
+      messages:aiChatState.messages,
+      provider,
+      sanitized:false
     });
     const data=await r.json();
     loadingEl.remove();
@@ -3907,7 +3918,7 @@ async function sendAiChatMessage(){
     }else{
       aiChatState.messages.pop();
       renderAiChatMessages();
-      alert('回复失败：'+(data.error||'未知错误'));
+      alert('回复失败：'+aiAdvisorErrorText(data));
     }
   }catch(e){
     loadingEl.remove();
@@ -3956,11 +3967,7 @@ async function fetchAiAdvice(){
   const portfolioPayload=getAiPortfolioPayload();
 
   try{
-    const r=await fetch('/api/ai-advisor',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({mode:'diagnose',portfolio,portfolioPayload,provider,sanitized:false})
-    });
+    const r=await postAiAdvisor({mode:'diagnose',portfolio,portfolioPayload,provider,sanitized:false});
     const data=await r.json();
     if(data.advice){
       diagnosis.innerHTML=
@@ -3970,7 +3977,7 @@ async function fetchAiAdvice(){
       initAiChatSession(portfolio,provider,data.model||'',data.advice);
       setAiDailyBriefFromText(data.advice);
     }else{
-      diagnosis.innerHTML=`<span style="color:#f87171">失败：${escOvHtml(String(data.error||'未知'))}</span>`;
+      diagnosis.innerHTML=`<span style="color:#f87171">失败：${escOvHtml(aiAdvisorErrorText(data))}</span>`;
     }
   }catch(e){
     diagnosis.innerHTML=`<span style="color:#f87171">网络错误：${escOvHtml(String(e.message||''))}</span>`;
@@ -4362,15 +4369,11 @@ async function sendEventsAiChat(){
   renderEventsAiMsgs();
   if(sendBtn){sendBtn.disabled=true;sendBtn.textContent='…';}
 
-  const portfolio=buildAiPortfolioContext();
+  const portfolio=buildFullPortfolioText();
   const portfolioPayload=getAiPortfolioPayload();
   const eventsContext=buildEventsCalendarContext();
   try{
-    const r=await fetch('/api/ai-advisor',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({mode:'events',eventsContext,portfolio,portfolioPayload,messages:eventsAiChat.messages,provider,sanitized:false})
-    });
+    const r=await postAiAdvisor({mode:'events',eventsContext,portfolio,portfolioPayload,messages:eventsAiChat.messages,provider,sanitized:false});
     const data=await r.json();
     if(data.advice){
       eventsAiChat.messages.push({role:'assistant',content:data.advice});
@@ -4378,7 +4381,7 @@ async function sendEventsAiChat(){
     }else{
       eventsAiChat.messages.pop();
       renderEventsAiMsgs();
-      alert('回复失败：'+(data.error||'未知'));
+      alert('回复失败：'+aiAdvisorErrorText(data));
     }
   }catch(e){
     eventsAiChat.messages.pop();

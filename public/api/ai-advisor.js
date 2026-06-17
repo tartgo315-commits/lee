@@ -158,6 +158,11 @@ export default async function handler(req, res) {
   const isEventsChat = mode === 'events';
   const isChat = mode === 'chat' || isEventsChat;
 
+  const MAX_EVENTS_CHARS = 8000;
+  const eventsContextTrimmed = eventsContext
+    ? String(eventsContext).slice(0, MAX_EVENTS_CHARS)
+    : '';
+
   if (isEventsChat) {
     if (!eventsContext) {
       return res.status(400).json({ error: 'missing eventsContext' });
@@ -176,7 +181,7 @@ export default async function handler(req, res) {
 
   let chatSystem = `${pickChatPrompt(sanitized)}\n\n${ctx}`;
   if (isEventsChat) {
-    chatSystem = `${pickEventsPrompt(sanitized)}\n\n${eventsContext}`;
+    chatSystem = `${pickEventsPrompt(sanitized)}\n\n${eventsContextTrimmed}`;
     if (portfolio) chatSystem += `\n\n${ctx}`;
   }
 
@@ -206,7 +211,7 @@ export default async function handler(req, res) {
     }
 
     const r = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -222,7 +227,7 @@ export default async function handler(req, res) {
     const text = d?.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!text) throw new Error('empty');
     const tag = isEventsChat ? 'Events' : isChat ? 'Chat' : 'CIO';
-    return { advice: text, model: `Gemini 1.5 Flash · ${tag}` };
+    return { advice: text, model: `Gemini 2.5 Flash · ${tag}` };
   }
 
   async function tryGroq() {
@@ -304,14 +309,17 @@ export default async function handler(req, res) {
         ? [tryCohere, tryGemini, tryGroq]
         : [tryGemini, tryGroq, tryCohere];
 
+  const errors = [];
   for (const fn of order) {
     try {
       const result = await fn();
       return res.json(result);
-    } catch {
+    } catch (e) {
+      errors.push(fn.name + ': ' + (e?.message || String(e)));
       continue;
     }
   }
-
-  return res.status(502).json({ error: '所有AI服务均不可用，请检查环境变量' });
+  const detail = errors.join(' | ');
+  console.error('All AI providers failed:', detail);
+  return res.status(502).json({ error: '所有AI服务均不可用，请检查环境变量', detail });
 }
