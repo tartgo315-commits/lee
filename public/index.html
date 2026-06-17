@@ -628,6 +628,8 @@ input[type=text],input[type=number],input[type=date],select,textarea{font-size:v
 .ph-label .ti{font-size:var(--fs-title);color:var(--text-4)}
 .ph-main{color:var(--text-1)}
 .ph-sub{color:var(--text-4);margin-top:4px}
+.ph-growth{font-size:13px;font-weight:600;margin-top:8px;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.ph-growth-sub{font-size:11px;font-weight:400;color:var(--text-4);margin-top:3px;font-family:var(--font)}
 .ph-actions{display:flex;gap:8px;flex-wrap:wrap}
 .account-block{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);margin-bottom:16px;overflow:hidden}
 .account-header{display:flex;align-items:center;gap:16px;padding:20px 24px;cursor:pointer;border-bottom:1px solid var(--border-light);transition:background var(--ease-lux)}
@@ -695,10 +697,12 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--border-a
 .modal-tip-list li{margin:4px 0}
 .modal.modal-ai{max-width:min(720px,92vw);width:100%;max-height:88vh;padding:20px 22px;display:flex;flex-direction:column;overflow:hidden}
 .modal-ai .modal-title{margin-bottom:12px;flex-shrink:0}
-.modal-ai .ov-copilot-body{flex:1;min-height:280px;max-height:calc(88vh - 120px)}
-.modal-ai .ov-copilot-scroll{max-height:none;flex:1}
-.modal-ai .ov-events-ai-msgs{max-height:180px}
-.modal-ai .ai-pb-chat-msgs{max-height:240px}
+.modal-ai .ov-copilot-body{flex:1;min-height:280px;max-height:calc(88vh - 120px);display:flex;flex-direction:column}
+.modal-ai .ov-copilot-panel{flex:1;min-height:0}
+.modal-ai .ov-copilot-scroll{max-height:none;flex:1;min-height:0;display:flex;flex-direction:column}
+.modal-ai .ov-events-ai-msgs{flex:1;min-height:200px;max-height:none;overflow-y:auto}
+.modal-ai .ai-pb-chat-msgs{flex:1;min-height:200px;max-height:none;overflow-y:auto}
+.modal-ai #ai-diagnosis-output{max-height:none;overflow-y:auto}
 #modal-ai.overlay{background:rgba(8,11,18,.92)}
 .modal.modal-ai{background:#12151D;border-color:rgba(255,255,255,.1);box-shadow:0 24px 64px rgba(0,0,0,.7)}
 .modal-ai .ov-copilot-wealth,.modal-ai .ai-pb-panel{background:#12151D!important;border:none!important}
@@ -1060,6 +1064,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
           <div class="ph-label"><i class="ti ti-chart-candle"></i> 美国</div>
           <div class="ph-main" id="us-total">$ —</div>
           <div class="ph-sub" id="us-sub">—</div>
+          <div class="ph-growth" id="us-growth" style="display:none"></div>
         </div>
         <div class="ph-actions">
           <button class="btn btn-outline btn-sm" onclick="refreshStocks()"><i class="ti ti-refresh"></i> 刷新美股</button>
@@ -1214,10 +1219,10 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
       <div class="card" style="margin-bottom:14px">
         <div class="card-title" style="font-size:16px"><i class="ti ti-adjustments"></i> 账户与备份</div>
         <div class="settings-list">
-          <div class="settings-item" style="display:none">
+          <div class="settings-item">
             <div class="settings-item-main">
               <div class="settings-item-label"><i class="ti ti-chart-candle"></i> Tiger 账户本金（AUD）</div>
-              <div class="settings-item-desc">用于总览页计算美股账户相对本金的盈亏</div>
+              <div class="settings-item-desc">美国区顶部「相对本金」增长比例：初始投入澳币 vs 当前市值（含证券+闲置）</div>
               <div id="principal-status"></div>
             </div>
             <div class="settings-item-actions">
@@ -1225,7 +1230,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
               <button class="btn btn-primary" onclick="savePrincipal()">保存</button>
             </div>
           </div>
-          <div class="settings-item">
+          <div class="settings-item" style="display:none">
             <div class="settings-item-main">
               <div class="settings-item-label"><i class="ti ti-chart-candle"></i> Tiger 账户本金（USD）</div>
               <div class="settings-item-desc">用于计算美股账户相对本金的盈亏，以 USD 为基准，不受汇率影响</div>
@@ -2405,9 +2410,10 @@ function usAccountHeaderCNY(acc){
 function updateUsLiveAggregates(){
   const onUs=document.getElementById('page-us')?.classList.contains('active');
   const rcny=totalCNY('us');
-  if(onUs){
+    if(onUs){
     const elT=document.getElementById('us-total');if(elT)elT.textContent=fc(fromCNY(rcny,'USD'),'USD',2);
     const elS=document.getElementById('us-sub');if(elS)elS.textContent=fc(rcny,'CNY')+' | '+fc(fromCNY(rcny,'AUD'),'AUD');
+    updateUsGrowthDisplay();
     const ps=D.products.filter(p=>p.region==='us');
     const accounts=[...new Set(ps.map(p=>p.account||'未分类'))];
     const blocks=[...document.querySelectorAll('#us-blocks .account-block')];
@@ -3105,6 +3111,34 @@ function totalCNY(region){
   else if(!region)s+=usManualIdleAdjustmentCny(D.products.filter(p=>p.region==='us'));
   return s;
 }
+/** 美国区相对初始本金（AUD，默认 72640）的增长 */
+function getUsPrincipalGrowth(){
+  const rcny=totalCNY('us');
+  const principalAUD=Number(D.settings?.usPrincipalAUD)>0?Number(D.settings.usPrincipalAUD):72640;
+  const currentAUD=fromCNY(rcny,'AUD');
+  const currentUSD=fromCNY(rcny,'USD');
+  const principalCny=toCNY(principalAUD,'AUD');
+  const pnlAUD=currentAUD-principalAUD;
+  const pnlCNY=rcny-principalCny;
+  const pnlUSD=currentUSD-fromCNY(principalCny,'USD');
+  const pnlPct=principalAUD>0?(pnlAUD/principalAUD*100):0;
+  return{principalAUD,currentAUD,currentUSD,pnlAUD,pnlUSD,pnlCNY,pnlPct,isPos:pnlAUD>=0};
+}
+function updateUsGrowthDisplay(){
+  const el=document.getElementById('us-growth');
+  if(!el)return;
+  const rcny=totalCNY('us');
+  if(!(rcny>0)){
+    el.style.display='none';
+    el.innerHTML='';
+    return;
+  }
+  const g=getUsPrincipalGrowth();
+  const sign=g.isPos?'+':'';
+  const col=g.isPos?'var(--up)':'var(--dn)';
+  el.style.display='block';
+  el.innerHTML=`<span style="color:${col}">${sign}${fc(g.pnlAUD,'AUD',0)} · ${sign}${safePctFixed(g.pnlPct,1)}%</span><div class="ph-growth-sub">本金 ${fc(g.principalAUD,'AUD',0)} → 现值 ${fc(g.currentAUD,'AUD',0)}</div>`;
+}
 
 // ══ PAGE NAV ══
 const titles={overview:'总览',cn:'🇨🇳 中国境内',us:'🇺🇸 美国',au:'🇦🇺 澳洲',history:'NAV 历史',news:'📰 资讯',fx:'汇率设置',settings:'系统设置'};
@@ -3588,9 +3622,11 @@ function buildFullPortfolioText(){
     idleLines.forEach(l=>lines.push('  '+l));
   }
   const snaps=[...(D.navHistory||[])].filter(n=>n&&n.date&&n.cny!=null&&!isNaN(Number(n.cny))).sort((a,b)=>a.date.localeCompare(b.date));
-  lines.push('','【NAV 快照历史（完整 '+snaps.length+' 条）】');
-  if(!snaps.length)lines.push('无快照');
-  else snaps.forEach(s=>{
+  const NAV_AI_MAX=90;
+  const navForAi=snaps.length>NAV_AI_MAX?snaps.slice(-NAV_AI_MAX):snaps;
+  lines.push('','【NAV 快照历史（近 '+navForAi.length+' 条'+(snaps.length>navForAi.length?'，共 '+snaps.length+' 条仅取最近':'')+'）】');
+  if(!navForAi.length)lines.push('无快照');
+  else navForAi.forEach(s=>{
     const br=s.byRegion||{};
     const extra=[br.cn!=null?`CN ¥${Math.round(br.cn)}`:null,br.us!=null?`US ¥${Math.round(br.us)}`:null,br.au!=null?`AU ¥${Math.round(br.au)}`:null].filter(Boolean).join(' · ');
     lines.push(`${s.date} · NAV ¥${Math.round(Number(s.cny))}${extra?' · '+extra:''}`);
@@ -4349,7 +4385,12 @@ function renderEventsAiMsgs(){
     box.innerHTML='<div style="font-size:13px;color:var(--text3);padding:8px 2px;font-family:var(--mono)">输入问题，AI 将结合大事件日历、RSS 资讯与你的完整持仓解读。</div>';
     return;
   }
-  box.innerHTML=eventsAiChat.messages.map(m=>`<div class="ov-events-ai-msg ${m.role==='user'?'user':'bot'}">${m.role==='user'?escOvHtml(m.content).replace(/\n/g,'<br>'):escOvHtml(m.content).replace(/\n/g,'<br>')}</div>`).join('');
+  box.innerHTML=eventsAiChat.messages.map(m=>{
+    const body=m.role==='user'
+      ?escOvHtml(m.content).replace(/\n/g,'<br>')
+      :formatAiAdviceHtml(m.content);
+  return `<div class="ov-events-ai-msg ${m.role==='user'?'user':'bot'}">${body}</div>`;
+  }).join('');
   box.scrollTop=box.scrollHeight;
 }
 
@@ -4678,20 +4719,17 @@ function renderOverview(){
     // Extra stats for US column: single row, 3-currency PnL
     let extraStats = '';
     let col = 'var(--green)', sign = '+', pnlAUD = 0, pnlUSD = 0, pnlCNY = 0, pnlPct = 0, totalAUD_us = 0;
-    let usStockCny=0,usIdleCny=0;
+    let usStockCny=0,usIdleCny=0,usGrowth=null;
     if(r.id === 'us' && ps.length){
       usStockCny=sumStockUsCNY(ps);
       usIdleCny=regionUsIdleCnyTotal(ps);
-      const principalUSD=D.settings?.usPrincipalUSD||46490;
-      const principalCNY=toCNY(principalUSD,'USD');
-      totalAUD_us=fromCNY(rcny,'AUD');
-      const principalAUD=fromCNY(principalCNY,'AUD');
-      const totalUSD=fromCNY(rcny,'USD');
-      pnlUSD=totalUSD-principalUSD;
-      pnlAUD=totalAUD_us-principalAUD;
-      pnlCNY=rcny-principalCNY;
-      pnlPct=principalUSD>0?(pnlUSD/principalUSD*100):0;
-      const isPos=pnlUSD>=0;
+      usGrowth=getUsPrincipalGrowth();
+      totalAUD_us=usGrowth.currentAUD;
+      pnlAUD=usGrowth.pnlAUD;
+      pnlUSD=usGrowth.pnlUSD;
+      pnlCNY=usGrowth.pnlCNY;
+      pnlPct=usGrowth.pnlPct;
+      const isPos=usGrowth.isPos;
       col = isPos ? 'var(--green)' : 'var(--red)';
       sign = isPos ? '+' : '';
       extraStats = 'us';
@@ -4717,6 +4755,8 @@ function renderOverview(){
             <span>证券市值 <strong class="ov-cap-val">${fc(fromCNY(usStockCny,'USD'),'USD',2)}</strong></span>
             <span class="ov-cap-sep">·</span>
             <span>闲置资金 <strong class="ov-cap-val">${fc(fromCNY(usIdleCny,'USD'),'USD',2)}</strong></span>
+            <span class="ov-cap-sep">·</span>
+            <span>本金 <strong class="ov-cap-val">${fc(usGrowth.principalAUD,'AUD',0)}</strong></span>
           </div>
         </div>
         <div class="ov-col-pnl-row">
@@ -4909,6 +4949,7 @@ function renderRegion(region){
     const elUb=document.getElementById('us-blocks');
     if(elUt)elUt.textContent=fc(primaryVal,'USD',2);
     if(elUs)elUs.textContent=fc(rcny,'CNY')+' | '+fc(fromCNY(rcny,'AUD'),'AUD');
+    updateUsGrowthDisplay();
     try{renderUsStockPanel();}catch(e){}
     if(elUb)elUb.innerHTML=buildAccountBlocks(ps,region);
     finnhubSyncSubscriptions();

@@ -169,10 +169,20 @@ export async function onRequest(context) {
   let chatSystem = `${pickChatPrompt(sanitized)}\n\n${ctx}`;
   if (isEventsChat) {
     chatSystem = `${pickEventsPrompt(sanitized)}\n\n${eventsContextTrimmed}`;
-    if (portfolio) chatSystem += `\n\n${ctx}`;
+    if (portfolio) {
+      chatSystem += `\n\n${sanitized ? '【脱敏持仓摘要】' : '【完整持仓与市场上下文】'}\n${portfolio}`;
+    }
   }
 
-  const outTokens = sanitized ? (isChat ? 1200 : 1400) : isChat ? 1400 : 1600;
+  const outTokens = sanitized
+    ? isChat
+      ? 1200
+      : 1400
+    : isEventsChat
+      ? 3200
+      : isChat
+        ? 2400
+        : 2800;
 
   async function tryGemini() {
     const key = env.GEMINI_API_KEY;
@@ -211,8 +221,12 @@ export async function onRequest(context) {
       throw new Error('gemini_http_' + r.status);
     }
     const d = await r.json();
-    const text = d?.candidates?.[0]?.content?.parts?.[0]?.text;
+    const cand = d?.candidates?.[0];
+    let text = cand?.content?.parts?.[0]?.text;
     if (!text) throw new Error('empty');
+    if (cand?.finishReason === 'MAX_TOKENS') {
+      text += '\n\n（回复因长度限制被截断，可输入「继续」获取剩余分析）';
+    }
     const tag = isEventsChat ? 'Events' : isChat ? 'Chat' : 'CIO';
     return { advice: text, model: `Gemini 2.5 Flash · ${tag}` };
   }
@@ -247,8 +261,11 @@ export async function onRequest(context) {
       throw new Error('groq_http_' + r.status);
     }
     const d = await r.json();
-    const text = d?.choices?.[0]?.message?.content;
+    let text = d?.choices?.[0]?.message?.content;
     if (!text) throw new Error('empty');
+    if (d?.choices?.[0]?.finish_reason === 'length') {
+      text += '\n\n（回复因长度限制被截断，可输入「继续」获取剩余分析）';
+    }
     const tag = isEventsChat ? 'Events' : isChat ? 'Chat' : 'CIO';
     return { advice: text, model: `Groq Llama 3.3 70B · ${tag}` };
   }
