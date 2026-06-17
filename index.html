@@ -1705,6 +1705,7 @@ function save(){
 const today=()=>new Date().toISOString().slice(0,10);
 load();
 hydrateStocksFromCacheOnLoad();
+syncTdRateLimitedFromStorage();
 if(!D.goal||typeof D.goal!=='object'||!(Number(D.goal.amount)>0))
   D.goal={amount:1500000,currency:'CNY',label:'存款目标'};
 (function seedCrclDefaultStopLoss(){
@@ -2031,8 +2032,27 @@ async function fetchTextCrossOrigin(url){return fetchProxiedText(url);}
 
 // ══ 美股现价：Twelve Data → Yahoo → localStorage 缓存（stock_price_cache）══
 const STOCK_PRICE_CACHE_KEY='stock_price_cache';
+const TD_LIMIT_UNTIL_KEY='stock_td_limit_until';
 const stockPriceSourceBySym=new Map();
 let __stockTdRateLimited=false;
+function syncTdRateLimitedFromStorage(){
+  try{
+    const until=parseInt(localStorage.getItem(TD_LIMIT_UNTIL_KEY)||'0',10);
+    if(until>Date.now())__stockTdRateLimited=true;
+    else if(until>0)localStorage.removeItem(TD_LIMIT_UNTIL_KEY);
+  }catch(e){}
+}
+function markTdRateLimited(){
+  __stockTdRateLimited=true;
+  try{
+    const d=new Date();
+    localStorage.setItem(TD_LIMIT_UNTIL_KEY,String(Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate()+1)));
+  }catch(e){}
+}
+function clearTdRateLimited(){
+  __stockTdRateLimited=false;
+  try{localStorage.removeItem(TD_LIMIT_UNTIL_KEY);}catch(e){}
+}
 
 function readStockPriceCacheStore(){
   try{
@@ -2074,9 +2094,17 @@ function updateStockQuoteFallbackBanner(){
   if(__stockTdRateLimited&&(yahooUsed||cacheEntries.length)){
     el.style.display='block';
     el.className='alert alert-warn';
+    let resetHint='';
+    try{
+      const until=parseInt(localStorage.getItem(TD_LIMIT_UNTIL_KEY)||'0',10);
+      if(until>Date.now()){
+        const h=new Date(until);
+        resetHint='（Twelve Data 免费额度按 UTC 日重置，约 '+h.toLocaleString('zh-CN',{hour:'2-digit',minute:'2-digit'})+' 北京时间后恢复）';
+      }
+    }catch(e){}
     el.textContent=cacheEntries.length
-      ?'Twelve Data 额度已用尽，行情使用备用数据源；部分标的显示缓存价格'
-      :'Twelve Data 额度已用尽，行情已切换 Yahoo 备用数据源';
+      ?'Twelve Data 今日额度已用尽，行情使用备用数据源；部分标的显示缓存价格'+resetHint
+      :'Twelve Data 今日额度已用尽，行情已切换 Yahoo 备用数据源'+resetHint;
     return;
   }
   if(cacheEntries.length){
@@ -2147,6 +2175,7 @@ async function fetchTwelveDataBatch(tickers){
       {cache:'no-store'}
     );
     const d=await r.json();
+    if(isTwelveDataRateLimited(d))return{map:new Map(),rateLimited:true};
     const isMulti=syms.length>1;
     const out=new Map();
     let rateLimited=false;
@@ -2190,14 +2219,30 @@ async function fetchYahooOnlyStockPrice(ticker){
   const yPx=(p2!=null&&p2>0&&isFinite(p2))?p2:((p1!=null&&p1>0&&isFinite(p1))?p1:((p3>0&&isFinite(p3))?p3:null));
   return yPx!=null&&yPx>0?yPx:null;
 }
+/** 不占 Twelve Data：Yahoo → 缓存（自动轮询在额度用尽时用此路径） */
+async function fetchStockPriceYahooOrCacheOnly(ticker){
+  const sym=String(ticker||'').trim().toUpperCase();
+  if(!sym)return null;
+  const yPx=await fetchYahooOnlyStockPrice(sym);
+  if(yPx>0){
+    writeStockPriceCache(sym,yPx);
+    return{price:yPx,source:'yahoo',timestamp:Date.now()};
+  }
+  const cached=getCachedStockPrice(sym);
+  if(cached?.price>0){
+    return{price:cached.price,source:'cache',timestamp:cached.timestamp};
+  }
+  return null;
+}
 /** 按序 fallback：Twelve Data → Yahoo → localStorage 缓存 */
 async function fetchStockPriceWithFallback(ticker){
   const sym=String(ticker||'').trim().toUpperCase();
   if(!sym)return null;
+  if(__stockTdRateLimited)return fetchStockPriceYahooOrCacheOnly(sym);
   const td=await fetchTwelveDataStockPriceDetailed(sym);
-  if(td.rateLimited)__stockTdRateLimited=true;
+  if(td.rateLimited)markTdRateLimited();
   if(td.price>0){
-    __stockTdRateLimited=false;
+    clearTdRateLimited();
     writeStockPriceCache(sym,td.price);
     return{price:td.price,source:'twelve',timestamp:Date.now()};
   }
@@ -2534,10 +2579,10 @@ async function pollFinnhubQuotesOnce(){
   if(!__stockTdRateLimited){
     const batch=await fetchTwelveDataBatch(syms);
     if(batch.rateLimited){
-      __stockTdRateLimited=true;
+      markTdRateLimited();
     }else{
       tdMap=batch.map;
-      if(tdMap.size>0)__stockTdRateLimited=false;
+      if(tdMap.size>0)clearTdRateLimited();
     }
   }
 
@@ -2547,7 +2592,9 @@ async function pollFinnhubQuotesOnce(){
     if(price&&price>0){
       writeStockPriceCache(sym,price);
     }else{
-      const fallback=await fetchStockPriceWithFallback(sym);
+      const fallback=__stockTdRateLimited
+        ?await fetchStockPriceYahooOrCacheOnly(sym)
+        :await fetchStockPriceWithFallback(sym);
       if(fallback?.price>0){
         price=fallback.price;
         source=fallback.source;
@@ -3550,6 +3597,7 @@ function buildFullPortfolioText(){
   });
   return lines.join('\n');
 }
+/** AI 诊断/追问：完整持仓 + 大事件日历 + RSS 资讯 */
 function buildAiPortfolioContext(){
   return[
     buildFullPortfolioText(),
