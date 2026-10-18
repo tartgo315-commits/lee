@@ -910,6 +910,41 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
   .term-zone-portfolio,.term-zone-intel{padding:16px!important}
 }
 .calc-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:end;padding-bottom:12px}.flow-row{display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border);padding:10px 0}.flow-row>span{flex:1;min-width:0;overflow-wrap:anywhere}[hidden]{display:none!important}#goal-eta{white-space:normal;overflow-wrap:anywhere}#valuation-notice{margin:12px 0;font-size:13px;line-height:1.65}#calculation-panel details>summary{cursor:pointer;color:var(--text-2)}
+/* Overview: full-width summary, primary holdings, compact upcoming events. */
+.term-intel-events #ov-events-card{display:flex;flex:none;flex-direction:column;gap:0}
+.term-intel-events #ov-events-list{flex:none;min-height:0!important;max-height:none;overflow:visible}
+.term-intel-events #ov-events-card.events-expanded #ov-events-list{max-height:560px;overflow-y:auto;scrollbar-gutter:stable}
+.term-intel-events .ov-events-hd{gap:10px;margin-bottom:8px}
+.term-intel-events .ov-events-sub{white-space:normal;overflow:visible;line-height:1.5}
+.term-intel-events .ov-event-row{grid-template-columns:minmax(0,1fr);gap:6px;padding:12px 0}
+.term-intel-events .ov-event-row .ov-event-date{grid-column:1;grid-row:1;display:flex;flex-wrap:wrap;align-items:baseline;gap:3px 8px;overflow:visible}
+.term-intel-events .ov-event-row .ov-event-body{grid-column:1;grid-row:2}
+.term-intel-events .tz-dual{flex-direction:row;flex-wrap:wrap;gap:3px 10px}
+.term-intel-events .ov-event-date .tz-line.cn,.term-intel-events .ov-event-date .tz-line.us{white-space:normal;overflow:visible;font-size:11px;line-height:1.5}
+.term-intel-events .ov-event-date .countdown{margin:0;font-size:11px}
+.term-intel-events .ov-event-title{font-size:13px;-webkit-line-clamp:3}
+.term-intel-events .ov-events-filter{font-size:11px;padding:4px 7px}
+.term-intel-events .events-compact .ov-event-date .tz-line.us{display:none}.term-intel-events .events-compact .ov-events-today-marker{display:none!important}.term-intel-events .events-compact .ov-event-row{padding:10px 0}.ov-events-title-row{display:flex;align-items:center;justify-content:space-between;gap:8px}.ov-events-title-row .card-title{flex:1}.ov-events-toggle{flex-shrink:0;font-size:11px;padding:4px 6px;justify-content:center}
+.term-intel-events .term-intel-risk{margin-top:8px}
+@media(min-width:769px){
+  .terminal-dashboard{grid-template-areas:"head head" "portfolio intel";grid-template-columns:minmax(0,1fr) 300px;gap:12px;align-items:start}
+  .terminal-dashboard>.term-zone-head{grid-template-columns:minmax(0,1.2fr) minmax(0,1.5fr) minmax(0,1fr) minmax(0,.9fr) minmax(0,.9fr);gap:10px;min-height:236px;overflow:visible}
+  .term-zone-head>.term-nav-hero,.term-zone-head>.term-nav-chart,.term-zone-head>.term-nav-goal,.term-zone-head>.term-alloc-card{min-height:236px;height:100%;padding:16px}
+  #ov-dash.is-empty{grid-template-columns:minmax(0,1.2fr) minmax(0,1.5fr) minmax(0,1fr)}
+  .terminal-dashboard>.term-zone-intel{grid-row:auto;align-self:start;height:auto!important;min-height:0!important;padding:16px!important;overflow:visible}
+  .term-intel-events{height:auto;flex:none;overflow:visible}
+  .term-intel-events #ov-events-card{height:auto;overflow:visible}
+  .term-zone-head>.term-nav-chart{grid-column:auto;grid-row:auto}
+  .term-nav-chart .nav-chart-wrap{min-height:150px}
+}
+@media(min-width:769px) and (max-width:1199px){
+  .terminal-dashboard{grid-template-areas:"head" "portfolio" "intel";grid-template-columns:minmax(0,1fr)}
+  .terminal-dashboard>.term-zone-head{grid-template-columns:repeat(3,minmax(0,1fr));min-height:0}
+  .term-zone-head>.term-nav-chart{grid-column:span 2}
+  .term-zone-head>.term-nav-hero,.term-zone-head>.term-nav-chart,.term-zone-head>.term-nav-goal,.term-zone-head>.term-alloc-card{min-height:200px;height:auto}
+  #ov-dash.is-empty>.term-nav-chart{grid-column:auto}
+}
+
 </style>
 </head>
 <body>
@@ -1088,7 +1123,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
             <div class="card ov-events-card mb-0" id="ov-events-card">
               <div class="ov-events-hd">
                 <div>
-                  <div class="card-title" style="margin-bottom:0"><i class="ti ti-calendar-event"></i> 近期事件</div>
+                  <div class="ov-events-title-row"><div class="card-title" style="margin-bottom:0"><i class="ti ti-calendar-event"></i> 近期事件</div><button type="button" id="ov-events-toggle" class="btn btn-ghost btn-sm ov-events-toggle" aria-controls="ov-events-list" aria-expanded="false" onclick="toggleOverviewEvents()" hidden>展开全部</button></div>
                   <div class="ov-events-sub" id="ov-events-range">近1个月已发生 + 未来12个月 · 宏观 + 持仓到期</div>
                 </div>
                 <div class="ov-events-filters" id="ov-events-filters">
@@ -4136,6 +4171,7 @@ async function fetchAiAdvice(){
 // ══ OVERVIEW ══
 let ovChart=null,ovDashChartRegion=null,ovDashChartLiq=null,ovGoalChart=null,ovRange=30,__ovChartDays=null,__ovChartDark=null;
 let ovEventsFilter='all';
+let ovEventsExpanded=false;
 
 const MACRO_EVENTS_WATCH=[
   {date:'2026-05-07',title:'FOMC 利率决议',region:'us',cat:'monetary',impact:'high',
@@ -4558,10 +4594,19 @@ function setCopilotTab(tab,btn){
 }
 function setEventsFilter(filter,btn){
   ovEventsFilter=filter;
+  ovEventsExpanded=false;
   document.querySelectorAll('#ov-events-filters .ov-events-filter').forEach(b=>b.classList.toggle('active',b===btn));
   renderMajorEventsWatch();
 }
 
+function selectOverviewEvents(items,expanded,asOf,filter){
+  if(expanded)return items.slice();
+  if(filter==='news')return items.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,4);
+  const future=items.filter(e=>e.kind==='event'&&e.date>=asOf).sort((a,b)=>a.date.localeCompare(b.date));
+  const news=items.filter(e=>e.kind==='news').sort((a,b)=>b.date.localeCompare(a.date));
+  return [...future.slice(0,4),...news.slice(0,Math.max(0,4-future.length))];
+}
+function toggleOverviewEvents(){ovEventsExpanded=!ovEventsExpanded;renderMajorEventsWatch();}
 function renderMajorEventsWatch(){
   const listEl=document.getElementById('ov-events-list');
   const rangeEl=document.getElementById('ov-events-range');
@@ -4596,10 +4641,17 @@ function renderMajorEventsWatch(){
   if(ovEventsFilter==='news')combined.sort((a,b)=>b.date.localeCompare(a.date)||b.score-a.score);
   else combined.sort((a,b)=>a.date.localeCompare(b.date)||(a.kind==='event'&&b.kind==='news'?-1:a.kind==='news'&&b.kind==='event'?1:0));
 
+  const allCombined=combined;
+  combined=selectOverviewEvents(allCombined,ovEventsExpanded,localTodayISO(),ovEventsFilter);
+  const toggle=document.getElementById('ov-events-toggle'),card=document.getElementById('ov-events-card');
+  card?.classList.toggle('events-expanded',ovEventsExpanded);
+  card?.classList.toggle('events-compact',!ovEventsExpanded);
+  if(toggle){toggle.hidden=!ovEventsExpanded&&allCombined.length===combined.length;toggle.textContent=ovEventsExpanded?'收起':'展开全部（'+allCombined.length+'）';toggle.setAttribute('aria-expanded',String(ovEventsExpanded));}
+  if(rangeEl&&!ovEventsExpanded)rangeEl.textContent=(ovEventsFilter==='news'?'最近资讯':'待发生事件优先')+' · 显示 '+combined.length+' / '+allCombined.length+' 项';
   if(!combined.length){
     const emptyMsg=ovEventsFilter==='news'
-      ?'暂无持仓相关资讯。请打开「资讯」页点击「刷新资讯」，或在资讯页点击「刷新资讯」。'
-      :'该筛选下暂无事件';
+      ?'暂无持仓相关资讯。可到「资讯」页点击「刷新资讯」。'
+      :(allCombined.length?'近期暂无待发生事件，可展开查看已发生事项':'该筛选下暂无事件');
     listEl.innerHTML=`<div class="ov-events-empty">${emptyMsg}</div>`;
     renderEventsAiMsgs();
     return;
@@ -4655,7 +4707,7 @@ function renderMajorEventsWatch(){
       else if(calOnly.length&&calOnly.every(e=>eventDaysUntil(e.date)>0))rows.unshift(todayMarkerHtml());
     }
   }
-  if(newsCount===0&&(ovEventsFilter==='all'||ovEventsFilter==='personal'||ovEventsFilter==='news')&&(!D.newsCache?.items?.length)){
+  if((ovEventsExpanded||ovEventsFilter==='news')&&newsCount===0&&(ovEventsFilter==='all'||ovEventsFilter==='personal'||ovEventsFilter==='news')&&(!D.newsCache?.items?.length)){
     rows.push('<div class="ov-events-news-hint">持仓相关新闻尚未拉取。<a href="#" onclick="showPage(\'news\');return false">打开资讯页刷新</a> 或在资讯页点击「刷新资讯」。</div>');
   }
   listEl.innerHTML=rows.join('');
@@ -4898,48 +4950,14 @@ function renderOverview(){
   scheduleIntelHeightSync();
 }
 
+// Layout follows natural CSS height; these hooks clear legacy inline sizing only.
 function syncIntelColumnHeight(){
-  const intel=document.querySelector('.term-zone-intel');
-  const head=document.getElementById('ov-dash');
-  const port=document.querySelector('.term-zone-portfolio');
-  const card=document.getElementById('ov-events-card');
-  const list=document.getElementById('ov-events-list');
-  if(!intel||!head||!port)return;
-  if(window.innerWidth<=1350){
-    intel.style.minHeight='';
-    intel.style.height='';
-    if(list)list.style.minHeight='';
-    return;
-  }
-  const gap=6;
-  const target=head.offsetHeight+gap+port.offsetHeight;
-  if(target>0){
-    intel.style.minHeight=target+'px';
-    intel.style.height=target+'px';
-  }
-  if(card&&list){
-    const hd=card.querySelector('.ov-events-hd');
-    const risk=card.querySelector('.term-intel-risk');
-    const pad=32;
-    const inner=Math.max(0,target-pad);
-    const fixed=(hd?.offsetHeight||0)+(risk?.offsetHeight||0);
-    const listH=inner-fixed;
-    list.style.minHeight=listH>60?listH+'px':'';
-  }
+  const intel=document.querySelector('.term-zone-intel'),list=document.getElementById('ov-events-list');
+  if(intel){intel.style.height='';intel.style.minHeight='';}
+  if(list)list.style.minHeight='';
 }
-function scheduleIntelHeightSync(){
-  requestAnimationFrame(function(){requestAnimationFrame(syncIntelColumnHeight);});
-}
-let _intelHeightRo=null;
-function initIntelHeightObserver(){
-  if(_intelHeightRo||typeof ResizeObserver==='undefined')return;
-  const port=document.querySelector('.term-zone-portfolio');
-  const head=document.getElementById('ov-dash');
-  if(!port)return;
-  _intelHeightRo=new ResizeObserver(function(){scheduleIntelHeightSync();});
-  _intelHeightRo.observe(port);
-  if(head)_intelHeightRo.observe(head);
-}
+function scheduleIntelHeightSync(){syncIntelColumnHeight();}
+function initIntelHeightObserver(){syncIntelColumnHeight();}
 function setRange(days,btn){
   ovRange=days;
   document.querySelectorAll('.rt').forEach(b=>b.classList.remove('active'));
