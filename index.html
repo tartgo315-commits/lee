@@ -10,6 +10,8 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
 <script src="calculation-engine.js"></script>
 <script src="movement-engine.js"></script>
+<script src="ledger-workflows.js"></script>
+<script src="ledger-ui.js"></script>
 <script src="portfolio-intelligence.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1029,6 +1031,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
 @media(max-width:768px){#modal .asset-editor{width:100vw;border:0}.asset-editor-head{padding:16px}.asset-editor-body{padding:18px 16px}.asset-editor-footer{padding:12px 16px max(16px,env(safe-area-inset-bottom))}#modal .asset-editor-body input,#modal .asset-editor-body select{font-size:16px}.asset-editor-actions .btn{flex:1}.asset-editor-section{margin-bottom:20px}}
 
 </style>
+<link rel="stylesheet" href="ledger-workflows.css">
 </head>
 <body>
 <div id="pin-overlay" class="pin-overlay" style="display:none" aria-modal="true" role="dialog" aria-labelledby="pin-overlay-title">
@@ -1197,15 +1200,15 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
         <section class="term-zone term-zone-portfolio">
           <div class="term-portfolio-hd">
             <div class="card-title"><i class="ti ti-briefcase"></i> 资产持仓</div>
-            <span class="ov-holdings-note">全部持仓按地区、账户分组展示</span><button type="button" class="btn btn-ghost btn-sm" onclick="openCashMovement()">记录资金变动</button>
+            <span class="ov-holdings-note">全部地区 · 按账户分组</span><button type="button" class="btn btn-ghost btn-sm" onclick="LedgerUI.open('trade')">买卖股票</button><button type="button" class="btn btn-ghost btn-sm" onclick="LedgerUI.open('transfer')">转账</button><button type="button" class="btn btn-ghost btn-sm" onclick="openCashMovement()">现金变动</button><button type="button" class="btn btn-ghost btn-sm" onclick="LedgerUI.showWorkspace()">资金工作台</button>
           </div>
           <div id="gold-price-warn" style="display:none;margin-bottom:8px;padding:8px 12px;border-radius:8px;background:var(--warn-bg);border:1px solid rgba(217,119,6,.25);color:var(--warn);font-size:13px;">
             ⚠️ 黄金积存金价未刷新，当前净值未计入黄金市值。请点击顶栏「Au/g」刷新金价。
           </div>
-          <div id="ov-regions"></div>
+          <div id="ledger-home-status" class="ledger-controls" aria-label="资金处理状态"></div><div id="ov-regions"></div>
         </section>
 
-        <aside class="term-zone term-zone-intel">
+        <aside class="term-zone term-zone-intel intel-mode-events"><div class="intel-switch" aria-label="事件与风险切换"><button type="button" class="btn btn-ghost btn-sm" aria-pressed="true" onclick="setIntelView('events',this)">近期事件</button><button type="button" class="btn btn-ghost btn-sm" aria-pressed="false" onclick="setIntelView('risk',this)">风险检查</button></div>
           <div class="term-intel-events">
             <div class="card ov-events-card mb-0" id="ov-events-card">
               <div class="ov-events-hd">
@@ -1338,7 +1341,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
 
 </section>
 <section id="history-panel-flows" role="tabpanel" aria-labelledby="history-tab-flows" hidden>
-<section class="card" id="cashflow-panel" aria-label="资金流水"><div class="card-title">资金流水</div><p class="privacy-note">这里只登记全账本的外部入出金。账户间转账和持仓买卖不计入；保存流水不会自动修改资产余额。外币流水须填写发生日汇率。</p>        <details id="flow-editor" open>
+<section class="card" id="cashflow-panel" aria-label="资金流水"><div class="card-title">资金工作台</div><div id="ledger-workspace"></div><details class="ledger-legacy"><summary>补记历史外部入出金（不改当前余额）</summary><p class="privacy-note">这里只登记全账本的外部入出金。账户间转账和持仓买卖不计入；保存流水不会自动修改资产余额。外币流水须填写发生日汇率。</p>        <details id="flow-editor">
           <summary>新增或编辑入出金</summary>
           <input id="flow-id" type="hidden">
           <div class="fg-row c3" style="margin-top:12px">
@@ -1353,11 +1356,11 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
           </div>
           <div class="calc-actions"><button type="button" class="btn btn-primary" onclick="saveCashFlow()">保存流水</button><button type="button" class="btn btn-ghost" onclick="resetCashFlowForm()">清空表单</button></div>
         </details>
-        <div class="calc-actions"><button type="button" class="btn btn-primary" onclick="openCashMovement()">记录资金变动</button><button type="button" class="btn btn-ghost" onclick="restartPerformanceFromCurrent()">以当前资产重新开始核算收益</button></div>
-        <h3 style="font-size:14px;margin-top:18px">资金与资产变动记录</h3><div id="movement-log" aria-live="polite"></div>
-        <h3 style="font-size:14px;margin-top:18px">外部入出金（含补记历史）</h3>
+        </details><details class="ledger-legacy"><summary>重新设置收益核算区间（其他选项）</summary><p class="privacy-note">若只是在更正错误，优先使用记录中的「核对更正」，可保留原区间。</p><button type="button" class="btn btn-ghost btn-sm" onclick="restartPerformanceFromCurrent()">以当前资产重新开始核算收益</button></details>
+        <div id="movement-record-section"><h3 style="font-size:14px;margin-top:12px">资金与资产变动记录</h3><div id="movement-log" aria-live="polite"></div></div>
+        <details class="ledger-legacy"><summary>外部入出金明细（含补记历史）</summary>
         <div id="cashflow-list" class="privacy-note"></div>
-        <button id="restore-cashflow" type="button" class="btn btn-ghost btn-sm" onclick="restoreCashFlow()">恢复最近删除的流水</button>
+        <button id="restore-cashflow" type="button" class="btn btn-ghost btn-sm" onclick="restoreCashFlow()">恢复最近删除的流水</button></details>
 </section>
 </section>
 <section id="history-panel-goal" role="tabpanel" aria-labelledby="history-tab-goal" hidden>
@@ -1778,9 +1781,14 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
     <div id="mv-transfer-wrap" hidden><div class="fg"><label for="mv-target">转入账户</label><select id="mv-target" onchange="updateMovementPreview()"></select></div><div class="fg"><label for="mv-received">实际到账金额（转入账户币种，已扣费用）</label><input id="mv-received" type="number" min="0" step="0.01" oninput="updateMovementPreview()"></div><p class="privacy-note">跨币种填写实际到账金额。费用已体现在转出与到账金额中，不再重复扣款。若尚未到账，请到账后再记录；缺少目标现金项目时先添加该账户的现金余额。</p></div>
     <div id="mv-fx-wrap" class="fg" hidden><label for="mv-fx">发生日汇率（每 1 外币折 CNY）</label><input id="mv-fx" type="number" min="0" step="any" oninput="updateMovementPreview()"></div>
     <div class="fg-row c2"><div class="fg"><label for="mv-channel">渠道 / 方式（可选）</label><input type="text" id="mv-channel" placeholder="银行电汇 / 券商入金"></div><div class="fg"><label for="mv-chain">关联批次（可选）</label><input type="text" id="mv-chain" placeholder="同一次跨境资金用同一个名称"></div></div>
-    <div id="mv-preview" class="movement-preview" aria-live="polite"></div><p id="mv-error" role="alert"></p>
+    <button type="button" class="btn btn-ghost btn-sm" id="mv-stock-trade" hidden onclick="LedgerUI.fromManualTrade()">使用股票成交入口，自动联动现金</button><div id="mv-preview" class="movement-preview" aria-live="polite"></div><p id="mv-error" role="alert"></p>
     <div class="movement-actions"><button type="button" class="btn btn-ghost" onclick="cancelMovement()">返回修改</button><button type="button" class="btn btn-primary" id="mv-submit" onclick="commitMovement()">确认变动并保存</button></div>
   </div>
+</div>
+<div class="overlay" id="modal-ledger" role="dialog" aria-modal="true" aria-labelledby="ledger-title">
+ <div class="modal"><div class="movement-header"><h2 id="ledger-title">资金工作台</h2><button type="button" class="btn btn-icon" aria-label="关闭资金工作台" onclick="LedgerUI.close()">×</button></div>
+ <div id="ledger-form" class="ledger-form-grid"></div><div id="ledger-preview" aria-live="polite"></div><p id="ledger-error" role="alert"></p>
+ <div class="movement-actions"><button type="button" class="btn btn-ghost" onclick="LedgerUI.close()">取消</button><button type="button" class="btn btn-primary" onclick="LedgerUI.commit()">核对并保存</button></div></div>
 </div>
 <script>
 // ══ DATA ══
@@ -4799,7 +4807,7 @@ function ovPerfBarHtml(pct){
   return`<div class="ov-perf-bar ${cls}"><div class="ov-perf-fill" style="width:${w}%"></div></div>`;
 }
 const OVERVIEW_REGIONS={cn:'中国境内',us:'美国',au:'澳洲',other:'未标地区'};
-const OVERVIEW_TYPES={cash:'现金 / 活期',fund_cn:'基金 / 理财',gold:'黄金',stock_us:'美股',term_deposit:'定期存款',other:'其他'};
+const OVERVIEW_TYPES={in_transit:'在途资金',cash:'现金 / 活期',fund_cn:'基金 / 理财',gold:'黄金',stock_us:'美股',term_deposit:'定期存款',other:'其他'};
 let overviewHoldingFilters={region:'',account:'',type:'',sort:'desc'};
 function overviewHoldingAccountKey(region,account){return JSON.stringify([region,account]);}
 function buildOverviewHoldingRows(products,context,manualIdle){
@@ -4875,9 +4883,9 @@ function renderOverviewHoldings(){
         <div><label for="ov-filter-region">地区</label><select id="ov-filter-region"></select></div>
         <div><label for="ov-filter-account">账户</label><select id="ov-filter-account"></select></div>
         <div><label for="ov-filter-type">资产类型</label><select id="ov-filter-type"></select></div>
-        <button type="button" class="btn btn-ghost btn-sm" id="ov-filter-reset">显示全部</button>
+        <button type="button" class="btn btn-ghost btn-sm" id="ov-filter-reset">显示全部</button><label><input type="checkbox" id="ov-show-details" onchange="document.getElementById('ov-regions').classList.toggle('show-holding-details',this.checked)"> 展开持仓明细</label>
       </div></details>
-      <div class="ov-holdings-scroll" role="region" aria-label="持仓表格，可横向滚动" tabindex="0">
+      <div class="ov-holdings-scroll" role="region" aria-label="持仓表格，可横向与纵向滚动" tabindex="0">
         <table id="ov-holdings-table" class="ov-holdings-table"><caption class="sr-only">全部持仓按地区、账户分组，账户内按人民币估值排序</caption>
           <colgroup><col style="width:26%"><col style="width:20%"><col style="width:16%"><col style="width:15%"><col style="width:14%"><col style="width:9%"></colgroup>
           <thead><tr><th scope="col">资产</th><th scope="col">持仓 / 合同信息</th><th scope="col" class="num">原币估值</th><th scope="col" class="num" id="ov-sort-header"><button type="button" id="ov-sort-value">CNY（组内）↓</button></th><th scope="col" class="num">原币账面盈亏</th><th scope="col" class="num">操作</th></tr></thead>
@@ -4885,7 +4893,7 @@ function renderOverviewHoldings(){
         </table>
       </div>
       <div id="ov-holdings-status" class="ov-holdings-status" role="status" aria-live="polite"></div>
-      <p class="ov-holdings-note">账面盈亏仅对应当前持仓，不包含已卖出资产、分红和手续费；整体收益请查看「NAV 历史」。</p>`;
+      <p class="ov-holdings-note">账面盈亏仅对应当前持仓，不包含已卖出资产和分红；通过成交入口记录的买入费用计入成本；整体收益请查看「NAV 历史」。</p>`;
     for(const [id,field] of [['ov-filter-region','region'],['ov-filter-account','account'],['ov-filter-type','type']]){
       document.getElementById(id).addEventListener('change',e=>{overviewHoldingFilters[field]=e.target.value;if(field==='region')overviewHoldingFilters.account='';renderOverviewHoldings();});
     }
@@ -4941,8 +4949,7 @@ function renderOverviewHoldings(){
     if(p.type==='fund_cn')details.push(fmt(p.fundShares,4)+' 份');
     if(p.type==='gold')details.push(fmt(p.grams,4)+' 克');
     if(p.type==='term_deposit'){details.push((p.rate??'—')+'%');if(p.tdContractEnd||p.tdEnd)details.push('到期 '+(p.tdContractEnd||p.tdEnd));}
-    text(cells[1],OVERVIEW_TYPES[row.type],'ov-holding-account');
-    text(cells[1],details.slice(1).join(' · '),'ov-holding-sub');
+    text(cells[1],details.slice(1).join(' · ')||OVERVIEW_TYPES[row.type],'ov-holding-account');
     if(p.type==='stock_us'){
       if(isStopLossTriggered(p))text(cells[0],'已触发止损提醒','ov-holding-estimate');
       else if(isStopLossNear(p))text(cells[0],'接近已设止损价','ov-holding-estimate');
@@ -4953,7 +4960,7 @@ function renderOverviewHoldings(){
       else if(days!==null&&days<0)text(cells[0],'已到期，请核对余额','ov-holding-estimate');
     }
     if(row.manual)text(cells[0],'替代该账户已登记的美元现金余额','ov-holding-sub');
-    if(v.estimated)text(cells[0],p.tdNeedsReview?'待核对定存合同':'使用最近有效价格估值','ov-holding-estimate');
+    if(v.estimated)text(cells[0],p.type==='in_transit'?'在途暂估 · 非可用现金':p.tdNeedsReview?'待核对定存合同':'使用最近有效价格估值','ov-holding-estimate');
     cells[2].className=cells[3].className=cells[4].className='num';cells[5].className='ov-holding-actions';
     if(v.complete){text(cells[2],fc(v.amount,v.currency,2),'ov-holding-money');text(cells[3],fc(v.cny,'CNY',0),'ov-holding-money');}
     else{text(cells[2],'估值不完整','ov-holding-estimate');text(cells[2],v.reason,'ov-holding-sub');text(cells[3],'—');}
@@ -4962,7 +4969,7 @@ function renderOverviewHoldings(){
     else if(profit){text(cells[4],(profit.amount>0?'+':'')+fc(profit.amount,v.currency,2),'ov-holding-money '+(profit.amount>0?'pos':profit.amount<0?'neg':''));text(cells[4],profit.label,'ov-holding-sub');}
     else text(cells[4],'—','ov-holding-sub');
     const actions=document.createElement('div');actions.className='ov-holding-action-buttons';
-    for(const [action,label,icon,handler] of row.manual?[['account','账户详情','↗',view]]:[['edit',v.complete?'编辑资产':'补齐资料','✎',()=>editProduct(p.id)],['delete','删除资产','×',()=>deleteProduct(p.id)]]){
+    for(const [action,label,icon,handler] of p.type==='in_transit'?[['receive','处理在途资金','↗',()=>LedgerUI.open('receive',p.id)]]:row.manual?[['account','账户详情','↗',view]]:[['edit',v.complete?'编辑资产':'补齐资料','✎',()=>editProduct(p.id)],['delete','删除资产','×',()=>deleteProduct(p.id)]]){
       const button=document.createElement('button');button.type='button';button.className='btn btn-ghost btn-sm'+(action==='delete'?' danger':'');button.dataset.holdingAction=action;button.setAttribute('aria-label',label);button.title=label;button.textContent=icon;button.addEventListener('click',handler);actions.append(button);
     }
     cells[5].append(actions);body.append(tr);
@@ -4972,6 +4979,7 @@ function renderOverviewHoldings(){
   document.getElementById('ov-holdings-status').textContent='显示 '+selected.length+' / '+all.length+' 项持仓 · '+(missing?'已知部分估值 ':'折合 CNY 合计 ')+fc(known,'CNY',2)+(missing?' · '+missing+' 项估值不完整':'');
   document.getElementById('ov-sort-value').textContent='CNY（组内）'+(overviewHoldingFilters.sort==='asc'?'↑':'↓');document.getElementById('ov-sort-header').setAttribute('aria-sort','other');
   document.getElementById('ov-filter-summary').textContent=overviewHoldingFilters.region||overviewHoldingFilters.account||overviewHoldingFilters.type?'筛选持仓（已筛选）':'筛选持仓（可选）';
+  LedgerUI.refresh();
   if(focusedRegion)Array.from(summary.children).find(button=>button.dataset.region===focusedRegion)?.focus({preventScroll:true});
   if(focusedKey&&focusedAction){const row=Array.from(body.rows).find(row=>row.dataset.holdingKey===focusedKey);row?.querySelector('[data-holding-action="'+focusedAction+'"]')?.focus({preventScroll:true});}
 }
@@ -5002,6 +5010,7 @@ function renderOverview(){
 }
 
 // Layout follows natural CSS height; these hooks clear legacy inline sizing only.
+function setIntelView(mode,button){const root=document.querySelector('.term-zone-intel');root.classList.toggle('intel-mode-risk',mode==='risk');root.classList.toggle('intel-mode-events',mode!=='risk');root.querySelectorAll('.intel-switch button').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));}
 function syncIntelColumnHeight(){
   const intel=document.querySelector('.term-zone-intel'),list=document.getElementById('ov-events-list');
   if(intel){intel.style.height='';intel.style.minHeight='';}
@@ -5958,7 +5967,7 @@ function applyUsIdleCashToByType(byType){
 }
 function snapshotBreakdown(){
   const byRegion={cn:totalCNY('cn'),us:totalCNY('us'),au:totalCNY('au')};
-  const keys=['cash','fund_cn','gold','stock_us','term_deposit','other'];
+  const keys=['cash','fund_cn','gold','stock_us','term_deposit','in_transit','other'];
   const byType=Object.fromEntries(keys.map(k=>[k,0]));
   for(const p of D.products){
     const k=keys.includes(p.type)?p.type:'other';
@@ -6098,6 +6107,7 @@ function renderOverviewDashboard(){
   renderPieLegend(elAllocLeg,regParts,cny);
   const liqParts=[];
   if(cashV>0.01)liqParts.push({l:'现金 / 活期',d:cashV,bg:'rgba(148,163,184,.55)',bd:'rgba(148,163,184,.35)'});
+  if(bd.in_transit>0.01)liqParts.push({l:'在途 / 暂估',d:bd.in_transit,bg:'rgba(167,139,250,.65)',bd:'rgba(167,139,250,.4)'});
   if(lockV>0.01)liqParts.push({l:'定期 / 锁定',d:lockV,bg:'rgba(96,165,250,.55)',bd:'rgba(96,165,250,.35)'});
   if(invV>0.01)liqParts.push({l:'投资类',d:invV,bg:'rgba(201,162,39,.55)',bd:'rgba(201,162,39,.35)'});
   ovDashChartLiq=upsertOvDonutChart(
@@ -6626,6 +6636,7 @@ function stageMovement(ref,after,standalone=false){
   const cash=WealthMovements.info(ref,before||after).cash;
   const allowed=cash?(after===null?['expense','withdrawal','correction']:before?['deposit','expense','withdrawal','transfer','interest','correction','metadata']:['deposit','opening','correction']):before?['valuation','trade','correction','metadata']:['opening','trade','correction'];
   for(const [key,label] of [['','请选择变动类型'],...Object.entries(WealthMovements.KINDS).filter(([key])=>allowed.includes(key))]){const option=document.createElement('option');option.value=key;option.textContent=label;kind.append(option);}
+  document.getElementById('mv-stock-trade').hidden=(before||after)?.type!=='stock_us';
   document.getElementById('mv-submit').textContent=after===null?'确认删除并记录原因':'确认变动并保存';
   document.getElementById('modal-movement').classList.add('open');updateMovementPreview();requestAnimationFrame(()=>kind.focus());
 }
@@ -6672,6 +6683,7 @@ function commitMovement(){
   if(!pendingMovement)return;
   try{
     if(JSON.stringify(WealthMovements.read(D,pendingMovement.ref))!==JSON.stringify(pendingMovement.before))throw Error('资产已被更新，请取消并重新打开，避免覆盖新资料');
+    if(document.getElementById('mv-kind').value==='trade'&&(pendingMovement.before||pendingMovement.after)?.type==='stock_us')throw Error('股票成交请使用上方专用入口，现金与持仓会同时更新；若只是抄错数字，请选择数据更正');
     const after=movementAfter(),event=WealthMovements.prepare(D,pendingMovement.ref,after,movementOptions());
     persistMovementLedger(WealthMovements.apply(D,event));
     const product=after&&pendingMovement.ref.startsWith('p:')?after:null;
@@ -6684,20 +6696,7 @@ function queueMovementQuote(p){
   if(p.type==='gold'&&!p.goldPrice)setTimeout(async()=>{try{const price=await fetchGoldPrice(),live=D.products.find(x=>x.id===p.id);if(price>0&&live){live.goldPrice=price;live.goldUpdated=today();save();refreshAfterMovement();}}catch(e){}},400);
   if(p.type==='fund_cn'&&p.fundCode&&!p.fundPrice&&p.fundCurrency==='CNY')setTimeout(async()=>{try{const quote=await fetchFundPrice(p.fundCode),live=D.products.find(x=>x.id===p.id);if(quote.price>0&&live){live.fundPrice=quote.price;live.name=live.name||quote.name;save();refreshAfterMovement();}}catch(e){}},400);
 }
-function renderMovementLog(){
-  const list=document.getElementById('movement-log');if(!list)return;list.replaceChildren();
-  for(const event of [...(D.movementLog||[])].reverse()){
-    const card=document.createElement('article');card.className='movement-entry';
-    const title=document.createElement('strong');title.textContent=event.date+' · '+(WealthMovements.KINDS[event.kind]||event.kind)+(event.reversedAt?' · 已撤销':'');card.append(title);
-    for(const value of [event.reason,...event.changes.map(movementChangeText),event.channel?'渠道：'+event.channel:'',event.chainId?'关联批次：'+event.chainId:'','记录时间：'+new Date(event.timestamp).toLocaleString('zh-CN')+(event.reversedAt?' · 撤销时间：'+new Date(event.reversedAt).toLocaleString('zh-CN'):''),event.flow?(event.reversedAt?'原关联入出金流水已随撤销移除。':'已关联收益核算流水，撤销时一并恢复。'):'']){if(!value)continue;const line=document.createElement('p');line.textContent=value;card.append(line);}
-    const details=document.createElement('details'),summary=document.createElement('summary'),full=document.createElement('pre');summary.textContent='查看变动前后完整资料';full.textContent=JSON.stringify(event.changes.map(c=>({account:movementLabel(c.ref,c.after||c.before),before:c.before,after:c.after})),null,2);full.style.cssText='max-height:240px;overflow:auto;white-space:pre-wrap;font-size:12px';details.append(summary,full);card.append(details);
-    if(event.kind==='trade'&&!event.reversedAt&&!event.reviewedAt){const verify=document.createElement('button');verify.type='button';verify.className='btn btn-ghost btn-sm';verify.textContent='已核对配套现金与持仓';verify.addEventListener('click',()=>verifyMovementTrade(event.id));card.append(verify);}
-    if(event.reviewedAt){const verified=document.createElement('p');verified.textContent='已确认配套现金与持仓 · '+new Date(event.reviewedAt).toLocaleString('zh-CN');card.append(verified);}
-    if(!event.reversedAt){const button=document.createElement('button');button.type='button';button.className='btn btn-ghost btn-sm';button.textContent='撤销这次变动';button.addEventListener('click',()=>undoMovement(event.id));card.append(button);}
-    list.append(card);
-  }
-  if(!list.children.length)list.textContent='尚无资金变动记录。修改资产时填写原因，或点击「记录资金变动」。';
-}
+function renderMovementLog(){LedgerUI.renderWorkspace();LedgerUI.renderRecords();}
 function verifyMovementTrade(id){
   const event=(D.movementLog||[]).find(e=>e.id===id);if(!event||event.kind!=='trade'||event.reversedAt)return;
   if(!confirm('请确认这笔买卖 / 存取定期对应的现金和持仓都已记录，且没有将内部交易重复登记为外部入出金。确认后恢复收益核算，系统不会自动补扣现金。'))return;
@@ -6786,6 +6785,7 @@ function saveProduct(){
 
 function editProduct(id){
   const p=D.products.find(x=>x.id===id);if(!p)return;
+  if(p.type==='in_transit'){LedgerUI.open('receive',p.id);return;}
   openModal(p.region);
   document.getElementById('m-title').textContent='编辑资产';
   document.getElementById('m-editid').value=p.id;
@@ -6832,6 +6832,7 @@ function editProduct(id){
 
 function deleteProduct(id){
   const p=D.products.find(x=>x.id===id);if(!p)return;
+  if(p.type==='in_transit'){LedgerUI.open('receive',p.id);return;}
   stageMovement('p:'+id,null);
 }
 
@@ -6874,8 +6875,10 @@ function savePrincipalUSD(){
   setTimeout(()=>s.innerHTML='',3000);
 }
 function exportData(){
+  const next=JSON.parse(JSON.stringify(D));next.backupStatus={signature:LedgerWorkflows.fingerprint(D),requestedAt:new Date().toISOString()};
+  try{persistMovementLedger(next);}catch(error){calculationMessage(error.message);return;}
   const b=new Blob([JSON.stringify(D,null,2)],{type:'application/json'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='LEEsWealth_'+today()+'.json';a.click();
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='LEEsWealth_'+today()+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);LedgerUI.refresh();
 }
 function importData(input){
   const f=input.files[0];if(!f)return;
@@ -7023,7 +7026,8 @@ function refreshValuationNotice(){
   if(reviews)warnings.push(reviews+' 笔旧版定存需核对合同计息方式、原始本金与起息日；当前按保留参数估算。');
   const ambiguous=D.products.filter(p=>p.region==='us'&&p.type==='cash'&&p.currency==='CNY'&&looksLikeUsdBrokerCash(p)).length;
   if(ambiguous)warnings.push(ambiguous+' 条现金的名称可能指美元，但登记为人民币；本次严格按已填币种计算，请核对。');
-  if(state.estimated.some(r=>r.estimated)&&!reviews)warnings.push('部分资产使用最后有效价格估值，请核对报价时间。');
+  const transitCount=D.products.filter(p=>p.type==='in_transit').length;if(transitCount)warnings.push(transitCount+' 笔汇款在途，按汇出净额暂估，未计入可用现金。');
+  if(state.estimated.some(r=>D.products.some(p=>p.id===r.id&&!['term_deposit','in_transit'].includes(p.type))))warnings.push('部分资产使用最后有效价格估值，请核对报价时间。');
   el.hidden=!warnings.length;el.textContent=warnings.join(' ');syncNavigationNotices();
   const label=document.querySelector('.term-nav-hero .ov-hero-label');if(label)label.textContent=state.complete?'资产总净值':'已知资产估值（不完整）';
 }
@@ -7108,7 +7112,7 @@ function editCashFlow(id){
   if((D.cashFlows||[]).some(f=>f.id===id&&f.movementId))return calculationMessage('请从资金变动记录查看或撤销');
   const row=(D.cashFlows||[]).find(f=>f.id===id);if(!row)return;
   for(const [field,value] of [['id',row.id],['date',row.date],['type',row.type],['currency',row.currency],['amount',row.amount],['rate',row.fxToCny],['note',row.note]])document.getElementById('flow-'+field).value=value??'';
-  syncFlowRate();setHistoryTab('flows');document.getElementById('flow-editor').open=true;document.getElementById('flow-date').focus();
+  syncFlowRate();setHistoryTab('flows');document.getElementById('flow-editor').parentElement.open=true;document.getElementById('flow-editor').open=true;document.getElementById('flow-date').focus();
 }
 function deleteCashFlow(id){
   if((D.cashFlows||[]).some(f=>f.id===id&&f.movementId))return calculationMessage('请从资金变动记录撤销，余额会一并恢复');
@@ -7150,7 +7154,7 @@ function saveAccountingZone(){
   if(bd)bd.addEventListener('click',closeMobileSidebar);
   window.addEventListener('resize',function(){if(!isMobileNav())closeMobileSidebar();scheduleIntelHeightSync();});
   document.addEventListener('keydown',function(e){
-    if(e.key==='Escape'){closeMobileSidebar();closeCmdk();const top=document.getElementById('modal-movement').classList.contains('open')?document.getElementById('modal-movement'):Array.from(document.querySelectorAll('.overlay.open')).at(-1);if(top?.id==='modal-movement')cancelMovement();else if(top)closeModal(top.id);}
+    if(e.key==='Escape'){closeMobileSidebar();closeCmdk();const top=document.getElementById('modal-movement').classList.contains('open')?document.getElementById('modal-movement'):Array.from(document.querySelectorAll('.overlay.open')).at(-1);if(top?.id==='modal-movement')cancelMovement();else if(top?.id==='modal-ledger')LedgerUI.close();else if(top)closeModal(top.id);}
     if((e.key==='Enter'||e.key===' ')&&e.target.matches('.fx-chip[role=button]')){e.preventDefault();e.target.click();}
     if(e.key==='Tab'){
       const overlay=document.getElementById('modal-movement').classList.contains('open')?document.getElementById('modal-movement'):Array.from(document.querySelectorAll('.overlay.open')).at(-1);

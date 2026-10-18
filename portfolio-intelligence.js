@@ -52,7 +52,7 @@
   function riskReport(rows,asOf,extras={}){
     const valid=rows.filter(row=>row.valuation.complete),known=valid.reduce((sum,row)=>sum+row.valuation.cny,0),missing=rows.filter(row=>!row.valuation.complete).length;
     const currencies={},stocks=new Map();let cash=0,locked=0,due7=0,due30=0,overdue=0,reviews=0,cached=0,stops=0;
-    for(const row of rows){const p=row.product,v=row.valuation;if(p.tdNeedsReview)reviews++;if(v.estimated&&p.type!=='term_deposit')cached++;if(!active(p))continue;
+    for(const row of rows){const p=row.product,v=row.valuation;if(p.tdNeedsReview)reviews++;if(v.estimated&&!['term_deposit','in_transit'].includes(p.type))cached++;if(!active(p))continue;
       if(p.type==='term_deposit'&&(p.tdContractEnd||p.tdEnd)){const days=Math.round((Date.parse((p.tdContractEnd||p.tdEnd)+'T00:00:00Z')-Date.parse(asOf+'T00:00:00Z'))/86400000);if(days<0)overdue++;else if(days<=7)due7++;else if(days<=30)due30++;}
       if(p.type==='stock_us'&&Number(p.stopLoss)>0&&Number(p.currentPrice)>0&&Number(p.currentPrice)<=Number(p.stopLoss))stops++;
       if(!v.complete)continue;currencies[v.currency]=(currencies[v.currency]||0)+v.cny;if(p.type==='cash')cash+=v.cny;if(p.type==='term_deposit')locked+=v.cny;
