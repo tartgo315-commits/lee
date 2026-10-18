@@ -835,6 +835,72 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
   .topbar-cmdk{max-width:36px;padding:4px 10px}
   .topbar-cmdk-label,.topbar-cmdk-kbd{display:none}
 }
+
+/* Responsive audit fixes: cards stay in normal grid flow at every breakpoint. */
+.fx-chip{flex-shrink:0}
+.term-nav-goal.ov-hero-goal-compact{padding:14px 16px;border:1px solid var(--card-border);border-radius:16px;background:var(--card-surface)}
+#ov-dash.is-empty .term-alloc-card{display:none}
+#ov-trend-empty{margin:0;line-height:1.6}
+.term-alloc-card .ov-pie-leg-row{grid-template-columns:10px minmax(0,1fr);align-items:start}
+.term-alloc-card .ov-pie-leg-val{grid-column:2;text-align:left;white-space:normal;overflow-wrap:anywhere}
+.term-alloc-card .ov-pie-leg-name{white-space:normal}
+.privacy-note{font-size:13px;line-height:1.65;color:var(--text-3);margin:12px 0 16px}
+#ov-regions{scroll-margin-top:72px}
+@media(max-width:768px){#ov-regions{scroll-margin-top:120px}}
+@media(min-width:769px) and (max-width:1350px){
+  .terminal-dashboard{grid-template-areas:"head" "portfolio" "intel";grid-template-columns:minmax(0,1fr)}
+  .terminal-dashboard>.term-zone-intel{grid-row:auto;height:auto!important;min-height:0!important}
+  .term-zone-head{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .term-nav-hero,.term-nav-chart,.term-nav-goal,.term-alloc-card{min-height:180px;height:auto}
+}
+@media(max-width:1350px){
+  .terminal-dashboard>.term-zone-intel{display:block}
+  .term-intel-events,.term-intel-events #ov-events-card{display:block;height:auto;overflow:visible}
+  .term-intel-events #ov-events-list{min-height:0!important;max-height:480px}
+  .term-intel-events #ov-events-card{flex:auto}
+}
+@media(max-width:768px){
+  .topbar{height:auto;min-height:104px;max-height:none;flex-wrap:wrap;padding:8px 12px;gap:8px;overflow:visible}
+  .topbar-brand{display:none}
+  .topbar>.fx-strip{order:3;flex:1 0 100%;width:100%;overflow-x:auto}
+  .topbar-right{margin-left:auto;min-width:0;flex:1;justify-content:flex-end;gap:6px}
+  .topbar-right .btn-primary{font-size:12px}
+  #page-overview .term-nav-hero{min-height:150px}
+  #page-overview .term-nav-chart{min-height:190px}
+  .topbar-right>.btn{min-width:36px;min-height:36px;padding:6px 8px}
+  .topbar-right>#snap-btn,.topbar-right>.btn[title="导出 JSON"],.topbar-right>.btn[title="锁屏"],.topbar-right>.btn[title="设置"]{display:none}
+  .sidebar{top:104px;max-height:calc(100dvh - 104px)}
+  .terminal-dashboard{grid-template-areas:"head" "portfolio" "intel";grid-template-columns:minmax(0,1fr);gap:16px}
+  .terminal-dashboard>.term-zone-intel{grid-row:auto;min-height:0!important;height:auto!important;overflow:visible}
+  .terminal-dashboard>.term-zone-head{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;overflow:visible}
+  .term-zone-head>.term-nav-hero,.term-zone-head>.term-nav-chart,.term-zone-head>.term-nav-goal,.term-zone-head>.term-alloc-card{min-height:180px;height:auto;padding:16px}
+  .term-zone-head>.term-nav-chart{grid-column:1/-1;min-height:220px;grid-row:2}
+  .term-zone-head>.term-nav-goal{border:1px solid var(--card-border);border-radius:16px;background:var(--card-surface)}
+  #page-overview #ov-regions{grid-template-columns:minmax(0,1fr);gap:16px}
+  #page-overview .ov-head-cell-val{font-size:clamp(13px,4vw,18px);white-space:normal;overflow-wrap:anywhere}
+  #page-overview .ov-col-pnl-row{grid-template-columns:1fr;gap:8px}
+  #page-overview .ov-pnl-item{white-space:normal;overflow-wrap:anywhere}
+  .term-intel-events,.term-intel-events #ov-events-card{height:auto;overflow:visible;flex:auto}
+  .term-intel-events .ov-event-row{grid-template-columns:104px minmax(0,1fr)}
+  .term-intel-events .ov-event-date .tz-line.cn,.term-intel-events .ov-event-date .tz-line.us{white-space:normal;overflow:visible;font-size:12px}
+  .term-intel-events .ov-events-filter{min-height:36px;font-size:12px}
+  .term-intel-events .ov-events-sub{white-space:normal;opacity:1}
+  .overlay{padding:12px}
+  .modal{max-width:100%;max-height:calc(100dvh - 24px);padding:20px 16px}
+  .modal input,.modal select,.modal textarea{font-size:16px}
+  .batch-row{grid-template-columns:1fr 1fr!important}
+  .batch-row input{min-width:0}
+  .batch-row input:first-child{grid-column:1/-1}
+  .batch-row .batch-del{min-height:36px}
+  #modal-batch .batch-column-head{display:none!important}
+}
+@media(max-width:420px){
+  .terminal-dashboard>.term-zone-head{grid-template-columns:minmax(0,1fr)}
+  .term-zone-head>.term-nav-chart{grid-column:auto}
+  .term-nav-chart-foot{flex-wrap:wrap;gap:8px}
+  .term-portfolio-hd{flex-wrap:wrap;gap:8px}
+  .term-zone-portfolio,.term-zone-intel{padding:16px!important}
+}
 </style>
 </head>
 <body>
@@ -880,7 +946,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
       <button type="button" class="btn btn-icon btn-sm" onclick="exportData()" title="导出 JSON"><i class="ti ti-download"></i></button>
       <button type="button" class="btn btn-icon btn-sm" id="theme-btn" onclick="toggleNight()" title="深色 / 日间主题切换" aria-label="切换深浅色主题">☀️</button>
       <button type="button" class="btn btn-outline btn-sm" id="snap-btn" onclick="takeSnapshot()" title="写入今日 NAV 历史快照"><i class="ti ti-camera"></i> 快照</button>
-      <button type="button" class="btn btn-outline btn-sm" id="refresh-all-btn" onclick="refreshAllQuotes()" title="刷新汇率与各类行情，并写入今日快照、拉取资讯"><i class="ti ti-refresh"></i> 刷新行情</button>
+      <button type="button" class="btn btn-outline btn-sm" id="refresh-all-btn" onclick="refreshAllQuotes()" title="更新汇率与行情；不记录快照、不拉取资讯"><i class="ti ti-refresh"></i> 刷新行情</button>
       <button type="button" class="btn btn-icon btn-sm" onclick="showPage('settings')" title="设置"><i class="ti ti-settings"></i></button>
       <button type="button" class="btn btn-icon btn-sm" onclick="showPinOverlay()" title="锁屏"><i class="ti ti-lock"></i></button>
       <button type="button" class="btn btn-primary btn-sm" onclick="openModal()"><i class="ti ti-plus"></i> 添加资产</button>
@@ -928,7 +994,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
       <div class="terminal-dashboard">
         <section class="term-zone term-zone-head" id="ov-dash">
           <div class="term-nav-hero">
-            <div class="ov-hero-label">Total NAV</div>
+            <div class="ov-hero-label">资产总净值</div>
             <div class="ov-hero-nav" id="ov-cny">¥ —</div>
             <div class="ov-hero-delta">
               <span class="ov-nav-lbl" id="ov-nav-lbl">—</span>
@@ -941,9 +1007,9 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
             </div>
           </div>
           <div class="term-nav-chart">
-            <div class="nav-chart-wrap"><canvas id="chart-ov"></canvas></div>
+            <div class="nav-chart-wrap"><canvas id="chart-ov"></canvas><p id="ov-trend-empty" class="privacy-note" hidden>至少记录两条快照后显示趋势</p></div>
             <div class="term-nav-chart-foot">
-              <span class="ov-assets-chart-lbl">NAV Trend</span>
+              <span class="ov-assets-chart-lbl">净值趋势</span>
               <div class="range-tabs">
                 <button class="rt active" onclick="setRange(30,this)">1M</button>
                 <button class="rt" onclick="setRange(90,this)">3M</button>
@@ -964,7 +1030,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
                 </div>
                 <div class="term-goal-meta-col">
                   <span id="goal-current">¥—</span>
-                  <span id="goal-target">目标 ¥1,500,000</span>
+                  <span id="goal-target">尚未设置目标</span>
                   <span id="goal-remaining">—</span>
                   <span id="goal-eta">预计达成 —</span>
                 </div>
@@ -973,14 +1039,14 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
             </div>
           </div>
           <div class="term-alloc-card">
-            <div class="card-title"><i class="ti ti-chart-pie"></i> Regional</div>
+            <div class="card-title"><i class="ti ti-chart-pie"></i> 地区分布</div>
             <div class="term-alloc-row">
               <div class="ov-donut-wrap ov-pie-canvas"><canvas id="chart-alloc-region"></canvas></div>
               <div class="ov-pie-legend" id="ov-alloc-legend"></div>
             </div>
           </div>
           <div class="term-alloc-card">
-            <div class="card-title"><i class="ti ti-droplet"></i> Liquidity</div>
+            <div class="card-title"><i class="ti ti-droplet"></i> 流动性分布</div>
             <div class="term-alloc-row">
               <div class="ov-donut-wrap ov-pie-canvas"><canvas id="chart-alloc-liq"></canvas></div>
               <div class="ov-pie-legend" id="ov-liq-legend"></div>
@@ -998,8 +1064,8 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
 
         <section class="term-zone term-zone-portfolio">
           <div class="term-portfolio-hd">
-            <div class="card-title"><i class="ti ti-briefcase"></i> Portfolio</div>
-            <a href="#" class="ov-link-all" onclick="showPage('us');return false">全部持仓 <i class="ti ti-chevron-right"></i></a>
+            <div class="card-title"><i class="ti ti-briefcase"></i> 资产持仓</div>
+            <a href="#ov-regions" class="ov-link-all" onclick="document.getElementById('ov-regions').scrollIntoView({block:'start',behavior:'smooth'});return false">查看各地区持仓 <i class="ti ti-chevron-right"></i></a>
           </div>
           <div id="gold-price-warn" style="display:none;margin-bottom:8px;padding:8px 12px;border-radius:8px;background:var(--warn-bg);border:1px solid rgba(217,119,6,.25);color:var(--warn);font-size:13px;">
             ⚠️ 黄金积存金价未刷新，当前净值未计入黄金市值。请点击顶栏「Au/g」刷新金价。
@@ -1012,7 +1078,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
             <div class="card ov-events-card mb-0" id="ov-events-card">
               <div class="ov-events-hd">
                 <div>
-                  <div class="card-title" style="margin-bottom:0"><i class="ti ti-calendar-event"></i> Upcoming Events</div>
+                  <div class="card-title" style="margin-bottom:0"><i class="ti ti-calendar-event"></i> 近期事件</div>
                   <div class="ov-events-sub" id="ov-events-range">近1个月已发生 + 未来12个月 · 宏观 + 持仓到期</div>
                 </div>
                 <div class="ov-events-filters" id="ov-events-filters">
@@ -1025,7 +1091,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
               </div>
               <div class="ov-events-list" id="ov-events-list"></div>
               <div class="term-intel-risk">
-                <div class="term-intel-hd"><i class="ti ti-shield-check"></i> Risk Monitor</div>
+                <div class="term-intel-hd"><i class="ti ti-shield-check"></i> 风险提示</div>
                 <div id="ov-insights" class="ov-insights"></div>
               </div>
             </div>
@@ -1048,7 +1114,6 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
         <div class="ph-actions">
           <button class="btn btn-outline btn-sm" onclick="refreshGold()"><i class="ti ti-coin"></i> 刷新金价</button>
           <button class="btn btn-outline btn-sm" onclick="refreshFunds()"><i class="ti ti-refresh"></i> 刷新基金</button>
-          <button class="btn btn-outline btn-sm" onclick="importAlipayChinaPreset()"><i class="ti ti-device-mobile"></i> 导入示例</button>
           <button class="btn btn-primary btn-sm" onclick="openModal('cn')"><i class="ti ti-plus"></i> 添加</button>
         </div>
       </div>
@@ -1085,7 +1150,6 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
           <div class="ph-sub" id="au-sub">—</div>
         </div>
         <div class="ph-actions">
-          <button class="btn btn-outline btn-sm" onclick="importCbaAuPreset()"><i class="ti ti-building-bank"></i> 导入示例</button>
           <button class="btn btn-primary btn-sm" onclick="openModal('au')"><i class="ti ti-plus"></i> 添加</button>
         </div>
       </div>
@@ -1155,7 +1219,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
 
     <!-- FX -->
     <div class="page" id="page-fx">
-      <div class="alert alert-info">汇率用于跨币种折算。点击「自动刷新」从免费 API 获取实时数据，或手动输入后保存。</div>
+      <div class="alert alert-info">汇率用于跨币种折算。点击「自动刷新」获取报价，或手动输入后保存。<span id="fx-provenance"></span></div>
 
       <!-- 正向汇率 -->
       <div class="card" style="margin-bottom:14px">
@@ -1215,6 +1279,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
     <!-- SETTINGS -->
     <div class="page" id="page-settings">
       <div class="alert alert-info">账户参数、数据备份与访问安全。</div>
+      <p class="privacy-note">账本保存在当前浏览器的本地存储中，不会自动跨设备同步。清除网站数据会丢失本机账本；导出的 JSON 含完整资产资料，请妥善保管。</p>
 
       <div class="card" style="margin-bottom:14px">
         <div class="card-title" style="font-size:16px"><i class="ti ti-adjustments"></i> 账户与备份</div>
@@ -1226,7 +1291,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
               <div id="principal-status"></div>
             </div>
             <div class="settings-item-actions">
-              <input type="number" id="cfg-principal-aud" class="fx-big-input" placeholder="72640" step="any">
+              <input type="number" id="cfg-principal-aud" class="fx-big-input" placeholder="填写实际本金" step="any">
               <button class="btn btn-primary" onclick="savePrincipal()">保存</button>
             </div>
           </div>
@@ -1237,7 +1302,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
               <div id="principal-usd-status"></div>
             </div>
             <div class="settings-item-actions">
-              <input type="number" id="cfg-principal-usd" class="fx-big-input" placeholder="46490" step="any">
+              <input type="number" id="cfg-principal-usd" class="fx-big-input" placeholder="填写实际本金" step="any">
               <button class="btn btn-primary" onclick="savePrincipalUSD()">保存</button>
             </div>
           </div>
@@ -1261,7 +1326,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
           <div class="settings-item">
             <div class="settings-item-main">
               <div class="settings-item-label">站点门禁</div>
-              <div class="settings-item-desc">配置 <code>SITE_PASSWORD</code> 与 <code>SITE_AUTH_SECRET</code> 后，进入站点需先登录。</div>
+              <div class="settings-item-desc"><span id="gate-status" role="status">正在检查门禁状态…</span></div>
             </div>
             <div class="settings-item-actions">
               <a class="btn btn-ghost" href="/api/logout"><i class="ti ti-logout"></i> 退出登录</a>
@@ -1270,7 +1335,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
           <div class="settings-item">
             <div class="settings-item-main">
               <div class="settings-item-label"><i class="ti ti-lock"></i> PIN 锁屏</div>
-              <div class="settings-item-desc">30 分钟无操作自动锁屏；不影响站点密码。</div>
+              <div class="settings-item-desc"><span id="pin-status"></span>30 分钟无操作自动锁屏。PIN 仅遮挡界面，不加密本地账本，也不能代替站点门禁。</div>
             </div>
             <div class="settings-item-actions">
               <button type="button" class="btn btn-ghost" onclick="setupPin()"><i class="ti ti-key"></i> 设置 / 修改 PIN</button>
@@ -1300,8 +1365,9 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
 </div>
 
 <!-- BATCH IMPORT MODAL -->
-<div class="overlay" id="modal-ai">
+<div class="overlay" id="modal-ai" role="dialog" aria-modal="true" aria-label="资产与分析窗口">
   <div class="modal modal-ai">
+    <p class="privacy-note">AI 请求会发送脱敏资产摘要和你输入的问题至所选服务商。请勿在问题中填写账号或其他敏感资料；「本地」分析无需发送资产信息。</p>
     <div class="modal-title">
       <span><i class="ti ti-sparkles"></i> AI Insights <span class="term-beta">Beta</span></span>
       <button class="modal-x" onclick="closeModal('modal-ai')" aria-label="关闭"><i class="ti ti-x"></i></button>
@@ -1370,15 +1436,15 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
     </div>
   </div>
 </div>
-<div class="overlay" id="modal-batch">
+<div class="overlay" id="modal-batch" role="dialog" aria-modal="true" aria-label="资产与分析窗口">
   <div class="modal" style="max-width:720px">
     <div class="modal-title">
       <span><i class="ti ti-table-import"></i> 批量导入美股持仓</span>
       <button class="modal-x" onclick="closeModal('modal-batch')" aria-label="关闭"><i class="ti ti-x"></i></button>
     </div>
-    <div class="alert alert-info">已预填你的 Tiger 持仓数据，确认后点「导入全部」。价格会在导入后自动刷新。</div>
+    <div class="alert alert-info">填写你要导入的持仓。相同 Tiger 账户下的同代码持仓将被替换；导入后自动刷新行情。此表单不预填个人数据。</div>
     <div style="margin-bottom:14px">
-      <div style="display:grid;grid-template-columns:80px 1fr 90px 110px 110px 32px;gap:8px;padding:8px 12px;background:var(--bg3);border-radius:var(--r-sm);font-size:11px;font-weight:700;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">
+      <div class="batch-column-head" style="display:grid;grid-template-columns:80px 1fr 90px 110px 110px 32px;gap:8px;padding:8px 12px;background:var(--bg3);border-radius:var(--r-sm);font-size:11px;font-weight:700;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">
         <div>代码</div><div>名称</div><div>持股数</div><div>成本价(USD)</div><div>当前价(USD)</div><div></div>
       </div>
       <div id="batch-rows"></div>
@@ -1393,7 +1459,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
     <div id="batch-status" style="margin-top:10px"></div>
   </div>
 </div>
-<div class="overlay" id="modal">
+<div class="overlay" id="modal" role="dialog" aria-modal="true" aria-label="资产与分析窗口">
   <div class="modal">
     <div class="modal-title">
       <span id="m-title">添加资产</span>
@@ -1401,14 +1467,14 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
     </div>
 
     <div class="fg-row c2">
-      <div class="fg"><label>地区</label>
+      <div class="fg"><label for="m-region">地区</label>
         <select id="m-region" onchange="onRegion()">
           <option value="cn">🇨🇳 中国境内</option>
           <option value="us">🇺🇸 美国</option>
           <option value="au">🇦🇺 澳洲</option>
         </select>
       </div>
-      <div class="fg"><label>产品类型</label>
+      <div class="fg"><label for="m-type">产品类型</label>
         <select id="m-type" onchange="onType()">
           <option value="cash">现金 / 活期</option>
           <option value="fund_cn">国内基金 / 理财</option>
@@ -1421,22 +1487,22 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
     </div>
 
     <div class="fg-row c2">
-      <div class="fg"><label>账户名称</label><input type="text" id="m-account" placeholder="支付宝 / 建设银行 / Tiger..."></div>
-      <div class="fg"><label>产品名称</label><input type="text" id="m-name" placeholder="余额宝 / AAPL / 定期存款..."></div>
+      <div class="fg"><label for="m-account">账户名称</label><input type="text" id="m-account" placeholder="支付宝 / 建设银行 / Tiger..."></div>
+      <div class="fg"><label for="m-name">产品名称</label><input type="text" id="m-name" placeholder="余额宝 / AAPL / 定期存款..."></div>
     </div>
 
     <!-- Cash -->
     <div id="f-cash">
       <div class="fg-row c3">
-        <div class="fg"><label>金额</label><input type="number" id="m-amount" placeholder="0.00" step="any"></div>
-        <div class="fg"><label>货币</label>
+        <div class="fg"><label for="m-amount">金额</label><input type="number" id="m-amount" placeholder="0.00" step="any"></div>
+        <div class="fg"><label for="m-currency">货币</label>
           <select id="m-currency">
             <option value="CNY">CNY 人民币</option>
             <option value="USD">USD 美元</option>
             <option value="AUD">AUD 澳元</option>
           </select>
         </div>
-        <div class="fg"><label>更新日期</label><input type="date" id="m-date"></div>
+        <div class="fg"><label for="m-date">更新日期</label><input type="date" id="m-date"></div>
       </div>
       <div id="m-us-cash-tip" class="alert alert-info" style="display:none;margin-top:var(--s-3)">🇺🇸 与 Tiger「预估现金额」对应：可用现金、闲置资金应计利息等可各建一条「现金/活期」，货币选 <strong>USD</strong>，产品名称写「可用现金」「闲置资金应计利息」等便于区分。<br><strong>股票持仓</strong>（如 CRCL、VOO）请把产品类型改为「<strong>美股（Tiger）</strong>」，即可填写<strong>代码、股数、成本价</strong>。</div>
     </div>
@@ -1445,8 +1511,8 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
     <div id="f-fund" style="display:none">
       <div id="m-fund-tip" class="alert alert-info" style="margin-bottom:12px"></div>
       <div class="fg-row c2">
-        <div class="fg"><label>基金/产品代码（可选）</label><input type="text" id="m-fcode" placeholder="如 021740"></div>
-        <div class="fg"><label>计价货币</label>
+        <div class="fg"><label for="m-fcode">基金/产品代码（可选）</label><input type="text" id="m-fcode" placeholder="如 021740"></div>
+        <div class="fg"><label for="m-fcurrency">计价货币</label>
           <select id="m-fcurrency" onchange="updateFundModalTip()">
             <option value="CNY">CNY 人民币</option>
             <option value="USD">USD 美元</option>
@@ -1455,12 +1521,12 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
         </div>
       </div>
       <div class="fg-row c2">
-        <div class="fg"><label>持有份额</label><input type="number" id="m-fshares" placeholder="10143.42" step="any"></div>
-        <div class="fg"><label>当前净值</label><input type="number" id="m-fprice" placeholder="1.024744" step="any"></div>
+        <div class="fg"><label for="m-fshares">持有份额</label><input type="number" id="m-fshares" placeholder="10143.42" step="any"></div>
+        <div class="fg"><label for="m-fprice">当前净值</label><input type="number" id="m-fprice" placeholder="1.024744" step="any"></div>
       </div>
       <div class="fg-row c2">
-        <div class="fg"><label>成本均价（每份）</label><input type="number" id="m-fcost" placeholder="1.00" step="any"></div>
-        <div class="fg"><label>净值更新日期</label><input type="date" id="m-fdate"></div>
+        <div class="fg"><label for="m-fcost">成本均价（每份）</label><input type="number" id="m-fcost" placeholder="1.00" step="any"></div>
+        <div class="fg"><label for="m-fdate">净值更新日期</label><input type="date" id="m-fdate"></div>
       </div>
     </div>
 
@@ -1468,31 +1534,31 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
     <div id="f-gold" style="display:none">
       <div class="alert alert-info" style="margin-bottom:12px">🥇 交易日自动拉取<strong>AU9999</strong>；<strong>休市后自动改用国际金价×汇率折算</strong>（无需手填），与建行积存金通常差 1–3 元/克。</div>
       <div class="fg-row c3">
-        <div class="fg"><label>持有克数</label><input type="number" id="m-grams" placeholder="18.0000" step="any"></div>
-        <div class="fg"><label>持仓均价（元/克）</label><input type="number" id="m-gcost" placeholder="796.3783" step="any"></div>
-        <div class="fg"><label>当前金价（元/克）</label><input type="number" id="m-gprice" placeholder="自动获取" step="any"></div>
+        <div class="fg"><label for="m-grams">持有克数</label><input type="number" id="m-grams" placeholder="18.0000" step="any"></div>
+        <div class="fg"><label for="m-gcost">持仓均价（元/克）</label><input type="number" id="m-gcost" placeholder="796.3783" step="any"></div>
+        <div class="fg"><label for="m-gprice">当前金价（元/克）</label><input type="number" id="m-gprice" placeholder="自动获取" step="any"></div>
       </div>
     </div>
 
     <!-- Stock US -->
     <div id="f-stock" style="display:none">
       <div class="fg-row c2">
-        <div class="fg"><label>股票代码</label><input type="text" id="m-ticker" placeholder="AAPL / SGOV（ETF）"></div>
-        <div class="fg"><label>持股数量</label><input type="number" id="m-shares" placeholder="100" step="any"></div>
+        <div class="fg"><label for="m-ticker">股票代码</label><input type="text" id="m-ticker" placeholder="AAPL / SGOV（ETF）"></div>
+        <div class="fg"><label for="m-shares">持股数量</label><input type="number" id="m-shares" placeholder="100" step="any"></div>
       </div>
       <div class="fg-row c2">
-        <div class="fg"><label>成本价 (USD)</label><input type="number" id="m-cost" placeholder="150.00" step="any"></div>
-        <div class="fg"><label>当前价 (USD)</label><input type="number" id="m-sprice" placeholder="自动刷新" step="any"></div>
+        <div class="fg"><label for="m-cost">成本价 (USD)</label><input type="number" id="m-cost" placeholder="150.00" step="any"></div>
+        <div class="fg"><label for="m-sprice">当前价 (USD)</label><input type="number" id="m-sprice" placeholder="自动刷新" step="any"></div>
       </div>
-      <div class="fg"><label>止损价 USD（可选，用于盈亏面板预警）</label>
+      <div class="fg"><label for="m-stoploss">止损价 USD（可选，用于盈亏面板预警）</label>
         <input type="number" id="m-stoploss" placeholder="如 82.50" step="0.01"></div>
     </div>
 
     <!-- Term Deposit -->
     <div id="f-td" style="display:none">
       <div class="fg-row c2">
-        <div class="fg"><label>本金</label><input type="number" id="m-principal" placeholder="50000" step="any"></div>
-        <div class="fg"><label>货币</label>
+        <div class="fg"><label for="m-principal">本金</label><input type="number" id="m-principal" placeholder="50000" step="any"></div>
+        <div class="fg"><label for="m-tdcur">货币</label>
           <select id="m-tdcur">
             <option value="AUD">AUD 澳元</option>
             <option value="USD">USD 美元</option>
@@ -1501,13 +1567,13 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
         </div>
       </div>
       <div class="fg-row c3">
-        <div class="fg"><label>年利率 (%)</label><input type="number" id="m-rate" placeholder="5.10" step="0.01"></div>
-        <div class="fg"><label>开始日期</label><input type="date" id="m-tdstart"></div>
-        <div class="fg"><label>到期日期</label><input type="date" id="m-tdend"></div>
+        <div class="fg"><label for="m-rate">年利率 (%)</label><input type="number" id="m-rate" placeholder="5.10" step="0.01"></div>
+        <div class="fg"><label for="m-tdstart">开始日期</label><input type="date" id="m-tdstart"></div>
+        <div class="fg"><label for="m-tdend">到期日期</label><input type="date" id="m-tdend"></div>
       </div>
     </div>
 
-    <div class="fg"><label>备注（可选）</label><input type="text" id="m-note" placeholder="月结 / 工资卡..."></div>
+    <div class="fg"><label for="m-note">备注（可选）</label><input type="text" id="m-note" placeholder="月结 / 工资卡..."></div>
     <input type="hidden" id="m-editid">
 
     <div style="display:flex;gap:8px;margin-top:4px">
@@ -1525,7 +1591,7 @@ const FIREBASE_PROXY_BASE='';
 /** 线上无同源 /_proxy 时回退（勿尾斜杠）。部署在 Vercel 且接口在 /_proxy 时填你的站点根。 */
 const WO_REMOTE_PROXY_ORIGIN='https://lee-lime.vercel.app';
 const SK='wo_v2';
-const blank=()=>({products:[],navHistory:[],fx:{USD:7.24,AUD:4.75},nextId:1,settings:{usPrincipalAUD:72640,usPrincipalUSD:46490},usAccountMeta:{},goal:{amount:1500000,currency:'CNY',label:'存款目标'}});
+const blank=()=>({products:[],navHistory:[],fx:{USD:7.24,AUD:4.75},nextId:1,settings:{},usAccountMeta:{},goal:{amount:0,currency:'CNY',label:'存款目标'}});
 let D=blank();
 
 // ══ Asset schema v2（统一 market / asset_type / risk_profile / yield_config）══
@@ -1712,21 +1778,7 @@ load();
 hydrateStocksFromCacheOnLoad();
 syncTdRateLimitedFromStorage();
 if(!D.goal||typeof D.goal!=='object'||!(Number(D.goal.amount)>0))
-  D.goal={amount:1500000,currency:'CNY',label:'存款目标'};
-(function seedCrclDefaultStopLoss(){
-  if(!D.settings||typeof D.settings!=='object')D.settings={};
-  if(D.settings.crclStop82Applied)return;
-  const ps=D.products||[];
-  const hasCrcl=ps.some(p=>p.type==='stock_us'&&String(p.ticker||'').trim().toUpperCase()==='CRCL');
-  if(!hasCrcl)return;
-  let patched=false;
-  for(const p of ps){
-    if(p.type!=='stock_us'||String(p.ticker||'').trim().toUpperCase()!=='CRCL')continue;
-    if(!(Number(p.stopLoss)>0)){p.stopLoss=82.5;patched=true;}
-  }
-  D.settings.crclStop82Applied=true;
-  if(patched)save();
-})();
+  D.goal={amount:0,currency:'CNY',label:'存款目标'};
 maybeRollAuWeeklyCompound();
 function maybeShowHttpDataTip(){
   var el=document.getElementById('http-data-migrate-banner');
@@ -2289,6 +2341,7 @@ function applyFxRatesIfStable(fx,force){
     if(pa>0&&Math.abs(fx.AUD-pa)/pa>FX_AUTO_MAX_DRIFT_PCT)return false;
   }
   Object.assign(D.fx,fx);
+  D.fxMeta={source:'自动行情接口',updatedAt:new Date().toISOString()};
   FX_RATES.syncCross();
   return true;
 }
@@ -3111,10 +3164,10 @@ function totalCNY(region){
   else if(!region)s+=usManualIdleAdjustmentCny(D.products.filter(p=>p.region==='us'));
   return s;
 }
-/** 美国区相对初始本金（AUD，默认 72640）的增长 */
+/** 美国区相对初始本金（AUD，由用户设置）的增长 */
 function getUsPrincipalGrowth(){
   const rcny=totalCNY('us');
-  const principalAUD=Number(D.settings?.usPrincipalAUD)>0?Number(D.settings.usPrincipalAUD):72640;
+  const principalAUD=Number(D.settings?.usPrincipalAUD)>0?Number(D.settings.usPrincipalAUD):0;
   const currentAUD=fromCNY(rcny,'AUD');
   const currentUSD=fromCNY(rcny,'USD');
   const principalCny=toCNY(principalAUD,'AUD');
@@ -3128,7 +3181,7 @@ function updateUsGrowthDisplay(){
   const el=document.getElementById('us-growth');
   if(!el)return;
   const rcny=totalCNY('us');
-  if(!(rcny>0)){
+  if(!(rcny>0)||!(Number(D.settings?.usPrincipalAUD)>0)){
     el.style.display='none';
     el.innerHTML='';
     return;
@@ -3153,7 +3206,7 @@ const CMDK_ITEMS=[
   {id:'settings',label:'设置',kw:'设置 导入 导出',ico:'⚙️',run:function(){showPage('settings');}},
   {id:'add',label:'添加资产',kw:'新建 添加',ico:'＋',run:function(){openModal();}},
   {id:'snapshot',label:'记录今日快照',kw:'快照 拍照',ico:'📸',run:function(){takeSnapshot();}},
-  {id:'refresh',label:'全部刷新',kw:'同步 刷新 行情',ico:'🔄',run:function(){refreshAllQuotes();}}
+  {id:'refresh',label:'刷新行情',kw:'同步 刷新 行情',ico:'🔄',run:function(){refreshAllQuotes();}}
 ];
 let __cmdkFiltered=[],__cmdkActive=0;
 function filterCmdkItems(q){
@@ -3172,7 +3225,7 @@ function renderCmdkList(q){
   __cmdkActive=0;
   if(!__cmdkFiltered.length){list.innerHTML='<div class="cmdk-empty" role="status">无匹配项，试试「设置」「历史」</div>';return;}
   list.innerHTML=__cmdkFiltered.map(function(it,i){
-    return '<button type="button" role="option" class="cmdk-item'+(i===0?' cmdk-item-active':'')+'" data-cmdk-i="'+i+'"><span class="cmdk-item-ico" aria-hidden="true">'+it.ico+'</span><span>'+it.label+'</span><span class="cmdk-item-meta">跳转</span></button>';
+    return '<button type="button" role="option" class="cmdk-item'+(i===0?' cmdk-item-active':'')+'" data-cmdk-i="'+i+'"><span class="cmdk-item-ico" aria-hidden="true">'+it.ico+'</span><span>'+it.label+'</span><span class="cmdk-item-meta">'+(['add','snapshot','refresh'].includes(it.id)?'执行':'打开')+'</span></button>';
   }).join('');
   list.querySelectorAll('.cmdk-item').forEach(function(btn){
     btn.addEventListener('click',function(){
@@ -3294,7 +3347,7 @@ function renderSidebar(){
   const fxParts=['USD','AUD'].map(c=>`<div class="fx-chip"><span class="fx-chip-pair">${c}/CNY</span><span class="fx-chip-rate">${c==='USD'?FX_RATES.USD_TO_CNY:FX_RATES.AUD_TO_CNY}</span></div>`);
   const audUsd=FX_RATES.AUD_TO_USD.toFixed(5);
   fxParts.push(`<div class="fx-chip" title="1 澳元 = ${audUsd} 美元"><span class="fx-chip-pair">AUD/USD</span><span class="fx-chip-rate">${audUsd}</span></div>`);
-  fxParts.push(`<div class="fx-chip" id="gold-price-chip" title="上海金 AU9999 · 点击刷新" onclick="refreshGoldChip()" style="cursor:pointer"><span class="fx-chip-pair">Au/g</span><span class="fx-chip-rate" id="fc-gold">—</span></div>`);
+  fxParts.push(`<div class="fx-chip" id="gold-price-chip" role="button" tabindex="0" title="上海金 AU9999 · 点击刷新" onclick="refreshGoldChip()" style="cursor:pointer"><span class="fx-chip-pair">Au/g</span><span class="fx-chip-rate" id="fc-gold">—</span></div>`);
   fxParts.push('<div class="fx-chip" id="td-expiry-chip" style="display:none" aria-live="polite"><span class="fx-chip-pair">近到期</span><span class="fx-chip-rate" id="fc-td-expiry">—</span></div>');
   fxParts.push('<div class="fx-chip" id="topbar-btc" title="Bitcoin · 点击刷新" onclick="refreshBtcPrice()" role="button" tabindex="0"><span class="fx-chip-pair">BTC/USD</span><span class="fx-chip-rate" id="btc-price-usd">—</span><span id="btc-price-cny" hidden></span><span id="btc-change" hidden></span></div>');
   document.getElementById('fx-strip').innerHTML=fxParts.join('');
@@ -3318,7 +3371,11 @@ function updateGoalBar(){
   const goal=D.goal;
   if(!goal||!goal.amount){
     if(ovGoalChart){try{ovGoalChart.destroy();}catch(e){}ovGoalChart=null;}
-    pctEl.textContent='—%';
+    pctEl.textContent='—';
+    curEl.textContent=fc(totalCNY(),'CNY',0);
+    tgtEl.textContent='尚未设置目标';
+    remEl.textContent='点击编辑设置目标';
+    etaEl.textContent='';
     return;
   }
   const cny=totalCNY();
@@ -3361,7 +3418,7 @@ function updateGoalBar(){
 }
 
 function openGoalEdit(){
-  const cur=D.goal||{amount:1500000,currency:'CNY',label:'存款目标'};
+  const cur=D.goal||{amount:0,currency:'CNY',label:'存款目标'};
   const amt=prompt('设定目标金额（人民币）：',String(cur.amount));
   if(amt===null)return;
   const n=parseFloat(amt);
@@ -3588,7 +3645,7 @@ function buildFullPortfolioText(){
   const cnCny=totalCNY('cn'),usCny=totalCNY('us'),auCny=totalCNY('au');
   const goalAmt=D.goal?.amount||0;
   const goalPct=goalAmt>0?(cny/goalAmt*100):null;
-  const principalUSD=D.settings?.usPrincipalUSD||46490;
+  const principalUSD=D.settings?.usPrincipalUSD||0;
   const lines=[
     `总净值：${fc(cny,'CNY',2)}（≈ ${fc(fromCNY(cny,'USD'),'USD',2)} · ≈ ${fc(fromCNY(cny,'AUD'),'AUD',2)}）`,
     `汇率：USD/CNY=${fx.USD||'—'} · AUD/CNY=${fx.AUD||'—'}`,
@@ -3633,10 +3690,10 @@ function buildFullPortfolioText(){
   });
   return lines.join('\n');
 }
-/** AI 诊断/追问：完整持仓 + 大事件日历 + RSS 资讯 */
+/** AI 诊断/追问：脱敏资产摘要 + 大事件日历 + RSS 资讯 */
 function buildAiPortfolioContext(){
   return[
-    buildFullPortfolioText(),
+    buildSanitizedPortfolio(),
     '',
     '═══════════════════════════════════════',
     '【大事件日历 + 持仓相关新闻 RSS】',
@@ -3644,7 +3701,7 @@ function buildAiPortfolioContext(){
   ].join('\n');
 }
 function getAiPortfolioPayload(){
-  return buildFullPortfolioPayload();
+  return getSanitizedPortfolioPayload();
 }
 function aiAdvisorErrorText(data){
   const base=data?.error||'未知';
@@ -3655,10 +3712,6 @@ async function postAiAdvisor(body){
   const opts={method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)};
   let r=await fetch('/api/ai-advisor',opts);
   if(r.ok)return r;
-  const ro=(typeof WO_REMOTE_PROXY_ORIGIN==='string'&&WO_REMOTE_PROXY_ORIGIN.trim())?WO_REMOTE_PROXY_ORIGIN.replace(/\/$/,''):'';
-  if(ro&&r.status>=500){
-    try{r=await fetch(`${ro}/api/ai-advisor`,opts);}catch(e){}
-  }
   return r;
 }
 
@@ -3943,7 +3996,7 @@ async function sendAiChatMessage(){
       portfolioPayload:getAiPortfolioPayload(),
       messages:aiChatState.messages,
       provider,
-      sanitized:false
+      sanitized:true
     });
     const data=await r.json();
     loadingEl.remove();
@@ -3997,19 +4050,19 @@ async function fetchAiAdvice(){
   btn.disabled=true;btn.textContent='🔄 诊断中…';
   result.style.display='block';
   updateCopilotWealthEmpty();
-  diagnosis.innerHTML='<div class="ai-pb-loading">💎 CIO 正在审阅完整持仓、大事件与资讯，约需 5–15 秒…</div>';
+  diagnosis.innerHTML='<div class="ai-pb-loading">💎 CIO 正在审阅脱敏资产摘要、大事件与资讯，约需 5–15 秒…</div>';
 
   const portfolio=buildAiPortfolioContext();
   const portfolioPayload=getAiPortfolioPayload();
 
   try{
-    const r=await postAiAdvisor({mode:'diagnose',portfolio,portfolioPayload,provider,sanitized:false});
+    const r=await postAiAdvisor({mode:'diagnose',portfolio,portfolioPayload,provider,sanitized:true});
     const data=await r.json();
     if(data.advice){
       diagnosis.innerHTML=
-        `<div class="ai-pb-meta">🤖 ${escOvHtml(String(data.model||''))} · 完整上下文 · ${new Date().toLocaleTimeString('zh-CN')}</div>`+
+        `<div class="ai-pb-meta">🤖 ${escOvHtml(String(data.model||''))} · 脱敏上下文 · ${new Date().toLocaleTimeString('zh-CN')}</div>`+
         `<div class="ai-pb-body">${formatAiAdviceHtml(data.advice)}</div>`+
-        `<div class="ai-pb-disclaimer">🔒 含真实持仓、账户、NAV 历史、大事件与 RSS；数据经 HTTPS 传输至 AI 服务商 · 仅供参考，不构成投资建议</div>`;
+        `<div class="ai-pb-disclaimer">🔒 资产摘要已模糊金额并移除账户名、备注和精确持仓；你的提问仍会发送至所选 AI 服务商 · 仅供参考，不构成投资建议</div>`;
       initAiChatSession(portfolio,provider,data.model||'',data.advice);
       setAiDailyBriefFromText(data.advice);
     }else{
@@ -4349,7 +4402,7 @@ function mergeWatchEvents(){
 }
 
 function buildEventsCalendarContext(){
-  const events=mergeWatchEvents();
+  const events=mergeWatchEvents().filter(ev=>!ev.personal);
   const today=localTodayISO();
   const lines=[`今日日期：${today}`,`时间窗口：过去30天 + 未来365天`,`共 ${events.length} 项`,''];
   events.forEach(ev=>{
@@ -4361,7 +4414,7 @@ function buildEventsCalendarContext(){
     lines.push(`- ${ev.date} ${when} · ${ev.title} · ${ev.region} · ${ev.impact==='high'?'高影响':'中影响'}${ev.personal?' · 个人持仓':''}`);
     if(ev.fact)lines.push(`  具体内容：${ev.fact}`);
     if(ev.expected)lines.push(`  预期影响：${ev.expected}`);
-    if(ev.actual)lines.push(`  实际影响：${ev.actual}`);
+    if(ev.actual&&!ev.actualPending)lines.push(`  实际影响：${ev.actual}`);
     else if(ev.actualPending)lines.push(`  实际影响：待更新`);
     else if(ev.desc)lines.push(`  ${ev.desc}`);
   });
@@ -4382,7 +4435,7 @@ function renderEventsAiMsgs(){
   const box=document.getElementById('ov-events-ai-msgs');
   if(!box)return;
   if(!eventsAiChat.messages.length){
-    box.innerHTML='<div style="font-size:13px;color:var(--text3);padding:8px 2px;font-family:var(--mono)">输入问题，AI 将结合大事件日历、RSS 资讯与你的完整持仓解读。</div>';
+    box.innerHTML='<div style="font-size:13px;color:var(--text3);padding:8px 2px;font-family:var(--mono)">输入问题，AI 将结合大事件日历、RSS 资讯与你的脱敏资产摘要解读。</div>';
     return;
   }
   box.innerHTML=eventsAiChat.messages.map(m=>{
@@ -4410,11 +4463,11 @@ async function sendEventsAiChat(){
   renderEventsAiMsgs();
   if(sendBtn){sendBtn.disabled=true;sendBtn.textContent='…';}
 
-  const portfolio=buildFullPortfolioText();
+  const portfolio=buildSanitizedPortfolio();
   const portfolioPayload=getAiPortfolioPayload();
   const eventsContext=buildEventsCalendarContext();
   try{
-    const r=await postAiAdvisor({mode:'events',eventsContext,portfolio,portfolioPayload,messages:eventsAiChat.messages,provider,sanitized:false});
+    const r=await postAiAdvisor({mode:'events',eventsContext,portfolio,portfolioPayload,messages:eventsAiChat.messages,provider,sanitized:true});
     const data=await r.json();
     if(data.advice){
       eventsAiChat.messages.push({role:'assistant',content:data.advice});
@@ -4491,7 +4544,7 @@ function renderMajorEventsWatch(){
 
   if(!combined.length){
     const emptyMsg=ovEventsFilter==='news'
-      ?'暂无持仓相关资讯。请打开「资讯」页点击「刷新资讯」，或使用顶栏「全部同步」。'
+      ?'暂无持仓相关资讯。请打开「资讯」页点击「刷新资讯」，或在资讯页点击「刷新资讯」。'
       :'该筛选下暂无事件';
     listEl.innerHTML=`<div class="ov-events-empty">${emptyMsg}</div>`;
     renderEventsAiMsgs();
@@ -4549,7 +4602,7 @@ function renderMajorEventsWatch(){
     }
   }
   if(newsCount===0&&(ovEventsFilter==='all'||ovEventsFilter==='personal'||ovEventsFilter==='news')&&(!D.newsCache?.items?.length)){
-    rows.push('<div class="ov-events-news-hint">持仓相关新闻尚未拉取。<a href="#" onclick="showPage(\'news\');return false">打开资讯页刷新</a> 或使用顶栏「全部同步」。</div>');
+    rows.push('<div class="ov-events-news-hint">持仓相关新闻尚未拉取。<a href="#" onclick="showPage(\'news\');return false">打开资讯页刷新</a> 或在资讯页点击「刷新资讯」。</div>');
   }
   listEl.innerHTML=rows.join('');
   renderEventsAiMsgs();
@@ -4563,6 +4616,7 @@ function ovPerfBarHtml(pct){
   return`<div class="ov-perf-bar ${cls}"><div class="ov-perf-fill" style="width:${w}%"></div></div>`;
 }
 function renderOverview(){
+  document.getElementById('ov-dash').classList.toggle('is-empty',!(D.products||[]).length);
   maybeRollAuWeeklyCompound();
   const cny=totalCNY(),usd=fromCNY(cny,'USD'),aud=fromCNY(cny,'AUD');
   const missingGoldPrice=D.products.some(p=>p.type==='gold'&&!(p.goldPrice>0));
@@ -4636,8 +4690,8 @@ function renderOverview(){
             </div>
           </div>
           <div class="ov-prod-actions">
-            <button class="ov-row-btn" onclick="event.stopPropagation();editProduct(${p.id})">✏️</button>
-            <button class="ov-row-btn danger" onclick="event.stopPropagation();deleteProduct(${p.id})">✕</button>
+            <button class="ov-row-btn" aria-label="编辑资产" onclick="event.stopPropagation();editProduct(${p.id})">✏️</button>
+            <button class="ov-row-btn danger" aria-label="删除资产" onclick="event.stopPropagation();deleteProduct(${p.id})">✕</button>
           </div>
         </div>`;
         } else if(p.type==='fund_cn'){
@@ -4671,8 +4725,8 @@ function renderOverview(){
             </div>
           </div>
           <div class="ov-prod-actions">
-            <button class="ov-row-btn" onclick="event.stopPropagation();editProduct(${p.id})">✏️</button>
-            <button class="ov-row-btn danger" onclick="event.stopPropagation();deleteProduct(${p.id})">✕</button>
+            <button class="ov-row-btn" aria-label="编辑资产" onclick="event.stopPropagation();editProduct(${p.id})">✏️</button>
+            <button class="ov-row-btn danger" aria-label="删除资产" onclick="event.stopPropagation();deleteProduct(${p.id})">✕</button>
           </div>
         </div>`;
         } else {
@@ -4698,8 +4752,8 @@ function renderOverview(){
             </div>
           </div>
           <div class="ov-prod-actions">
-            <button class="ov-row-btn" onclick="event.stopPropagation();editProduct(${p.id})">✏️</button>
-            <button class="ov-row-btn danger" onclick="event.stopPropagation();deleteProduct(${p.id})">✕</button>
+            <button class="ov-row-btn" aria-label="编辑资产" onclick="event.stopPropagation();editProduct(${p.id})">✏️</button>
+            <button class="ov-row-btn danger" aria-label="删除资产" onclick="event.stopPropagation();deleteProduct(${p.id})">✕</button>
           </div>
         </div>`;
       }).join('');
@@ -4720,7 +4774,7 @@ function renderOverview(){
     let extraStats = '';
     let col = 'var(--green)', sign = '+', pnlAUD = 0, pnlUSD = 0, pnlCNY = 0, pnlPct = 0, totalAUD_us = 0;
     let usStockCny=0,usIdleCny=0,usGrowth=null;
-    if(r.id === 'us' && ps.length){
+    if(r.id === 'us' && ps.length && Number(D.settings?.usPrincipalAUD)>0){
       usStockCny=sumStockUsCNY(ps);
       usIdleCny=regionUsIdleCnyTotal(ps);
       usGrowth=getUsPrincipalGrowth();
@@ -4745,7 +4799,7 @@ function renderOverview(){
         </div>`;
     const regionPctAll=cny>0?(rcny/cny*100):0;
     const regionViz=`<div class="ov-region-viz" title="占全球净值 ${regionPctAll.toFixed(1)}%"><div class="ov-region-viz-fill ${r.id}" style="width:${regionPctAll.toFixed(1)}%"></div><span class="ov-region-viz-pct">${regionPctAll.toFixed(1)}%</span></div>`;
-    const ovNameRow = `<div class="ov-col-name-row"><div class="ov-col-name-block"><span class="ov-col-name">${r.flag} ${r.name}</span><span class="ov-col-meta">${ps.length} Holdings</span></div><button type="button" class="ov-col-add-icon" onclick="openModal('${r.id}')" title="添加资产"><i class="ti ti-plus"></i></button></div>${regionViz}`;
+    const ovNameRow = `<div class="ov-col-name-row"><div class="ov-col-name-block"><span class="ov-col-name">${r.flag} ${r.name}</span><span class="ov-col-meta">${ps.length} 项资产</span></div><button type="button" class="ov-col-add-icon" onclick="openModal('${r.id}')" title="添加资产"><i class="ti ti-plus"></i></button></div>${regionViz}`;
 
     let headerHTML;
     if(r.id === 'us' && extraStats) {
@@ -4794,7 +4848,7 @@ function syncIntelColumnHeight(){
   const card=document.getElementById('ov-events-card');
   const list=document.getElementById('ov-events-list');
   if(!intel||!head||!port)return;
-  if(window.innerWidth<769){
+  if(window.innerWidth<=1350){
     intel.style.minHeight='';
     intel.style.height='';
     if(list)list.style.minHeight='';
@@ -4854,6 +4908,11 @@ function renderNavMiniChart(days,opts){
     lbl.style.color=chg>=0?'var(--up-soft)':chg<0?'var(--dn-soft)':'var(--text-4)';
   }
   const ctx=document.getElementById('chart-ov');if(!ctx)return;
+  const empty=document.getElementById('ov-trend-empty');
+  const enough=hist.length>=2&&D.navHistory.length>=1;
+  ctx.hidden=!enough;
+  if(empty)empty.hidden=enough;
+  if(!enough){if(ovChart){ovChart.destroy();ovChart=null;}return;}
   const isDark=!document.body.classList.contains('light');
   const pointRadius=vals.length<30?3:0;
   if(ovChart&&!force&&__ovChartDays===days&&__ovChartDark===isDark){
@@ -5419,7 +5478,7 @@ function updateGoldChip(){
     return;
   }
   if(chip)chip.title='金价自动：日盘 AU9999，休市国际金价折算。点击刷新';
-  el.textContent='—';
+  el.textContent='未获取';
 }
 async function refreshGoldChip(){
   const el=document.getElementById('fc-gold');
@@ -5552,7 +5611,7 @@ function redrawAllAfterFullQuoteRefresh(){
   refreshCurrentView();
 }
 
-/** 顶栏一键：汇率 → 黄金 → 美股（并行）→ 基金（并行）→ 写入今日快照 → 拉取/翻译资讯 */
+/** 仅更新行情；快照与资讯由各自入口执行。 */
 async function refreshAllQuotes(){
   const strip=document.getElementById('global-refresh-status');
   const btn=document.getElementById('refresh-all-btn');
@@ -5567,7 +5626,7 @@ async function refreshAllQuotes(){
   }
   busy(true);
   quoteRefreshBusy=true;
-  __woSyncToastId=showToast({message:'正在同步行情与快照…',type:'loading',duration:0});
+  __woSyncToastId=showToast({message:'正在刷新行情…',type:'loading',duration:0});
   const lines=[];
   const show=msg=>{if(strip) strip.innerHTML='<div class="alert alert-info" style="margin:0">'+msg+'</div>';};
 
@@ -5650,14 +5709,6 @@ async function refreshAllQuotes(){
     save();
     redrawAllAfterFullQuoteRefresh();
 
-    show('📝 正在写入今日快照（按当前行情与汇率）…');
-    takeSnapshot();
-    lines.push('快照');
-
-    show('📰 正在刷新资讯（RSS + 中文翻译，可能需数十秒）…');
-    const newsOk=await refreshNewsFeeds();
-    lines.push(newsOk?'资讯':'资讯失败');
-
     refreshCurrentView();
 
     const summary=lines.length?lines.join(' · '):'完成';
@@ -5665,7 +5716,7 @@ async function refreshAllQuotes(){
     const note='中/澳条目在「汇率」成功后即已用新 USD、AUD 价重算人民币市值（无需单独接口）；定存按本金与利率应计；澳洲定存周复利已滚存。基金为天天基金 JSONP，失败多为网络阻断或代码错误。';
     if(strip) strip.innerHTML='<div class="alert alert-ok" style="margin:0">✅ 全部完成（'+n+' 条资产）：'+summary+'</div><div class="alert alert-info" style="margin:8px 0 0;font-size:12px;line-height:1.5">'+note+'</div>';
     setTimeout(()=>{if(strip) strip.innerHTML='';},12000);
-    showToast({message:'全部同步完成',type:'success',duration:2600});
+    showToast({message:'行情刷新完成',type:'success',duration:2600});
   }catch(e){
     if(strip) strip.innerHTML='<div class="alert alert-warn" style="margin:0">⚠️ 刷新中断：'+(e.message||e)+'</div>';
     showToast({message:'同步中断：'+(e.message||String(e)),type:'warn',duration:5200});
@@ -5848,7 +5899,7 @@ function renderOverviewDashboard(){
   const cny=totalCNY();
   const chips=[];
   if(!D.navHistory||!D.navHistory.length)
-    chips.push({t:'尚未记录 NAV 快照 — 侧边栏点「记录今日快照」便于以后对比',c:'warn'});
+    chips.push({t:'尚未记录 NAV 快照 — 点击顶栏「快照」便于以后对比',c:'warn'});
   else{
     const sorted=[...D.navHistory].filter(n=>n.date).sort((a,b)=>a.date.localeCompare(b.date));
     const first=sorted[0],last=sorted[sorted.length-1];
@@ -6127,6 +6178,8 @@ function mergeNavHistories(local, imp){
 // ══ FX ══
 function renderFXPage(){
   FX_RATES.syncCross();
+  const meta=D.fxMeta;
+  document.getElementById('fx-provenance').textContent=meta?' 来源：'+meta.source+'；更新：'+new Date(meta.updatedAt).toLocaleString('zh-CN'):' 当前为预设或导入汇率，更新时间未知。';
   document.getElementById('fx-usd').value=FX_RATES.USD_TO_CNY||'';
   document.getElementById('fx-aud').value=FX_RATES.AUD_TO_CNY||'';
   document.getElementById('fx-usdaud').value=FX_RATES.USD_TO_AUD.toFixed(5);
@@ -6232,6 +6285,7 @@ function saveFX(){
   FX_RATES.syncCross();
   if(!isNaN(ua)&&ua>0)D.fx.USDAUD=ua;
   if(D.fx)delete D.fx.HKD;
+  D.fxMeta={source:'手动设置',updatedAt:new Date().toISOString()};
   save();renderSidebar();renderReverseRates();
   const el=document.getElementById('fx-msg');
   el.innerHTML='<div class="alert alert-ok">✅ 已保存</div>';
@@ -6251,17 +6305,27 @@ function openModal(region,account){
   document.getElementById('m-date').value=today();
   document.getElementById('m-tdstart').value=today();
   document.getElementById('m-tdend').value='';
-  if(region){document.getElementById('m-region').value=region;onRegion();}
+  region=region||({ 'page-cn':'cn','page-us':'us','page-au':'au' }[document.querySelector('.page.active')?.id])||'cn';
+  document.getElementById('m-region').value=region;
+  onRegion();
   if(account)document.getElementById('m-account').value=account;
   const cur=document.getElementById('m-currency');
   if(cur)cur.value=(region==='us')?'USD':'CNY';
   onType();
-  document.getElementById('modal').classList.add('open');
+  showModal('modal');
 }
-function closeModal(id){document.getElementById(id||'modal').classList.remove('open');}
+let modalReturnFocus=null;
+function showModal(id){
+  modalReturnFocus=document.activeElement;
+  const overlay=document.getElementById(id);
+  overlay.classList.add('open');
+  requestAnimationFrame(()=>overlay.querySelector('input:not([type=hidden]),select,button')?.focus());
+}
+function closeModal(id){const el=document.getElementById(id||'modal');if(!el.classList.contains('open'))return;el.classList.remove('open');modalReturnFocus?.focus();}
+
 function openAiModal(){
   const m=document.getElementById('modal-ai');
-  if(m)m.classList.add('open');
+  if(m)showModal('modal-ai');
   try{renderEventsAiMsgs();}catch(e){}
   updateCopilotWealthEmpty();
 }
@@ -6341,6 +6405,7 @@ function onType(){
   if(tip)tip.style.display=r==='us'&&['cash','other'].includes(t)?'block':'none';
   const cur=document.getElementById('m-currency');
   const editing=document.getElementById('m-editid').value;
+  if(!editing&&t==='term_deposit')document.getElementById('m-tdcur').value=({cn:'CNY',us:'USD',au:'AUD'})[r];
   if(!editing&&['cash','other'].includes(t)&&cur){
     if(r==='us')cur.value='USD';
     else if(r==='cn')cur.value='CNY';
@@ -6371,7 +6436,7 @@ function saveProduct(){
 
   if(!account){status.innerHTML='<div class="alert alert-warn">请填写账户名称</div>';return;}
 
-  let p={id:editId?parseInt(editId):D.nextId++,region,type,account,name,note,createdAt:today(),updatedAt:today()};
+  let p={id:editId?parseInt(editId):D.nextId,region,type,account,name,note,createdAt:today(),updatedAt:today()};
 
   if(type==='gold'){
     const grams=parseFloat(document.getElementById('m-grams').value);
@@ -6412,7 +6477,8 @@ function saveProduct(){
     const tdStart=document.getElementById('m-tdstart').value;
     const tdEnd=document.getElementById('m-tdend').value;
     const tdCur=document.getElementById('m-tdcur').value;
-    if(isNaN(principal)||isNaN(rate)||!tdStart){status.innerHTML='<div class="alert alert-warn">请填写本金、年利率和开始日期</div>';return;}
+    if(!Number.isFinite(principal)||principal<=0||!Number.isFinite(rate)||rate<0||!tdStart){status.innerHTML='<div class="alert alert-warn">请填写本金、年利率和开始日期</div>';return;}
+    if(tdEnd&&tdEnd<=tdStart){status.innerHTML='<div class="alert alert-warn">到期日期必须晚于开始日期</div>';return;}
     p={...p,principal,rate,tdStart,tdEnd,tdCur,currency:tdCur};
   } else {
     const amount=parseFloat(document.getElementById('m-amount').value);
@@ -6430,7 +6496,7 @@ function saveProduct(){
       if(type==='gold')merged=sanitizeGoldProduct(merged);
       D.products[idx]=merged;
     }
-  }else D.products.push(type==='gold'?sanitizeGoldProduct(p):p);
+  }else{D.products.push(type==='gold'?sanitizeGoldProduct(p):p);D.nextId++;}
   save();closeModal('modal');renderRegion(region);renderSidebar();
   if(document.getElementById('page-overview').classList.contains('active'))renderOverview();
 }
@@ -6488,13 +6554,26 @@ function deleteProduct(id){
 // ══ SETTINGS ══
 function renderSettings(){
   if(!D.settings) D.settings={};
-  document.getElementById('cfg-principal-aud').value = D.settings.usPrincipalAUD || 72640;
-  document.getElementById('cfg-principal-usd').value = D.settings.usPrincipalUSD || 46490;
+  document.getElementById('cfg-principal-aud').value = D.settings.usPrincipalAUD || '';
+  document.getElementById('cfg-principal-usd').value = D.settings.usPrincipalUSD || '';
+  document.getElementById('pin-status').textContent=localStorage.getItem('lee_pin_hash')?'已设置 PIN。':'尚未设置 PIN。';
+  checkGateStatus();
+}
+async function checkGateStatus(){
+  const el=document.getElementById('gate-status');
+  try{
+    const r=await fetch('/api/security-status',{cache:'no-store'});
+    if(!r.ok)throw Error('unavailable');
+    const status=await r.json();
+    if(typeof status.enabled!=='boolean')throw Error('unavailable');
+    el.textContent=status.misconfigured?'密码或验证密钥配置不完整，站点门禁未启用。':status.gateSupported===false?'当前 Cloudflare 部署尚未接入站点门禁；配置密码本身不会保护页面。':status.enabled?'站点门禁已启用。访问本站需要登录。':'站点门禁未启用。请在托管平台配置站点密码和验证密钥。';
+  }catch(e){el.textContent='无法确认门禁状态，请检查托管平台配置。';}
 }
 function savePrincipal(){
   const v = parseFloat(document.getElementById('cfg-principal-aud').value);
   if(!D.settings) D.settings={};
-  if(!isNaN(v)&&v>0){ D.settings.usPrincipalAUD=v; save(); renderOverview(); }
+  if(!Number.isFinite(v)||v<=0){showToast({message:'请输入大于零的本金',type:'warn'});return;}
+  D.settings.usPrincipalAUD=v; save(); renderOverview();
   const s=document.getElementById('principal-status');
   s.innerHTML='<div class="alert alert-ok">✅ 已保存</div>';
   setTimeout(()=>s.innerHTML='',3000);
@@ -6502,7 +6581,8 @@ function savePrincipal(){
 function savePrincipalUSD(){
   const v=parseFloat(document.getElementById('cfg-principal-usd').value);
   if(!D.settings)D.settings={};
-  if(!isNaN(v)&&v>0){D.settings.usPrincipalUSD=v;save();renderOverview();}
+  if(!Number.isFinite(v)||v<=0){showToast({message:'请输入大于零的本金',type:'warn'});return;}
+  D.settings.usPrincipalUSD=v;save();renderOverview();
   const s=document.getElementById('principal-usd-status');
   s.innerHTML='<div class="alert alert-ok">✅ 已保存</div>';
   setTimeout(()=>s.innerHTML='',3000);
@@ -6528,7 +6608,7 @@ function importData(input){
     D=Object.assign(blank(),raw);
     D.navHistory=mergeNavHistories(localNav,raw.navHistory||[]);
     if(!D.goal||typeof D.goal!=='object'||!(Number(D.goal.amount)>0))
-      D.goal={amount:1500000,currency:'CNY',label:'存款目标'};
+      D.goal={amount:0,currency:'CNY',label:'存款目标'};
     save();renderOverview();maybeShowHttpDataTip();
     showToast({message:'导入成功，NAV 历史已按日期与本地合并',type:'success',duration:3600});
   }catch(err){showToast({message:'导入失败：'+err.message,type:'warn',duration:5000});}};
@@ -6568,13 +6648,6 @@ document.documentElement.classList.toggle('dark',!document.body.classList.contai
 if(localStorage.getItem('wo_sb_rail')==='1')document.body.classList.add('sidebar-collapsed');
 
 // ══ BATCH IMPORT ══
-const TIGER_PRESET = [
-  {ticker:'NVDA', name:'英伟达',    shares:40,   cost:105.36, price:168.19},
-  {ticker:'PLTR', name:'Palantir', shares:5,    cost:158.38, price:143.33},
-  {ticker:'CRCL', name:'Circle',   shares:10,   cost:90.95,  price:90.26, stopLoss:82.5},
-  {ticker:'TSLA', name:'特斯拉',   shares:31,   cost:269.08, price:363.46},
-  {ticker:'VOO',  name:'Vanguard', shares:39.5, cost:619.20, price:584.98},
-];
 let batchRowId=0;
 
 function openBatchModal(){
@@ -6582,8 +6655,8 @@ function openBatchModal(){
   document.getElementById('batch-rows').innerHTML='';
   document.getElementById('batch-status').innerHTML='';
   batchRowId=0;
-  TIGER_PRESET.forEach(r=>addBatchRow(r));
-  document.getElementById('modal-batch').classList.add('open');
+  addBatchRow();
+  showModal('modal-batch');
 }
 
 function addBatchRow(data={}){
@@ -6593,11 +6666,11 @@ function addBatchRow(data={}){
   div.id='brow-'+id;
   if(data.stopLoss!=null&&isFinite(Number(data.stopLoss)))div.dataset.stoploss=String(data.stopLoss);
   div.innerHTML=`
-    <input type="text" placeholder="NVDA" value="${data.ticker||''}" id="bt-${id}" style="text-transform:uppercase">
-    <input type="text" placeholder="名称（可选）" value="${data.name||''}" id="bn-${id}">
-    <input type="number" placeholder="40" value="${data.shares||''}" id="bs-${id}" step="any">
-    <input type="number" placeholder="105.36" value="${data.cost||''}" id="bc-${id}" step="any">
-    <input type="number" placeholder="自动刷新" value="${data.price||''}" id="bp-${id}" step="any">
+    <input type="text" placeholder="NVDA" value="${escAttr(data.ticker||'')}" aria-label="股票代码" id="bt-${id}" style="text-transform:uppercase">
+    <input type="text" placeholder="名称（可选）" value="${escAttr(data.name||'')}" aria-label="产品名称" id="bn-${id}">
+    <input type="number" placeholder="持股数" value="${data.shares||''}" aria-label="持股数" id="bs-${id}" step="any">
+    <input type="number" placeholder="每股成本" value="${data.cost||''}" aria-label="每股成本（USD）" id="bc-${id}" step="any">
+    <input type="number" placeholder="自动刷新" value="${data.price||''}" aria-label="当前价（USD）" id="bp-${id}" step="any">
     <button class="batch-del" onclick="document.getElementById('brow-${id}').remove()" title="删除">✕</button>
   `;
   document.getElementById('batch-rows').appendChild(div);
@@ -6606,6 +6679,14 @@ function addBatchRow(data={}){
 async function saveBatch(){
   const rows=document.querySelectorAll('.batch-row');
   const status=document.getElementById('batch-status');
+  const invalid=Array.from(rows).some(row=>{
+    const inputs=row.querySelectorAll('input');
+    if(!Array.from(inputs).some(el=>el.value.trim()))return false;
+    const shares=Number(inputs[2].value),cost=Number(inputs[3].value),price=Number(inputs[4].value);
+    return !inputs[0].value.trim()||!inputs[2].value||!inputs[3].value||!Number.isFinite(shares)||shares<=0||!Number.isFinite(cost)||cost<0||!Number.isFinite(price)||price<0;
+  });
+  if(invalid){status.innerHTML='<div class="alert alert-warn">请检查各行：代码、正数持股数和非负成本必填；当前价须为非负数。</div>';return;}
+  if(!Array.from(rows).some(row=>row.querySelector('input')?.value.trim())){status.innerHTML='<div class="alert alert-warn">请先填写至少一条持仓。</div>';return;}
   let imported=0;
   rows.forEach(row=>{
     const id=row.id.replace('brow-','');
@@ -6635,51 +6716,6 @@ async function saveBatch(){
   await refreshStocks();
 }
 
-/** 蚂蚁财富「全部持有」示例：余额宝 + 余额 + 前海开源黄金ETF联接C（金额可再编辑） */
-const ALIPAY_CN_PRESET_NAMES=['余额宝','余额','前海开源黄金ETF联接C'];
-function importAlipayChinaPreset(){
-  if(!confirm('将向中国境内账户「支付宝」写入 3 条：余额宝、余额、前海开源黄金ETF联接C（与截图金额一致）。\n若已有同名同账户条目会先删除再写入。继续？'))return;
-  const acc='支付宝';
-  D.products=D.products.filter(p=>!(p.region==='cn'&&p.account===acc&&ALIPAY_CN_PRESET_NAMES.includes(p.name)));
-  const t=today();
-  D.products.push({id:D.nextId++,region:'cn',type:'cash',account:acc,name:'余额宝',amount:36.91,currency:'CNY',note:'灵活取用 · 蚂蚁财富',createdAt:t,updatedAt:t});
-  D.products.push({id:D.nextId++,region:'cn',type:'cash',account:acc,name:'余额',amount:28.33,currency:'CNY',note:'灵活取用 · 蚂蚁财富',createdAt:t,updatedAt:t});
-  const mkt=71953.83,holdPnl=22043.12;
-  const fundPrice=2.3258;
-  const fundShares=mkt/fundPrice;
-  const costTotal=mkt-holdPnl;
-  const fundCost=costTotal/fundShares;
-  D.products.push({id:D.nextId++,region:'cn',type:'fund_cn',account:acc,name:'前海开源黄金ETF联接C',fundCode:'021740',fundShares,fundCost,fundPrice,fundCurrency:'CNY',note:'黄金ETF联接 · 份额=金额÷当日净值；成本均价=(金额−持有收益)÷份额。若涨幅与支付宝差很多：打开编辑把「成本均价」改成资产详情里的成本价。',createdAt:t,updatedAt:t});
-  save();renderSidebar();renderOverview();
-  if(document.getElementById('page-cn')?.classList.contains('active'))renderRegion('cn');
-  const el=document.getElementById('cn-refresh-status');
-  if(el)el.innerHTML='<div class="alert alert-ok">✅ 已写入支付宝 3 条。黄金联接份额按截图日净值推算；盈亏比例对「成本均价」敏感，请与蚂蚁「资产详情」核对，不一致时在编辑里改成本均价。</div>';
-}
-
-const CBA_AU_IMPORT_TAG='cba_au_import';
-/** CommBank 截图：Everyday + NetBank Saver + 3 笔定存；本金按当前余额与起息日反推，周复利由「澳洲」页每周滚存模拟 */
-function importCbaAuPreset(){
-  if(!confirm('将向澳洲账户「CommBank CBA」写入：2 条活期 + 3 笔定存（与截图一致）。\n会移除此前通过本按钮导入的同款条目（importTag）。继续？'))return;
-  D.products=D.products.filter(p=>p.importTag!==CBA_AU_IMPORT_TAG);
-  const acc='CommBank CBA';
-  const t=today();
-  D.products.push({id:D.nextId++,region:'au',type:'cash',account:acc,name:'Everyday / Transaction',amount:6.87,currency:'AUD',note:'062-948 · 1672-9941',importTag:CBA_AU_IMPORT_TAG,createdAt:t,updatedAt:t});
-  D.products.push({id:D.nextId++,region:'au',type:'cash',account:acc,name:'NetBank Saver',amount:0.98,currency:'AUD',note:'067-873 · 1581-6153',importTag:CBA_AU_IMPORT_TAG,createdAt:t,updatedAt:t});
-  const mkTd=(nameSuffix,bal,ratePct,startISO,endISO,noteExtra)=>{
-    const orig=inferTdPrincipalFromBalance(bal,ratePct,startISO);
-    const principal=Math.round(orig*100)/100;
-    const o=Math.round(orig*100)/100;
-    return{id:D.nextId++,region:'au',type:'term_deposit',account:acc,name:'定存 '+nameSuffix,principal,rate:ratePct,tdStart:startISO,tdEnd:endISO,tdContractStart:startISO,tdContractEnd:endISO,tdOrigPrincipal:o,tdCur:'AUD',currency:'AUD',tdCompoundWeekly:true,note:noteExtra,importTag:CBA_AU_IMPORT_TAG,createdAt:t,updatedAt:t};
-  };
-  D.products.push(mkTd('50624616 · 10月',20924.25,3.25,'2025-12-25','2026-10-25','067-873 · 50624616 · 3.25% p.a. · 约每 4 周付息/到期'));
-  D.products.push(mkTd('51576257 · 12月',20800,4.1,'2026-01-03','2027-01-03','067-873 · 51576257 · 4.10% p.a. · 到期付息'));
-  D.products.push(mkTd('51610814 · 12月',72700,4.1,'2026-01-11','2027-01-11','067-873 · 51610814 · 4.10% p.a. · 到期付息'));
-  save();renderSidebar();renderOverview();maybeRollAuWeeklyCompound();
-  if(document.getElementById('page-au')?.classList.contains('active'))renderRegion('au');
-  const el=document.getElementById('au-refresh-status');
-  if(el)el.innerHTML='<div class="alert alert-ok">✅ 已写入 CBA：2 活期 + 3 定存。定存显示「本周估算利息」；到期前 7 天总览与澳洲页顶部会出现红色提醒条。</div>';
-}
-
 // ══ INIT ══
 (function(){
   const mb=document.getElementById('mobile-menu-btn');
@@ -6688,7 +6724,17 @@ function importCbaAuPreset(){
   if(bd)bd.addEventListener('click',closeMobileSidebar);
   window.addEventListener('resize',function(){if(!isMobileNav())closeMobileSidebar();scheduleIntelHeightSync();});
   document.addEventListener('keydown',function(e){
-    if(e.key==='Escape'){closeMobileSidebar();closeCmdk();closeModal('modal-ai');}
+    if(e.key==='Escape'){closeMobileSidebar();closeCmdk();document.querySelectorAll('.overlay.open').forEach(el=>closeModal(el.id));}
+    if((e.key==='Enter'||e.key===' ')&&e.target.matches('.fx-chip[role=button]')){e.preventDefault();e.target.click();}
+    if(e.key==='Tab'){
+      const overlay=document.querySelector('.overlay.open');
+      if(overlay){
+        const fields=Array.from(overlay.querySelectorAll('button,input:not([type=hidden]),select,textarea,a[href]')).filter(el=>!el.disabled&&el.getClientRects().length);
+        const first=fields[0],last=fields[fields.length-1];
+        if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus();}
+        else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus();}
+      }
+    }
     const k=String(e.key||'').toLowerCase();
     if((e.metaKey||e.ctrlKey)&&k==='k'){e.preventDefault();toggleCmdk();}
   });
