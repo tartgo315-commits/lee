@@ -6,6 +6,7 @@ vm.runInContext(html.slice(idleStart,idleEnd)+'\n'+html.slice(start,end),context
 context.looksLikeUsdBrokerCash=()=>false;
 const valuation={fx:{USD:7,AUD:5},quoteCache:{},now:new Date('2026-10-18T12:00:00Z')};
 const products=[{id:1,region:'cn',account:'示例账户',name:'虚构人民币余额',type:'cash',amount:1000,currency:'CNY'},{id:2,region:'us',account:'示例账户',name:'虚构美元余额',type:'cash',amount:100,currency:'USD'},{id:3,region:'us',account:'示例账户',name:'虚构美股',type:'stock_us',ticker:'DEMO',shares:10,costPrice:8,currentPrice:10},{id:4,region:'au',account:'虚构澳洲账户',name:'虚构存款',type:'term_deposit',tdCur:'AUD',principal:1000,rate:5,tdStart:'2025-10-18',tdEnd:'2027-10-18',tdPaidInterest:20,tdPaidInterestDate:'2026-10-01'}];
+context.D={products};
 const build=(list=products,manual=()=>null)=>context.buildOverviewHoldingRows(list,valuation,manual);
 const sum=rows=>context.WealthMath.sum(rows.filter(r=>r.valuation.complete).map(r=>r.valuation.cny));
 let passed=0;function test(name,fn){fn();passed++;console.log('PASS '+name);}
@@ -40,4 +41,23 @@ test('Empty and unassigned holdings remain recoverable in the all-assets view',(
 test('Filtering and sorting never rearrange the source rows',()=>{
   const rows=build(),before=Array.from(rows,r=>r.key);context.filterOverviewHoldingRows(rows,{region:'us',sort:'asc'});assert.deepEqual(Array.from(rows,r=>r.key),before);
 });
-console.log(`${passed} overview holdings checks passed.`);
+
+
+test('Default view keeps every region and groups same-name accounts separately',()=>{
+  const rows=context.filterOverviewHoldingRows(build(),{sort:'desc'}),groups=context.groupOverviewHoldingRows(rows);
+  assert.deepEqual(Array.from(groups,g=>g.region),['cn','us','au']);
+  assert.equal(groups.reduce((n,g)=>n+g.count,0),rows.length);
+  assert.equal(groups[0].accounts[0].account,groups[1].accounts[0].account);
+  assert.equal(context.WealthMath.sum(groups.map(g=>g.knownCny)),sum(rows));
+});
+test('Group totals reflect manual idle replacement and incomplete valuations',()=>{
+  const rows=build([...products,{id:10,type:'fund_cn',region:'cn',account:'示例账户',fundShares:10}],()=>150),groups=context.groupOverviewHoldingRows(rows);
+  assert.equal(groups[0].missing,1);assert.equal(groups[0].accounts[0].missing,1);
+  assert.equal(context.WealthMath.sum(groups.map(g=>g.knownCny)),sum(rows));
+});
+test('Account order remains stable when valuation sorting changes',()=>{
+  const rows=build([...products,{id:11,type:'cash',region:'cn',account:'第二账户',currency:'CNY',amount:2000}]);
+  const names=sort=>Array.from(context.groupOverviewHoldingRows(context.filterOverviewHoldingRows(rows,{sort}))[0].accounts,g=>g.account);
+  assert.deepEqual(names('asc'),names('desc'));
+});
+console.log(passed+' total holdings checks passed.');
