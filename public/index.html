@@ -12,6 +12,8 @@
 <script src="movement-engine.js"></script>
 <script src="ledger-workflows.js"></script>
 <script src="ledger-ui.js"></script>
+<script src="ledger-assistant-context.js"></script>
+<script src="ledger-assistant-ui.js"></script>
 <script src="portfolio-intelligence.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1032,6 +1034,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
 
 </style>
 <link rel="stylesheet" href="ledger-workflows.css">
+<link rel="stylesheet" href="ledger-assistant.css">
 </head>
 <body>
 <div id="pin-overlay" class="pin-overlay" style="display:none" aria-modal="true" role="dialog" aria-labelledby="pin-overlay-title">
@@ -1072,7 +1075,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
       <span class="topbar-ai-lbl">AI</span>
       <span class="topbar-ai-summary" id="topbar-ai-summary">加载今日解读…</span>
     </button>
-    <div class="topbar-right">
+    <div class="topbar-right"><button type="button" class="btn btn-outline btn-sm" id="assistant-launcher" data-assistant-launcher aria-controls="ledger-assistant" aria-expanded="false" onclick="LedgerAssistant.open()">AI 账本</button>
       <button type="button" class="btn btn-icon btn-sm" onclick="exportData()" title="导出 JSON"><i class="ti ti-download"></i></button>
       <button type="button" class="btn btn-icon btn-sm" id="theme-btn" onclick="toggleNight()" title="深色 / 日间主题切换" aria-label="切换深浅色主题">☀️</button>
       <button type="button" class="btn btn-outline btn-sm" id="snap-btn" onclick="takeSnapshot()" title="写入今日 NAV 历史快照"><i class="ti ti-camera"></i> 快照</button>
@@ -1790,6 +1793,17 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
  <div id="ledger-form" class="ledger-form-grid"></div><div id="ledger-preview" aria-live="polite"></div><p id="ledger-error" role="alert"></p>
  <div class="movement-actions"><button type="button" class="btn btn-ghost" onclick="LedgerUI.close()">取消</button><button type="button" class="btn btn-primary" onclick="LedgerUI.commit()">核对并保存</button></div></div>
 </div>
+<button type="button" id="assistant-backdrop" aria-label="收起 AI 账本助手" hidden onclick="LedgerAssistant.close()"></button>
+<aside id="ledger-assistant" role="complementary" aria-labelledby="assistant-title" hidden>
+ <header class="assistant-head"><div><h2 id="assistant-title">AI 账本助手</h2><p>OpenAI · 当前账本问答 · 只读分析</p></div><div><button type="button" class="btn btn-ghost btn-sm" onclick="LedgerAssistant.clear()">清空对话</button><button type="button" class="btn btn-icon" aria-label="收起 AI 账本助手" onclick="LedgerAssistant.close()">×</button></div></header>
+ <div class="assistant-tools"><label><input type="checkbox" id="assistant-reasons">包含变动原因和渠道</label><p>金额按实值分析，账户名使用代号。仅提问时发送账本摘要；原因可能含私人内容，按需勾选。对话刷新后清空。</p>
+ <button type="button" class="btn btn-ghost btn-sm" onclick="LedgerAssistant.check()">重新检查连接</button>
+ <details id="assistant-setup" class="assistant-setup" hidden><summary id="assistant-setup-state">OpenAI 分析待配置</summary><ol><li>在 Cloudflare Pages 的项目设置中添加加密变量 <code>OPENAI_API_KEY</code>。</li><li>可选变量 <code>OPENAI_MODEL</code>，默认 <code>gpt-5-mini</code>。</li><li>本站需已配置 <code>SITE_PASSWORD</code> 与 <code>SITE_AUTH_SECRET</code>，登录后使用。</li><li>重新部署，再点“重新检查连接”。密钥只填托管后台。</li></ol><p>此处是独立的 OpenAI API 对话，不能继承 Codex 当前聊天。</p></details></div>
+ <div id="assistant-messages" class="assistant-chat" role="log" aria-live="polite" aria-label="账本分析对话"></div>
+ <details class="assistant-data"><summary>数据范围与账户代号</summary><button type="button" class="btn btn-ghost btn-sm" onclick="LedgerAssistant.preview()">预览本次数据</button><details><summary>将发送的摘要</summary><div id="assistant-preview"></div></details><details><summary>本机账户代号对应表（不发送）</summary><div id="assistant-map"></div></details></details>
+ <div class="assistant-compose"><div class="assistant-suggestions"><button type="button" class="btn btn-ghost btn-sm" onclick="LedgerAssistant.suggest('最近净资产变化有哪些已记录的原因？请区分快照变化和投资收益。')">净值为什么变了</button><button type="button" class="btn btn-ghost btn-sm" onclick="LedgerAssistant.suggest('这个月有哪些外部支出或转出？哪些有用途记录？')">本月支出</button><button type="button" class="btn btn-ghost btn-sm" onclick="LedgerAssistant.suggest('按关联批次梳理中国到澳洲再到券商的资金路径，哪些仍在途？')">追踪资金路径</button></div><label for="assistant-input">问问当前账本</label><textarea id="assistant-input" rows="2" maxlength="2000" placeholder="例如：这笔转账到哪一步了？"></textarea><div class="assistant-actions"><span class="hint">Ctrl / ⌘ + Enter 发送</span><button type="button" id="assistant-stop" class="btn btn-ghost btn-sm" hidden onclick="LedgerAssistant.stop()">停止</button><button type="button" id="assistant-send" class="btn btn-primary btn-sm" disabled onclick="LedgerAssistant.send()">发送问题</button></div><p id="assistant-status" role="status" aria-live="polite">打开后检查连接</p></div>
+</aside>
+
 <script>
 // ══ DATA ══
 /** 本地双击 html 时：可填已部署站点根，用对方 /proxy 拉行情（勿尾斜杠），例 https://你的项目.web.app */

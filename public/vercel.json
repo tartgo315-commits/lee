@@ -1,7 +1,13 @@
 {
   "rewrites": [
-    { "source": "/_proxy", "destination": "/api/proxy" },
-    { "source": "/proxy",  "destination": "/api/proxy" }
+    {
+      "source": "/_proxy",
+      "destination": "/api/proxy"
+    },
+    {
+      "source": "/proxy",
+      "destination": "/api/proxy"
+    }
   ],
   "functions": {
     "api/proxy.js": {
@@ -23,6 +29,9 @@
       "maxDuration": 15
     },
     "api/ai-advisor.js": {
+      "maxDuration": 60
+    },
+    "api/ledger-assistant.js": {
       "maxDuration": 60
     }
   }
