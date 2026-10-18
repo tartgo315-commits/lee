@@ -645,8 +645,15 @@ input[type=text],input[type=number],input[type=date],select,textarea{font-size:v
 .acc-secondary{font-size:var(--text-xs);font-weight:400;color:var(--text-4);margin-top:2px}
 .products-wrap.open{display:block}
 .products-wrap{display:none;border-top:1px solid var(--border-light)}
-.product-row{display:grid;grid-template-columns:minmax(120px,1fr) minmax(100px,1fr) minmax(80px,1fr) minmax(90px,1fr) 48px;gap:12px;align-items:center;padding:16px 24px;border-bottom:1px solid var(--border-light);background:var(--bg-card);transition:background var(--ease-lux)}
+.product-row{display:grid;grid-template-columns:minmax(0,2.1fr) minmax(108px,1.1fr) minmax(100px,1fr) 64px minmax(128px,1.1fr) 84px;gap:12px;align-items:center;padding:16px 24px;border-bottom:1px solid var(--border-light);background:var(--bg-card);transition:background var(--ease-lux)}
 .product-row:hover{background:var(--bg-hover)}
+.product-row>div{min-width:0}
+.product-row>div:first-child{overflow-wrap:anywhere}
+.product-row.hdr>div:not(:first-child),.pr-pct{text-align:right}
+.pr-pct{white-space:nowrap}
+.pr-acts{display:flex;justify-content:flex-end;align-items:center;gap:6px}
+.pr-acts .btn{flex-shrink:0}
+@media(min-width:769px) and (max-width:1100px){.product-row{gap:8px;padding-left:16px;padding-right:16px}}
 .product-row.hdr{background:var(--bg-muted);font-size:var(--text-xs);color:var(--text-4);text-transform:uppercase;letter-spacing:.04em}
 .product-row.stop-warn{border-left:3px solid var(--dn)}
 .pr-name{color:var(--text-2)}
@@ -5126,7 +5133,7 @@ function buildAccountBlocks(ps,region){
 
 function buildProductRow(p,region,primaryCur,accountTotalCNY){
   const valuation=WealthMath.productValue(p,valuationContext());
-  if(!valuation.complete)return '<div class="product-row"><div>'+escOvHtml(p.name||p.ticker||'资产')+'</div><div>估值不完整：'+escOvHtml(valuation.reason)+'</div><button type="button" class="btn btn-ghost btn-sm" onclick="editProduct('+p.id+')">补齐资料</button></div>';
+  if(!valuation.complete)return '<div class="product-row"><div><div class="pr-name">'+escOvHtml(p.name||p.ticker||'资产')+'</div><div class="pr-sub">估值不完整：'+escOvHtml(valuation.reason)+'</div></div><div class="pr-amt">—</div><div class="pr-amt dim">—</div><div class="pr-pct">—</div><div class="pr-pnl neu">—</div><div class="pr-acts"><button type="button" class="btn btn-ghost btn-sm" onclick="editProduct('+p.id+')">补齐资料</button></div></div>';
 
   const acny=accountTotalCNY>0?accountTotalCNY:0;
   const rowPct=acny>0?(pCNY(p)/acny*100).toFixed(2):'—';
@@ -5200,8 +5207,8 @@ function buildProductRow(p,region,primaryCur,accountTotalCNY){
     ${pctCell}
     ${pnlCell}
     <div class="pr-acts">
-      <button class="btn btn-ghost btn-sm" onclick="editProduct(${p.id})">✏️</button>
-      <button class="btn btn-danger btn-sm" onclick="deleteProduct(${p.id})">✕</button>
+      <button class="btn btn-ghost btn-sm" aria-label="编辑资产" title="编辑资产" onclick="editProduct(${p.id})">✏️</button>
+      <button class="btn btn-danger btn-sm" aria-label="删除资产" title="删除资产" onclick="deleteProduct(${p.id})">✕</button>
     </div>
   </div>`;
 }
