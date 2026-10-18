@@ -980,6 +980,27 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
 #history-goal-preview{padding:14px 16px;border:1px solid var(--border-accent);border-radius:10px;background:var(--up-bg);line-height:1.65;font-size:13px;color:var(--text-2);margin:0 0 16px}
 @media(max-width:768px){.history-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.history-tabs [role=tab]{padding:10px 8px}.history-result-grid{grid-template-columns:1fr}.history-chart-plot{height:220px}.flow-row{flex-wrap:wrap}.flow-row>span{flex-basis:100%}}
 
+#modal{padding:0;align-items:stretch;justify-content:flex-end;overscroll-behavior:none}
+#modal .asset-editor{background:var(--bg-page);width:min(720px,100vw);max-width:none;height:100dvh;max-height:100dvh;border-radius:0;border-width:0 0 0 1px;padding:0;overflow:hidden;display:flex;flex-direction:column}
+.asset-editor-head{flex-shrink:0;padding:22px 26px 16px;border-bottom:1px solid var(--border);background:var(--bg-card)}
+#modal .asset-editor-head .modal-title{margin:0;font-size:20px}.asset-editor-head p{margin:8px 0 0;color:var(--text-3);font-size:13px;line-height:1.5}
+.asset-editor-body{flex:1;min-height:0;overflow-y:auto;padding:22px 26px;overscroll-behavior:contain;scrollbar-gutter:stable}
+.asset-editor-section{margin:0 0 24px;padding:0 0 18px;border-bottom:1px solid var(--border)}
+.asset-editor-section:last-child{margin-bottom:0;border-bottom:0;padding-bottom:0}
+.asset-editor-section h3{margin:0 0 16px;font-size:14px;font-weight:600;color:var(--text-1)}
+#modal .asset-editor-body label{font-size:13px;line-height:1.5;letter-spacing:0;text-transform:none;color:var(--text-3);margin-bottom:6px}
+#modal .asset-editor-body input,#modal .asset-editor-body select{font-size:14px;height:40px}
+#modal .asset-editor-body .fg-row.c3{grid-template-columns:repeat(3,minmax(0,1fr))}
+#modal .asset-editor-body .fg-row{gap:14px;margin-bottom:16px}
+.asset-editor-help,.asset-editor-disclosure{margin:14px 0 0;border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text-3);font-size:13px;line-height:1.6}
+.asset-editor-help{margin:0 0 16px}.asset-editor-help summary,.asset-editor-disclosure summary{cursor:pointer;color:var(--text-2);font-weight:500}
+.asset-editor-disclosure[open]>summary{margin-bottom:16px}.asset-editor-disclosure .fg-row:last-child{margin-bottom:0}
+#modal .asset-editor-body .privacy-note{font-size:12px;line-height:1.6;margin:10px 0 0;grid-column:1/-1}
+.asset-editor-footer{flex-shrink:0;padding:14px 26px 18px;border-top:1px solid var(--border);background:var(--bg-card);box-shadow:0 -6px 24px rgba(0,0,0,.08)}
+.asset-editor-actions{display:flex;justify-content:flex-end;gap:10px}.asset-editor-actions .btn{min-width:92px;min-height:40px}
+#m-status{max-height:120px;overflow-y:auto;margin:0}#m-status:empty{display:none}#m-status:not(:empty){margin-bottom:12px}#m-status .alert{margin:0;font-size:13px;line-height:1.5}
+@media(max-width:768px){#modal .asset-editor{width:100vw;border:0}.asset-editor-head{padding:16px}.asset-editor-body{padding:18px 16px}.asset-editor-footer{padding:12px 16px max(16px,env(safe-area-inset-bottom))}#modal .asset-editor-body input,#modal .asset-editor-body select{font-size:16px}.asset-editor-actions .btn{flex:1}.asset-editor-section{margin-bottom:20px}}
+
 </style>
 </head>
 <body>
@@ -1594,14 +1615,10 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
     <div id="batch-status" style="margin-top:10px"></div>
   </div>
 </div>
-<div class="overlay" id="modal" role="dialog" aria-modal="true" aria-label="资产与分析窗口">
-  <div class="modal">
-    <div class="modal-title">
-      <span id="m-title">添加资产</span>
-      <button class="modal-x" onclick="closeModal('modal')" aria-label="关闭"><i class="ti ti-x"></i></button>
-    </div>
-
-    <div class="fg-row c2">
+<div class="overlay" id="modal" role="dialog" aria-modal="true" aria-labelledby="m-title">
+  <div class="modal asset-editor">
+    <header class="asset-editor-head"><div class="modal-title"><span id="m-title">添加资产</span><button type="button" class="modal-x" onclick="closeModal('modal')" aria-label="关闭"><i class="ti ti-x"></i></button></div><p>填写或核对资产资料，保存后更新账本。</p></header>
+    <div class="asset-editor-body" id="asset-editor-body"><section class="asset-editor-section"><h3>基本资料</h3>    <div class="fg-row c2">
       <div class="fg"><label for="m-region">地区</label>
         <select id="m-region" onchange="onRegion()">
           <option value="cn">🇨🇳 中国境内</option>
@@ -1622,12 +1639,12 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
     </div>
 
     <div class="fg-row c2">
-      <div class="fg"><label for="m-account">账户名称</label><input type="text" id="m-account" placeholder="支付宝 / 建设银行 / Tiger..."></div>
+      <div class="fg"><label for="m-account">账户名称（必填）</label><input type="text" id="m-account" aria-required="true" placeholder="支付宝 / 建设银行 / Tiger..."></div>
       <div class="fg"><label for="m-name">产品名称</label><input type="text" id="m-name" placeholder="余额宝 / AAPL / 定期存款..."></div>
     </div>
 
-    <!-- Cash -->
-    <div id="f-cash">
+</section>    <!-- Cash -->
+    <div id="f-cash" class="asset-editor-section"><h3>余额资料</h3>
       <div class="fg-row c3">
         <div class="fg"><label for="m-amount">金额</label><input type="number" id="m-amount" placeholder="0.00" step="any"></div>
         <div class="fg"><label for="m-currency">货币</label>
@@ -1643,8 +1660,8 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
     </div>
 
     <!-- Fund CN -->
-    <div id="f-fund" style="display:none">
-      <div id="m-fund-tip" class="alert alert-info" style="margin-bottom:12px"></div>
+    <div id="f-fund" class="asset-editor-section" style="display:none"><h3>基金持仓</h3>
+      <details class="asset-editor-help"><summary>基金资料填写说明</summary><div id="m-fund-tip" class="alert alert-info" style="margin-top:10px"></div></details>
       <div class="fg-row c2">
         <div class="fg"><label for="m-fcode">基金/产品代码（可选）</label><input type="text" id="m-fcode" placeholder="如 021740"></div>
         <div class="fg"><label for="m-fcurrency">计价货币</label>
@@ -1666,7 +1683,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
     </div>
 
     <!-- Gold -->
-    <div id="f-gold" style="display:none">
+    <div id="f-gold" class="asset-editor-section" style="display:none"><h3>黄金持仓</h3>
       <div class="alert alert-info" style="margin-bottom:12px">🥇 交易日自动拉取<strong>AU9999</strong>；<strong>休市后自动改用国际金价×汇率折算</strong>（无需手填），与建行积存金通常差 1–3 元/克。</div>
       <div class="fg-row c3">
         <div class="fg"><label for="m-grams">持有克数</label><input type="number" id="m-grams" placeholder="18.0000" step="any"></div>
@@ -1676,7 +1693,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
     </div>
 
     <!-- Stock US -->
-    <div id="f-stock" style="display:none">
+    <div id="f-stock" class="asset-editor-section" style="display:none"><h3>股票持仓</h3>
       <div class="fg-row c2">
         <div class="fg"><label for="m-ticker">股票代码</label><input type="text" id="m-ticker" placeholder="AAPL / SGOV（ETF）"></div>
         <div class="fg"><label for="m-shares">持股数量</label><input type="number" id="m-shares" placeholder="100" step="any"></div>
@@ -1690,7 +1707,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
     </div>
 
     <!-- Term Deposit -->
-    <div id="f-td" style="display:none">
+    <div id="f-td" class="asset-editor-section" style="display:none"><h3>存款金额与期限</h3>
       <div class="fg-row c2">
         <div class="fg"><label for="m-principal">本金</label><input type="number" id="m-principal" placeholder="50000" step="any"></div>
         <div class="fg"><label for="m-tdcur">货币</label>
@@ -1708,17 +1725,11 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
       </div>
     </div>
 
-<div class="fg-row c2" id="td-contract-fields" hidden><div class="fg"><label for="m-tdmethod">合同计息方式</label><select id="m-tdmethod"><option value="simple">单利，不自动复投</option><option value="weekly">每周复投</option><option value="monthly">每月复投</option><option value="annual">每年复投</option></select></div><div class="fg"><label for="m-tdbasis">合同计息日数规则</label><select id="m-tdbasis"><option value="ACT/365F">实际天数 / 固定 365</option><option value="ACT/360">实际天数 / 固定 360</option><option value="ACT/ACT">实际天数 / 当年天数</option></select></div><div class="fg"><label for="m-tdzone">合同日期时区</label><select id="m-tdzone"><option value="Asia/Shanghai">北京时间</option><option value="Australia/Sydney">悉尼时间</option><option value="America/New_York">纽约时间</option><option value="UTC">UTC</option></select></div><div class="fg"><label for="m-tdround">复投付息精度</label><select id="m-tdround"><option value="cents">每次付息四舍五入到分</option><option value="end">内部保留精度，最终到分</option></select></div><div class="fg"><label for="m-tdpaid">已转入其他余额的累计利息</label><input id="m-tdpaid" type="number" min="0" step="0.01" placeholder="未转出填 0"></div><div class="fg"><label for="m-tdpaiddate">上述累计已付息的截至日期</label><input id="m-tdpaiddate" type="date"></div><p class="privacy-note">请填写原始本金与合同起息日。每周付息不等于每周复利；只有利息实际复投才选复投。已转入现金账户的利息请在下方扣除，避免重复计入资产。旧版标记会在核对并保存后解除。</p></div>
-    <div class="fg-row c2"><div class="fg"><label for="m-cost-date">投入/买入日期（可选）</label><input id="m-cost-date" type="date"></div><div class="fg"><label for="m-cost-fx">投入时汇率（每 1 计价货币折 CNY）</label><input id="m-cost-fx" type="number" min="0" step="any" placeholder="外币资产请填实际历史汇率"></div></div>
+<section class="asset-editor-section" id="td-contract-fields" hidden><h3>合同计息</h3><div class="fg-row c2"><div class="fg"><label for="m-tdmethod">合同计息方式</label><select id="m-tdmethod"><option value="simple">单利，不自动复投</option><option value="weekly">每周复投</option><option value="monthly">每月复投</option><option value="annual">每年复投</option></select></div><div class="fg"><label for="m-tdbasis">合同计息日数规则</label><select id="m-tdbasis"><option value="ACT/365F">实际天数 / 固定 365</option><option value="ACT/360">实际天数 / 固定 360</option><option value="ACT/ACT">实际天数 / 当年天数</option></select></div></div><p class="privacy-note">请按实际合同选择计息方式。每周付息不等于每周复利；仅在利息实际复投时选择复投。</p><details class="asset-editor-disclosure" id="td-payout-details"><summary>已付息记录（利息已转入现金时填写）</summary><div class="fg-row c2"><div class="fg"><label for="m-tdpaid">已转入其他余额的累计利息</label><input id="m-tdpaid" type="number" min="0" step="0.01" placeholder="未转出填 0"></div><div class="fg"><label for="m-tdpaiddate">上述累计已付息的截至日期</label><input id="m-tdpaiddate" type="date"></div></div><p class="privacy-note">已转入现金余额的利息会从定存估值中扣除，避免重复计入资产。</p></details><details class="asset-editor-disclosure" id="td-advanced"><summary>高级合同参数：日期时区与付息精度</summary><div class="fg-row c2"><div class="fg"><label for="m-tdzone">合同日期时区</label><select id="m-tdzone"><option value="Asia/Shanghai">北京时间</option><option value="Australia/Sydney">悉尼时间</option><option value="America/New_York">纽约时间</option><option value="UTC">UTC</option></select></div><div class="fg"><label for="m-tdround">复投付息精度</label><select id="m-tdround"><option value="cents">每次付息四舍五入到分</option><option value="end">内部保留精度，最终到分</option></select></div></div></details></section><section class="asset-editor-section"><details class="asset-editor-disclosure" id="asset-cost-details"><summary>历史成本与汇率（可选）</summary>    <div class="fg-row c2"><div class="fg"><label for="m-cost-date">投入/买入日期（可选）</label><input id="m-cost-date" type="date"></div><div class="fg"><label for="m-cost-fx">投入时汇率（每 1 计价货币折 CNY）</label><input id="m-cost-fx" type="number" min="0" step="any" placeholder="外币资产请填实际历史汇率"></div></div>
     <p class="privacy-note">历史汇率仅用于拆分当前持仓账面盈亏，不改变市值；人民币资产按 1 计算。缺少历史汇率时不估造汇率收益。</p>
-    <div class="fg"><label for="m-note">备注（可选）</label><input type="text" id="m-note" placeholder="月结 / 工资卡..."></div>
-    <input type="hidden" id="m-editid">
-
-    <div style="display:flex;gap:8px;margin-top:4px">
-      <button class="btn btn-primary" onclick="saveProduct()">保存</button>
-      <button class="btn btn-ghost" onclick="closeModal('modal')">取消</button>
-    </div>
-    <div id="m-status" style="margin-top:10px"></div>
+</details>    <div class="fg"><label for="m-note">备注（可选）</label><input type="text" id="m-note" placeholder="月结 / 工资卡..."></div>
+</section><input type="hidden" id="m-editid"></div>
+    <footer class="asset-editor-footer"><div id="m-status" role="alert" aria-live="polite"></div><div class="asset-editor-actions"><button type="button" class="btn btn-ghost" onclick="closeModal('modal')">取消</button><button type="button" class="btn btn-primary" id="asset-editor-save" onclick="saveProduct()">保存</button></div></footer>
   </div>
 </div>
 
@@ -6402,7 +6413,24 @@ function saveFX(){
 }
 
 // ══ MODAL ══
+function assetEditorFocusId(editing,type){
+  if(!editing)return'm-account';
+  return{cash:'m-amount',other:'m-amount',gold:'m-grams',stock_us:'m-shares',fund_cn:'m-fshares',term_deposit:'m-principal'}[type]||'m-account';
+}
+function resetAssetEditorSections(){
+  for(const id of ['asset-cost-details','td-payout-details','td-advanced']){const section=document.getElementById(id);if(section)section.open=false;}
+  const body=document.getElementById('asset-editor-body');if(body)body.scrollTop=0;
+}
+function syncAssetEditorSections(){
+  const value=id=>document.getElementById(id)?.value||'';
+  document.getElementById('asset-cost-details').open=!!(value('m-cost-date')||value('m-cost-fx'));
+  document.getElementById('td-payout-details').open=Number(value('m-tdpaid'))>0||!!value('m-tdpaiddate');
+  const regionZone={cn:'Asia/Shanghai',us:'America/New_York',au:'Australia/Sydney'}[value('m-region')];
+  document.getElementById('td-advanced').open=!!value('m-tdzone')&&value('m-tdzone')!==regionZone||value('m-tdround')==='end';
+}
+
 function openModal(region,account){
+  resetAssetEditorSections();
   closeMobileSidebar();
   document.getElementById('m-title').textContent='添加资产';
   document.getElementById('m-editid').value='';
@@ -6430,7 +6458,10 @@ function showModal(id){
   modalReturnFocus=document.activeElement;
   const overlay=document.getElementById(id);
   overlay.classList.add('open');
-  requestAnimationFrame(()=>overlay.querySelector('input:not([type=hidden]),select,button')?.focus());
+  requestAnimationFrame(()=>{
+    if(id==='modal'){const field=assetEditorFocusId(!!document.getElementById('m-editid').value,document.getElementById('m-type').value);document.getElementById(field)?.focus({preventScroll:true});}
+    else overlay.querySelector('input:not([type=hidden]),select,button')?.focus();
+  });
 }
 function closeModal(id){const el=document.getElementById(id||'modal');if(!el.classList.contains('open'))return;el.classList.remove('open');modalReturnFocus?.focus();}
 
@@ -6546,7 +6577,7 @@ function saveProduct(){
   const note=document.getElementById('m-note').value.trim();
   const status=document.getElementById('m-status');
 
-  if(!account){status.innerHTML='<div class="alert alert-warn">请填写账户名称</div>';return;}
+  if(!account){status.innerHTML='<div class="alert alert-warn">请填写账户名称</div>';document.getElementById('m-account').focus();return;}
 
   const costFxRaw=document.getElementById('m-cost-fx').value,costFx=WealthMath.number(costFxRaw),costDate=document.getElementById('m-cost-date').value;
   if(costFxRaw&&!(costFx>0)||costDate&&(WealthMath.dayIndex(costDate)===null||costDate>today())){status.innerHTML='<div class="alert alert-warn">请核对投入日期与正数历史汇率</div>';return;}
@@ -6631,36 +6662,37 @@ function editProduct(id){
   document.getElementById('m-cost-fx').value=p.costFxToCny??'';document.getElementById('m-cost-date').value=p.costDate||'';
   onType();
   if(p.type==='gold'){
-    document.getElementById('m-grams').value=p.grams||'';
-    document.getElementById('m-gcost').value=p.goldCost||'';
-    document.getElementById('m-gprice').value=p.goldPrice||'';
+    document.getElementById('m-grams').value=p.grams??'';
+    document.getElementById('m-gcost').value=p.goldCost??'';
+    document.getElementById('m-gprice').value=p.goldPrice??'';
   } else if(p.type==='stock_us'){
     document.getElementById('m-ticker').value=p.ticker||'';
-    document.getElementById('m-shares').value=p.shares||'';
-    document.getElementById('m-cost').value=p.costPrice||'';
-    document.getElementById('m-sprice').value=p.currentPrice||'';
+    document.getElementById('m-shares').value=p.shares??'';
+    document.getElementById('m-cost').value=p.costPrice??'';
+    document.getElementById('m-sprice').value=p.currentPrice??'';
     document.getElementById('m-stoploss').value=p.stopLoss!=null&&p.stopLoss!==''?p.stopLoss:'';
   } else if(p.type==='fund_cn'){
     document.getElementById('m-fcode').value=p.fundCode||'';
-    document.getElementById('m-fshares').value=p.fundShares||'';
-    document.getElementById('m-fcost').value=p.fundCost||'';
-    document.getElementById('m-fprice').value=p.fundPrice||'';
+    document.getElementById('m-fshares').value=p.fundShares??'';
+    document.getElementById('m-fcost').value=p.fundCost??'';
+    document.getElementById('m-fprice').value=p.fundPrice??'';
     document.getElementById('m-fcurrency').value=p.fundCurrency||'CNY';
     document.getElementById('m-fdate').value=p.updatedAt||today();
     updateFundModalTip();
   } else if(p.type==='term_deposit'){
     const terms=WealthMath.depositTerms(p);
     document.getElementById('m-principal').value=terms.principal??'';
-    document.getElementById('m-rate').value=p.rate||'';
+    document.getElementById('m-rate').value=p.rate??'';
     document.getElementById('m-tdstart').value=terms.start||'';
     document.getElementById('m-tdmethod').value=terms.method;document.getElementById('m-tdbasis').value=terms.basis;document.getElementById('m-tdzone').value=WealthMath.depositZone(p);document.getElementById('m-tdround').value=terms.roundInterest?'cents':'end';document.getElementById('m-tdpaid').value=p.tdPaidInterest||0;document.getElementById('m-tdpaiddate').value=p.tdPaidInterestDate||'';
-    document.getElementById('m-tdend').value=p.tdEnd||'';
-    document.getElementById('m-tdcur').value=p.tdCur||'AUD';
+    document.getElementById('m-tdend').value=terms.end||'';
+    document.getElementById('m-tdcur').value=p.tdCur||p.currency||'AUD';
   } else {
-    document.getElementById('m-amount').value=p.amount||'';
+    document.getElementById('m-amount').value=p.amount??'';
     document.getElementById('m-currency').value=p.currency||'CNY';
     document.getElementById('m-date').value=p.updatedAt||today();
   }
+  syncAssetEditorSections();
 }
 
 function deleteProduct(id){
