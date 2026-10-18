@@ -27,9 +27,9 @@ function aiRoundWan(n) {
   return Math.round(v / 10000) * 10000;
 }
 function snapHistUsdAud(n) {
-  const snapUsdRate = n.fx?.USD > 0 ? n.fx.USD : FX_RATES.USD_TO_CNY;
-  const snapAudRate = n.fx?.AUD > 0 ? n.fx.AUD : FX_RATES.AUD_TO_CNY;
-  return { usd: n.cny / snapUsdRate, aud: n.cny / snapAudRate, snapUsdRate, snapAudRate };
+  const snapUsdRate = n.fx?.USD > 0 ? n.fx.USD : null;
+  const snapAudRate = n.fx?.AUD > 0 ? n.fx.AUD : null;
+  return { usd: snapUsdRate ? n.cny / snapUsdRate : null, aud: snapAudRate ? n.cny / snapAudRate : null, snapUsdRate, snapAudRate };
 }
 function fundNotionalCny(p) {
   return aiRoundWan(toCNY((p.fundPrice || 0) * (p.fundShares || 0), p.fundCurrency || 'CNY'));
@@ -60,7 +60,7 @@ ok(approx(snapUsd, snapOld.cny / 6.91965), 'USD = cny / snap.fx.USD');
 ok(approx(snapAud, snapOld.cny / 4.74372), 'AUD = cny / snap.fx.AUD');
 const snapNoFx = { cny: 1000000, fx: {} };
 const fb = snapHistUsdAud(snapNoFx);
-ok(approx(fb.usd, 1000000 / FX.USD), '无 fx 时 fallback 到当前 USD 汇率');
+ok(fb.usd===null&&fb.aud===null, '无历史汇率时不使用当前汇率重算');
 
 console.log('\n=== 修复 2：AI 基金 USD→CNY ===');
 const usdFund = { fundPrice: 1.024744, fundShares: 10143.42, fundCurrency: 'USD' };

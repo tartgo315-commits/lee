@@ -22,7 +22,7 @@ check('Personal import presets and automatic stock-specific stop-loss seeding ar
 check('New accounts have no personal principal or financial goal',()=>{
   const declaration=code.match(/const blank=\(\)=>\([^\n]+/)[0];
   const data=vm.runInNewContext(declaration+'\nblank()');
-  assert.equal(Object.keys(data.settings).length,0);
+  assert.equal(data.settings.usPrincipalAUD,undefined);assert.equal(data.settings.usPrincipalUSD,undefined);assert.equal(data.settings.accountingTimeZone,'Asia/Shanghai');
   assert.equal(data.goal.amount,0);
   assert.equal(data.products.length,0);
 });
