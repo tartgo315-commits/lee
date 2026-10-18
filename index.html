@@ -971,6 +971,17 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
 .ov-holdings-status{font-size:13px;line-height:1.6;padding-top:12px;color:var(--text-2)}.ov-holdings-note{font-size:12px;line-height:1.6;color:var(--text-3);margin:8px 0 0}.ov-holdings-empty{text-align:center!important;color:var(--text-3);padding:32px 16px!important}
 @media(max-width:768px){.ov-region-summary{gap:6px}.ov-region-tile{padding:10px 8px}.ov-region-tile strong{font-size:16px}.ov-region-tile-title,.ov-region-tile-meta{font-size:11px}.ov-holding-filters>div{min-width:calc(50% - 10px)}.ov-holding-filters select{font-size:16px}.ov-holdings-scroll{max-width:100%}}
 
+/* Compact status notices share the navigation row; details retain the full explanation. */
+.navigation-row{display:flex;align-items:center;min-height:44px;flex-shrink:0;border-bottom:1px solid var(--border);background:rgba(12,16,24,.88);z-index:205}
+.navigation-notices{display:none;position:relative;align-items:center;justify-content:flex-start;gap:8px;flex:1 1 280px;min-width:120px;padding:0 16px 0 8px}
+.navigation-notices:has(.nav-notice:not([hidden])){display:flex}
+.nav-notice{flex:0 1 340px;min-width:0;color:var(--warn)}.nav-notice[hidden]{display:none}.nav-notice-info{color:#a78bfa}
+.nav-notice>summary{display:block;cursor:pointer;list-style:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:5px 9px;border:1px solid currentColor;border-radius:6px;font-size:12px;line-height:1.3;background:var(--bg-card)}.nav-notice>summary::-webkit-details-marker{display:none}.nav-notice>summary::before{content:'ⓘ ';font-size:12px}.nav-notice>summary:focus-visible{outline:2px solid var(--up);outline-offset:2px}
+.nav-notice-popup{position:absolute;top:calc(100% + 8px);right:16px;width:min(480px,calc(100vw - 32px));padding:14px 16px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow-md);z-index:350}
+.nav-notice-popup .alert{padding:0!important;margin:0!important;border:0!important;background:transparent!important;font-size:13px!important;line-height:1.7!important}
+@media(min-width:769px){.navigation-row>.sidebar{width:auto;min-width:0;flex:0 1 auto;border-bottom:0;background:transparent}}
+@media(max-width:768px){.navigation-row{min-height:0;border:0}.navigation-notices:has(.nav-notice:not([hidden])){padding:6px 12px;min-height:38px}.nav-notice{flex:1 1 0}.nav-notice-popup{right:12px}}
+
 .history-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 20px;padding:6px;border:1px solid var(--border);border-radius:12px;background:var(--bg-card)}
 .history-tabs [role=tab]{padding:10px 18px;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--text-3);font:inherit;font-size:14px;font-weight:500;cursor:pointer}
 .history-tabs [role=tab]:hover{background:var(--bg-hover);color:var(--text-1)}
@@ -1057,6 +1068,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
       <button type="button" class="btn btn-primary btn-sm" onclick="openModal()"><i class="ti ti-plus"></i> 添加资产</button>
     </div>
   </div>
+  <div class="navigation-row">
   <nav class="sidebar tab-bar" id="main-sidebar" aria-label="主导航">
   <div class="sidebar-logo">
     <div class="logo-row">
@@ -1087,13 +1099,16 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
     <button type="button" class="sb-toggle" id="sidebar-toggle" onclick="toggleSidebarRail()" title="折叠 / 展开侧栏" aria-label="折叠侧栏">◀</button>
   </div>
 </nav>
+  <div class="navigation-notices" aria-label="估值与行情提示">
+    <details id="nav-valuation-notice" class="nav-notice nav-notice-warn" hidden><summary id="nav-valuation-summary">估值提示</summary><div class="nav-notice-popup"><div id="valuation-notice" class="alert alert-warn" role="status" hidden></div></div></details>
+    <details id="nav-quote-notice" class="nav-notice nav-notice-info" hidden><summary id="nav-quote-summary">行情提示</summary><div class="nav-notice-popup"><div id="stock-quote-fallback-banner" class="alert alert-warn" role="status" style="display:none;margin-bottom:var(--s-5);padding:var(--s-3) var(--gutter-x);border-radius:var(--r);line-height:1.45;font-size:var(--text-xs)"></div></div></details>
+  </div>
+  </div>
   <div id="global-refresh-status" class="global-refresh-strip" aria-live="polite"></div>
 
   <div class="main">
     <div id="proxy-miss-banner" class="alert alert-warn" role="alert" style="display:none;margin-bottom:var(--s-5);padding:var(--s-4) var(--gutter-x);border-radius:var(--r);line-height:1.55;font-size:var(--text-sm)"></div>
-    <div id="valuation-notice" class="alert alert-warn" role="status" hidden></div>
     <div id="http-data-migrate-banner" class="alert alert-info" role="status" style="display:none;margin-bottom:var(--s-5);padding:var(--s-4) var(--gutter-x);border-radius:var(--r);line-height:1.55;font-size:var(--text-sm)"></div>
-    <div id="stock-quote-fallback-banner" class="alert alert-warn" role="status" style="display:none;margin-bottom:var(--s-5);padding:var(--s-3) var(--gutter-x);border-radius:var(--r);line-height:1.45;font-size:var(--text-xs)"></div>
 
     <!-- OVERVIEW · Private banking terminal -->
     <div class="page active" id="page-overview">
@@ -2375,7 +2390,25 @@ function formatStockCacheAge(ts){
   if(m>=1)return m+'分钟前';
   return '刚刚';
 }
+function syncNavigationNotices(){
+  const valuation=document.getElementById('valuation-notice'),quote=document.getElementById('stock-quote-fallback-banner');
+  const warnings=valuation?.textContent||'';
+  const reviews=warnings.match(/(\d+) 笔旧版定存/);
+  const valuationLabel=warnings.includes('账本读取失败')?'账本读取失败 · 请查看':warnings.includes('估值不完整')?'估值不完整 · 请查看':reviews?reviews[1]+' 笔定存待核对':warnings.includes('名称可能指美元')?'现金币种待核对':'估值提示 · 请查看';
+  const quoteText=quote?.textContent||'';
+  const quoteLabel=quoteText.startsWith('显示缓存价格')?quoteText:quoteText.includes('今日额度已用尽')?'行情额度用尽 · 已用备用数据':quoteText.includes('每分钟')?'行情暂时限流 · 已用备用数据':quoteText.includes('请求暂时受限')?'行情暂时受限 · 已用备用数据':'行情使用备用数据源';
+  for(const [key,source,visible,label] of [['valuation',valuation,valuation&&!valuation.hidden&&!!warnings,valuationLabel],['quote',quote,quote&&quote.style.display!=='none'&&!!quoteText,quoteLabel]]){
+    const wrapper=document.getElementById('nav-'+key+'-notice'),summary=document.getElementById('nav-'+key+'-summary');if(!wrapper||!summary)continue;
+    wrapper.hidden=!visible;if(!visible)wrapper.open=false;summary.textContent=label;summary.title=source?.textContent||'';
+    if(key==='quote')wrapper.classList.toggle('nav-notice-info',!source?.classList.contains('alert-warn'));
+  }
+}
+document.addEventListener('click',event=>{
+  for(const notice of document.querySelectorAll('.nav-notice[open]'))if(!notice.contains(event.target))notice.open=false;
+});
+document.addEventListener('keydown',event=>{if(event.key==='Escape')for(const notice of document.querySelectorAll('.nav-notice[open]')){notice.open=false;notice.querySelector('summary')?.focus();}});
 function updateStockQuoteFallbackBanner(){
+  try{
   syncTdRateLimitedFromStorage();
   const el=document.getElementById('stock-quote-fallback-banner');
   if(!el)return;
@@ -2407,6 +2440,7 @@ function updateStockQuoteFallbackBanner(){
     return;
   }
   el.style.display='none';
+  }finally{syncNavigationNotices();}
 }
 function hydrateStocksFromCacheOnLoad(){
   const stocks=D.products.filter(p=>p.type==='stock_us'&&p.ticker);
@@ -6977,7 +7011,7 @@ function refreshValuationNotice(){
   const ambiguous=D.products.filter(p=>p.region==='us'&&p.type==='cash'&&p.currency==='CNY'&&looksLikeUsdBrokerCash(p)).length;
   if(ambiguous)warnings.push(ambiguous+' 条现金的名称可能指美元，但登记为人民币；本次严格按已填币种计算，请核对。');
   if(state.estimated.some(r=>r.estimated)&&!reviews)warnings.push('部分资产使用最后有效价格估值，请核对报价时间。');
-  el.hidden=!warnings.length;el.textContent=warnings.join(' ');
+  el.hidden=!warnings.length;el.textContent=warnings.join(' ');syncNavigationNotices();
   const label=document.querySelector('.term-nav-hero .ov-hero-label');if(label)label.textContent=state.complete?'资产总净值':'已知资产估值（不完整）';
 }
 function calculationMessage(message,type='warn'){showToast({message,type,duration:5000});}
