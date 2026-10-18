@@ -945,6 +945,27 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
   #ov-dash.is-empty>.term-nav-chart{grid-column:auto}
 }
 
+#page-overview #ov-regions{display:block}
+.ov-region-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:12px 0 16px}
+.ov-region-tile{display:flex;flex-direction:column;align-items:flex-start;gap:5px;min-width:0;padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:var(--bg-card);color:var(--text-2);text-align:left;cursor:pointer}
+.ov-region-tile:hover,.ov-region-tile[aria-pressed=true]{border-color:var(--up);background:var(--up-bg)}
+.ov-region-tile-title{font-size:13px;font-weight:600}.ov-region-tile strong{font-size:20px;font-family:var(--mono);font-variant-numeric:tabular-nums;max-width:100%;overflow-wrap:anywhere}
+.ov-region-tile-meta{font-size:12px;color:var(--text-3)}
+.ov-holding-filters{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.ov-holding-filters>div{flex:1;min-width:120px}.ov-holding-filters label{display:block;font-size:12px;color:var(--text-3);margin-bottom:6px}.ov-holding-filters select{width:100%;font-size:13px;height:36px;padding:6px 10px}.ov-holding-filters>.btn{min-height:36px;flex-shrink:0}
+.ov-holdings-scroll{overflow-x:auto;border:1px solid var(--border);border-radius:10px;scrollbar-gutter:stable}
+.ov-holdings-scroll:focus-visible{outline:2px solid var(--up);outline-offset:2px}
+.ov-holdings-table{width:100%;min-width:820px;table-layout:fixed;border-collapse:collapse;font-size:13px}
+.ov-holdings-table th{background:var(--bg-muted);font-size:12px;color:var(--text-3);font-weight:600;text-align:left;padding:12px 8px;border-bottom:1px solid var(--border)}
+.ov-holdings-table td{padding:14px 8px;vertical-align:middle;border-bottom:1px solid var(--border);overflow-wrap:anywhere}.ov-holdings-table tr:last-child td{border-bottom:0}.ov-holdings-table tbody tr:hover{background:var(--bg-hover)}
+.ov-holdings-table .num{text-align:right}.ov-holdings-table th button{border:0;padding:0;background:transparent;color:inherit;font:inherit;cursor:pointer;white-space:nowrap}
+.ov-holding-name{border:0;padding:0;background:transparent;color:var(--text-1);font:inherit;font-weight:600;text-align:left;cursor:pointer;line-height:1.5;overflow-wrap:anywhere}.ov-holding-name:hover{text-decoration:underline;color:var(--up-soft)}
+.ov-holding-account{display:block;color:var(--text-2);line-height:1.5}.ov-holding-sub,.ov-holding-estimate{display:block;font-size:12px;line-height:1.5;margin-top:3px;color:var(--text-3)}.ov-holding-estimate{color:var(--warn)}
+.ov-holding-money{display:block;font-size:13px;font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}.ov-holding-money.pos{color:var(--up-soft)}.ov-holding-money.neg{color:var(--dn-soft)}
+.ov-holding-action-buttons{display:flex;justify-content:flex-end;gap:4px}.ov-holding-action-buttons .btn{width:28px;min-width:28px;height:30px;padding:0;justify-content:center;font-size:16px}.ov-holding-action-buttons .danger{color:var(--dn-soft)}
+.ov-holdings-status{font-size:13px;line-height:1.6;padding-top:12px;color:var(--text-2)}.ov-holdings-note{font-size:12px;line-height:1.6;color:var(--text-3);margin:8px 0 0}.ov-holdings-empty{text-align:center!important;color:var(--text-3);padding:32px 16px!important}
+@media(max-width:768px){.ov-region-summary{gap:6px}.ov-region-tile{padding:10px 8px}.ov-region-tile strong{font-size:16px}.ov-region-tile-title,.ov-region-tile-meta{font-size:11px}.ov-holding-filters>div{min-width:calc(50% - 10px)}.ov-holding-filters select{font-size:16px}.ov-holdings-scroll{max-width:100%}}
+
 </style>
 </head>
 <body>
@@ -1110,7 +1131,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
         <section class="term-zone term-zone-portfolio">
           <div class="term-portfolio-hd">
             <div class="card-title"><i class="ti ti-briefcase"></i> 资产持仓</div>
-            <a href="#ov-regions" class="ov-link-all" onclick="document.getElementById('ov-regions').scrollIntoView({block:'start',behavior:'smooth'});return false">查看各地区持仓 <i class="ti ti-chevron-right"></i></a>
+            <span class="ov-holdings-note">点击地区汇总可筛选持仓</span>
           </div>
           <div id="gold-price-warn" style="display:none;margin-bottom:8px;padding:8px 12px;border-radius:8px;background:var(--warn-bg);border:1px solid rgba(217,119,6,.25);color:var(--warn);font-size:13px;">
             ⚠️ 黄金积存金价未刷新，当前净值未计入黄金市值。请点击顶栏「Au/g」刷新金价。
@@ -2493,7 +2514,7 @@ function pickStableFundNav(gsz,dwjz,prev){
   return p>0?p:0;
 }
 let __ovLiveDirty=false,__ovLiveFlushTimer=null;
-/** 行情微调时只更新顶部数字与走势图，避免整页重绘 + Chart 销毁重建导致闪烁 */
+/** 行情微调时更新顶部、持仓数据与趋势，保留筛选控件和图表实例 */
 function patchOverviewLive(){
   maybeRollAuWeeklyCompound();
   const cny=totalCNY(),usd=fromCNY(cny,'USD'),aud=fromCNY(cny,'AUD');
@@ -2506,6 +2527,7 @@ function patchOverviewLive(){
   const missingGoldPrice=D.products.some(p=>p.type==='gold'&&!(p.goldPrice>0));
   const warnEl=document.getElementById('gold-price-warn');
   if(warnEl)warnEl.style.display=missingGoldPrice?'block':'none';
+  renderOverviewHoldings();
   try{renderNavMiniChart(ovRange);}catch(e){console.error('patchOverviewLive chart',e);}
   try{updateGoalBar();}catch(e){}
   try{renderSidebar();}catch(e){}
@@ -2521,26 +2543,7 @@ function scheduleOverviewLiveRefresh(){
     try{patchOverviewLive();}catch(e){console.error('scheduleOverviewLiveRefresh',e);}
   },150);
 }
-function patchOverviewStockRow(sym,price){
-  if(!document.getElementById('page-overview')?.classList.contains('active'))return;
-  const T=String(sym||'').trim().toUpperCase();
-  const p=D.products.find(x=>x.type==='stock_us'&&String(x.ticker||'').trim().toUpperCase()===T);
-  if(!p||!(price>0))return;
-  document.querySelectorAll('#ov-regions .ov-prod-row[data-ov-ticker]').forEach(row=>{
-    if(String(row.dataset.ovTicker||'').trim().toUpperCase()!==T)return;
-    const shares=p.shares||0,cost=p.costPrice||0;
-    const mkt=shares*price,pnlUSD=shares*(price-cost),pct=cost>0?(price-cost)/cost*100:0;
-    const pxEl=row.querySelector('.ov-prod-px');
-    if(pxEl){pxEl.textContent=fmtStockPx(T,price);pxEl.classList.remove('wait');}
-    const amtEl=row.querySelector('.ov-prod-amt');
-    if(amtEl)amtEl.textContent=fc(mkt,'USD',2);
-    const pnlEl=row.querySelector('.ov-prod-pnl');
-    if(pnlEl){
-      pnlEl.className='ov-prod-pnl '+(pnlUSD>=0?'pos':'neg');
-      pnlEl.innerHTML=(pnlUSD>=0?'+':'')+fc(pnlUSD,'USD',2)+' ('+(pnlUSD>=0?'+':'')+safePctFixed(pct,1)+'%)';
-    }
-  });
-}
+function patchOverviewStockRow(sym,price){if(price>0&&document.getElementById('page-overview')?.classList.contains('active'))scheduleOverviewLiveRefresh();}
 const finnhubSubscribed=new Set();
 function finnhubDesiredSymbols(){
   const s=new Set();
@@ -4721,6 +4724,151 @@ function ovPerfBarHtml(pct){
   const cls=pct>=0?'pos':'neg';
   return`<div class="ov-perf-bar ${cls}"><div class="ov-perf-fill" style="width:${w}%"></div></div>`;
 }
+const OVERVIEW_REGIONS={cn:'中国境内',us:'美国',au:'澳洲',other:'未标地区'};
+const OVERVIEW_TYPES={cash:'现金 / 活期',fund_cn:'基金 / 理财',gold:'黄金',stock_us:'美股',term_deposit:'定期存款',other:'其他'};
+let overviewHoldingFilters={region:'',account:'',type:'',sort:'desc'};
+function overviewHoldingAccountKey(region,account){return JSON.stringify([region,account]);}
+function buildOverviewHoldingRows(products,context,manualIdle){
+  const overrides=new Map();
+  for(const p of products){
+    if(p.region!=='us')continue;
+    const account=String(p.account||'未分类'),amount=manualIdle(account);
+    if(Number.isFinite(amount)&&amount>=0)overrides.set(account,amount);
+  }
+  const rows=[];
+  for(const p of products){
+    const account=String(p.account||'未分类');
+    if(p.region==='us'&&overrides.has(account)&&isUsdIdleProduct(p))continue;
+    const region=Object.hasOwn(OVERVIEW_REGIONS,p.region)?p.region:'other';
+    rows.push({key:'asset:'+String(p.id),product:p,region,account,type:Object.hasOwn(OVERVIEW_TYPES,p.type)?p.type:'other',valuation:WealthMath.productValue(p,context),manual:false});
+  }
+  for(const [account,amount] of overrides){
+    const product={type:'cash',region:'us',account,name:'账户闲置资金（手填）',currency:'USD',amount};
+    rows.push({key:'idle:'+account,product,region:'us',account,type:'cash',valuation:WealthMath.productValue(product,context),manual:true});
+  }
+  return rows;
+}
+function filterOverviewHoldingRows(rows,filters){
+  const selected=rows.filter(row=>(!filters.region||row.region===filters.region)&&(!filters.account||overviewHoldingAccountKey(row.region,row.account)===filters.account)&&(!filters.type||row.type===filters.type));
+  return selected.sort((a,b)=>{
+    if(a.valuation.complete!==b.valuation.complete)return a.valuation.complete?-1:1;
+    return ((a.valuation.cny||0)-(b.valuation.cny||0))*(filters.sort==='asc'?1:-1)||String(a.product.name||'').localeCompare(String(b.product.name||''));
+  });
+}
+function overviewHoldingProfit(row){
+  const p=row.product,v=row.valuation;if(!v.complete)return null;
+  if(p.type==='term_deposit')return{amount:WealthMath.sum([v.amount,-WealthMath.depositTerms(p).principal]),label:'应计未付利息'};
+  const fields={stock_us:['shares','costPrice'],fund_cn:['fundShares','fundCost'],gold:['grams','goldCost']}[p.type];
+  if(!fields)return null;
+  const quantity=WealthMath.number(p[fields[0]]),cost=WealthMath.number(p[fields[1]]);
+  if(quantity===null||cost===null||cost<0)return{missing:true};
+  const basis=WealthMath.multiply(quantity,cost),amount=WealthMath.sum([WealthMath.round(v.amount),-basis]);
+  return{amount,label:basis>0?(amount/basis*100).toFixed(1)+'%':'账面变化'};
+}
+function resetOverviewHoldingFilters(){overviewHoldingFilters={region:'',account:'',type:'',sort:'desc'};renderOverviewHoldings();}
+function setOverviewHoldingRegion(region){overviewHoldingFilters.region=overviewHoldingFilters.region===region?'':region;overviewHoldingFilters.account='';renderOverviewHoldings();}
+function syncOverviewHoldingOptions(select,options,value){
+  const signature=JSON.stringify(options);
+  if(select.dataset.options!==signature){
+    select.replaceChildren();for(const [key,label] of options){const option=document.createElement('option');option.value=key;option.textContent=label;select.append(option);}select.dataset.options=signature;
+  }
+  select.value=value;
+}
+function renderOverviewHoldings(){
+  const root=document.getElementById('ov-regions');if(!root)return;
+  const focusedRegion=document.activeElement?.closest('.ov-region-tile')?.dataset.region;
+  if(!root.querySelector('#ov-holdings-table')){
+    root.innerHTML=`<div id="ov-region-summary" class="ov-region-summary"></div>
+      <div class="ov-holding-filters">
+        <div><label for="ov-filter-region">地区</label><select id="ov-filter-region"></select></div>
+        <div><label for="ov-filter-account">账户</label><select id="ov-filter-account"></select></div>
+        <div><label for="ov-filter-type">资产类型</label><select id="ov-filter-type"></select></div>
+        <button type="button" class="btn btn-ghost btn-sm" id="ov-filter-reset">重置筛选</button>
+      </div>
+      <div class="ov-holdings-scroll" role="region" aria-label="持仓表格，可横向滚动" tabindex="0">
+        <table id="ov-holdings-table" class="ov-holdings-table"><caption class="sr-only">当前资产持仓，按人民币估值排序</caption>
+          <colgroup><col style="width:26%"><col style="width:20%"><col style="width:16%"><col style="width:15%"><col style="width:14%"><col style="width:9%"></colgroup>
+          <thead><tr><th scope="col">资产</th><th scope="col">账户 / 地区</th><th scope="col" class="num">原币估值</th><th scope="col" class="num" id="ov-sort-header"><button type="button" id="ov-sort-value">折合 CNY ↓</button></th><th scope="col" class="num">原币账面盈亏</th><th scope="col" class="num">操作</th></tr></thead>
+          <tbody id="ov-holdings-body"></tbody>
+        </table>
+      </div>
+      <div id="ov-holdings-status" class="ov-holdings-status" role="status" aria-live="polite"></div>
+      <p class="ov-holdings-note">账面盈亏仅对应当前持仓，不包含已卖出资产、分红和手续费；整体收益请查看「NAV 历史」。</p>`;
+    for(const [id,field] of [['ov-filter-region','region'],['ov-filter-account','account'],['ov-filter-type','type']]){
+      document.getElementById(id).addEventListener('change',e=>{overviewHoldingFilters[field]=e.target.value;if(field==='region')overviewHoldingFilters.account='';renderOverviewHoldings();});
+    }
+    document.getElementById('ov-filter-reset').addEventListener('click',resetOverviewHoldingFilters);
+    document.getElementById('ov-sort-value').addEventListener('click',()=>{overviewHoldingFilters.sort=overviewHoldingFilters.sort==='asc'?'desc':'asc';renderOverviewHoldings();});
+  }
+  const all=buildOverviewHoldingRows(D.products,valuationContext(),usManualIdleUsd);
+  const regionOptions=[['','全部地区'],...['cn','us','au'].map(key=>[key,OVERVIEW_REGIONS[key]])];
+  if(all.some(row=>row.region==='other'))regionOptions.push(['other',OVERVIEW_REGIONS.other]);
+  const accountOptions=[['','全部账户']],seen=new Set();
+  for(const row of all){
+    if(overviewHoldingFilters.region&&row.region!==overviewHoldingFilters.region)continue;
+    const key=overviewHoldingAccountKey(row.region,row.account);if(seen.has(key))continue;seen.add(key);accountOptions.push([key,row.account+' · '+OVERVIEW_REGIONS[row.region]]);
+  }
+  if(!accountOptions.some(([key])=>key===overviewHoldingFilters.account))overviewHoldingFilters.account='';
+  syncOverviewHoldingOptions(document.getElementById('ov-filter-region'),regionOptions,overviewHoldingFilters.region);
+  syncOverviewHoldingOptions(document.getElementById('ov-filter-account'),accountOptions,overviewHoldingFilters.account);
+  syncOverviewHoldingOptions(document.getElementById('ov-filter-type'),[['','全部类型'],...Object.entries(OVERVIEW_TYPES)],overviewHoldingFilters.type);
+  const summary=document.getElementById('ov-region-summary');summary.replaceChildren();
+  for(const region of ['cn','us','au']){
+    const state=valuationStatus(region),button=document.createElement('button');button.type='button';button.className='ov-region-tile';button.dataset.region=region;button.setAttribute('aria-pressed',String(overviewHoldingFilters.region===region));button.setAttribute('aria-label','筛选'+OVERVIEW_REGIONS[region]+'持仓');
+    const title=document.createElement('span');title.className='ov-region-tile-title';title.textContent=OVERVIEW_REGIONS[region];
+    const value=document.createElement('strong');value.textContent=fc(state.knownCny,'CNY',0);
+    const meta=document.createElement('span');meta.className='ov-region-tile-meta';meta.textContent=D.products.filter(p=>p.region===region).length+' 项资产'+(state.complete?'':' · 估值不完整');
+    button.append(title,value,meta);button.addEventListener('click',()=>setOverviewHoldingRegion(region));summary.append(button);
+  }
+  const body=document.getElementById('ov-holdings-body');
+  const active=document.activeElement,focusedKey=active?.closest('#ov-holdings-body tr')?.dataset.holdingKey,focusedAction=active?.dataset.holdingAction;
+  body.replaceChildren();const selected=filterOverviewHoldingRows(all,overviewHoldingFilters);
+  const text=(parent,value,className)=>{const span=document.createElement('span');if(className)span.className=className;span.textContent=value;parent.append(span);return span;};
+  for(const row of selected){
+    const p=row.product,v=row.valuation,tr=document.createElement('tr');tr.dataset.holdingKey=row.key;
+    const cells=Array.from({length:6},()=>document.createElement('td'));tr.append(...cells);
+    const name=document.createElement('button');name.type='button';name.className='ov-holding-name';name.textContent=p.name||p.ticker||p.fundCode||'未命名资产';name.dataset.holdingAction='view';
+    const view=()=>{if(row.region==='other')editProduct(p.id);else revealCmdkHolding(row.region,row.account,row.manual?undefined:p.id);};name.addEventListener('click',view);cells[0].append(name);
+    const details=[OVERVIEW_TYPES[row.type]];
+    if(p.ticker&&p.ticker!==p.name)details.push(p.ticker);
+    if(p.type==='stock_us')details.push(fmt(p.shares,4)+' 股');
+    if(p.type==='fund_cn')details.push(fmt(p.fundShares,4)+' 份');
+    if(p.type==='gold')details.push(fmt(p.grams,4)+' 克');
+    if(p.type==='term_deposit'){details.push((p.rate??'—')+'%');if(p.tdContractEnd||p.tdEnd)details.push('到期 '+(p.tdContractEnd||p.tdEnd));}
+    text(cells[0],details.join(' · '),'ov-holding-sub');
+    if(p.type==='stock_us'){
+      if(isStopLossTriggered(p))text(cells[0],'已触发止损提醒','ov-holding-estimate');
+      else if(isStopLossNear(p))text(cells[0],'接近已设止损价','ov-holding-estimate');
+    }
+    if(p.type==='term_deposit'){
+      const days=tdDaysLeft(p);
+      if(days!==null&&days>=0&&days<=7)text(cells[0],days===0?'今日到期':days+' 天后到期','ov-holding-estimate');
+      else if(days!==null&&days<0)text(cells[0],'已到期，请核对余额','ov-holding-estimate');
+    }
+    if(row.manual)text(cells[0],'替代该账户已登记的美元现金余额','ov-holding-sub');
+    if(v.estimated)text(cells[0],p.tdNeedsReview?'待核对定存合同':'使用最近有效价格估值','ov-holding-estimate');
+    text(cells[1],row.account,'ov-holding-account');text(cells[1],OVERVIEW_REGIONS[row.region],'ov-holding-sub');
+    cells[2].className=cells[3].className=cells[4].className='num';cells[5].className='ov-holding-actions';
+    if(v.complete){text(cells[2],fc(v.amount,v.currency,2),'ov-holding-money');text(cells[3],fc(v.cny,'CNY',0),'ov-holding-money');}
+    else{text(cells[2],'估值不完整','ov-holding-estimate');text(cells[2],v.reason,'ov-holding-sub');text(cells[3],'—');}
+    const profit=overviewHoldingProfit(row);
+    if(profit?.missing)text(cells[4],'缺少成本','ov-holding-sub');
+    else if(profit){text(cells[4],(profit.amount>0?'+':'')+fc(profit.amount,v.currency,2),'ov-holding-money '+(profit.amount>0?'pos':profit.amount<0?'neg':''));text(cells[4],profit.label,'ov-holding-sub');}
+    else text(cells[4],'—','ov-holding-sub');
+    const actions=document.createElement('div');actions.className='ov-holding-action-buttons';
+    for(const [action,label,icon,handler] of row.manual?[['account','账户详情','↗',view]]:[['edit',v.complete?'编辑资产':'补齐资料','✎',()=>editProduct(p.id)],['delete','删除资产','×',()=>deleteProduct(p.id)]]){
+      const button=document.createElement('button');button.type='button';button.className='btn btn-ghost btn-sm'+(action==='delete'?' danger':'');button.dataset.holdingAction=action;button.setAttribute('aria-label',label);button.title=label;button.textContent=icon;button.addEventListener('click',handler);actions.append(button);
+    }
+    cells[5].append(actions);body.append(tr);
+  }
+  if(!selected.length){const row=document.createElement('tr'),cell=document.createElement('td');cell.colSpan=6;cell.className='ov-holdings-empty';cell.textContent=all.length?'没有符合当前筛选的资产，试试重置筛选。':'尚无资产，点击顶部「添加资产」开始记录。';row.append(cell);body.append(row);}
+  const missing=selected.filter(row=>!row.valuation.complete).length,known=WealthMath.sum(selected.filter(row=>row.valuation.complete).map(row=>row.valuation.cny));
+  document.getElementById('ov-holdings-status').textContent='显示 '+selected.length+' / '+all.length+' 项持仓 · '+(missing?'已知部分估值 ':'折合 CNY 合计 ')+fc(known,'CNY',2)+(missing?' · '+missing+' 项估值不完整':'');
+  document.getElementById('ov-sort-value').textContent='折合 CNY '+(overviewHoldingFilters.sort==='asc'?'↑':'↓');document.getElementById('ov-sort-header').setAttribute('aria-sort',overviewHoldingFilters.sort==='asc'?'ascending':'descending');
+  if(focusedRegion)Array.from(summary.children).find(button=>button.dataset.region===focusedRegion)?.focus({preventScroll:true});
+  if(focusedKey&&focusedAction){const row=Array.from(body.rows).find(row=>row.dataset.holdingKey===focusedKey);row?.querySelector('[data-holding-action="'+focusedAction+'"]')?.focus({preventScroll:true});}
+}
+
 function renderOverview(){
   document.getElementById('ov-dash').classList.toggle('is-empty',!(D.products||[]).length);
   maybeRollAuWeeklyCompound();
@@ -4736,212 +4884,8 @@ function renderOverview(){
   const subEl=document.getElementById('ov-cny-sub');if(subEl)subEl.textContent=D.products.length+' 个资产项目';
   if(D.btcQuote?.usd>0){const hb=document.getElementById('ov-hero-btc');if(hb)hb.textContent=formatBtcUsd(D.btcQuote.usd);}
 
-  const regions=[
-    {id:'cn',flag:'🇨🇳',name:'中国境内',cur:'CNY'},
-    {id:'us',flag:'🇺🇸',name:'美国',cur:'USD'},
-    {id:'au',flag:'🇦🇺',name:'澳洲',cur:'AUD'}
-  ];
-  try{
-  document.getElementById('ov-regions').innerHTML=regions.map(r=>{
-    const ps=D.products.filter(p=>p.region===r.id);
-    const rcny=totalCNY(r.id);
-    const rlocal=fromCNY(rcny,r.cur);
-    const accs=[...new Set(ps.map(p=>p.account||'未分类'))];
-
-    const accBlocks=accs.length?accs.map(acc=>{
-      const aps=ps.filter(p=>p.account===acc);
-      const productCashCny=r.id==='us'?sumUsdCashCNY(aps):0;
-      const man=r.id==='us'?usManualIdleUsd(acc):null;
-      let acny=aps.reduce((s,p)=>s+pCNY(p),0);
-      if(r.id==='us'&&man!=null)acny+=toCNY(man,'USD')-productCashCny;
-      const alocal=fromCNY(acny,r.cur);
-      const prodRows=aps.map(p=>{
-        const valuation=WealthMath.productValue(p,valuationContext());
-        if(!valuation.complete)return '<div class="ov-prod-row"><div><div class="ov-prod-name">'+escOvHtml(p.name||p.ticker||'资产')+'</div><div class="ov-prod-sub">估值不完整：'+escOvHtml(valuation.reason)+'</div></div><button type="button" class="btn btn-ghost btn-sm" onclick="editProduct('+p.id+')">补齐资料</button></div>';
-
-        const cny=pCNY(p);
-        const local=fromCNY(cny,r.cur);
-        let name,sub,amt,cnyStr,pnl='',nameHtml='';
-        let perfBar='',ovRowExtra='';
-        if(p.type==='gold'){
-          const price=valuation.price??p.goldPrice??0,grams=p.grams||0,cost=p.goldCost||0;
-          const mkt=grams*price,pnlVal=mkt-grams*cost,pct=(cost>0&&grams>0)?pnlVal/(grams*cost)*100:0;
-          name=p.name||'黄金积存';
-          sub=`${fmt(grams,4)}克 · ${price?`¥${fmt(price,2)}/克 · `:'待刷新 · '}均价¥${fmt(cost,2)}/克`;
-          amt=price?fc(mkt,'CNY',2):'待刷新';
-          cnyStr='';
-          pnl=price?`<div class="ov-prod-pnl ${pnlVal>=0?'pos':'neg'}">${pnlVal>=0?'+':''}${fc(pnlVal,'CNY',2)} (${pnlVal>=0?'+':''}${safePctFixed(pct,1)}%)</div>`:'';
-          perfBar=price?ovPerfBarHtml(pct):'';
-        } else if(p.type==='stock_us'){
-          const price=valuation.price??p.currentPrice??0,cost=p.costPrice||0,shares=p.shares||0;
-          const mkt=shares*price,pnlUSD=shares*(price-cost),pct=cost>0?(price-cost)/cost*100:0;
-          const tick=(p.ticker||'').trim()||'—';
-          const hasName=p.name&&p.name.trim()&&p.name.trim().toUpperCase()!==tick.toUpperCase();
-          nameHtml=`<div class="ov-prod-name ov-prod-name--stock">${hasName?`<span class="ov-prod-tick">${escOvHtml(p.name.trim())}</span><span class="ov-prod-ticktag">${escOvHtml(tick)}</span>`:`<span class="ov-prod-tick">${escOvHtml(tick)}</span>`}<span class="ov-prod-px${price?'':' wait'}">${price?fmtStockPx(tick,price):'待刷新'}</span></div>`;
-          const wPct=acny>0?(cny/acny*100).toFixed(1):null;
-          sub=`持股量 ${fmt(shares,2)} 股 · 持股成本 ${fc(cost,'USD',2)}${wPct!=null?` · 占比 ${wPct}%`:''}${stockRiskSubHtml(p)}`;
-          amt=price?fc(mkt,'USD',2):'待刷新';
-          cnyStr='';
-          pnl=price?`<div class="ov-prod-pnl ${pnlUSD>=0?'pos':'neg'}">${pnlUSD>=0?'+':''}${fc(pnlUSD,'USD',2)} (${pnlUSD>=0?'+':''}${safePctFixed(pct,1)}%)</div>`:'';
-          const perfBar=price?ovPerfBarHtml(pct):'';
-          const slWarn=isStopLossTriggered(p)||isStopLossNear(p)?' crcl-warn':'';
-          return `<div class="ov-prod-row${slWarn}" data-ov-ticker="${escAttr(tick)}">
-          <div class="ov-prod-main">
-            ${nameHtml||`<div class="ov-prod-name">${escOvHtml(name)}</div>`}
-            ${sub?`<div class="ov-prod-sub">${escOvHtml(sub)}</div>`:''}
-          </div>
-          <div class="ov-prod-right">
-            <div class="ov-prod-metrics">
-              <div class="ov-prod-amt">${amt}</div>
-              ${cnyStr?`<div class="ov-prod-cny">${cnyStr}</div>`:''}
-              ${pnl}
-              ${perfBar}
-            </div>
-          </div>
-          <div class="ov-prod-actions">
-            <button class="ov-row-btn" aria-label="编辑资产" onclick="event.stopPropagation();editProduct(${p.id})">✏️</button>
-            <button class="ov-row-btn danger" aria-label="删除资产" onclick="event.stopPropagation();deleteProduct(${p.id})">✕</button>
-          </div>
-        </div>`;
-        } else if(p.type==='fund_cn'){
-          const price=p.fundPrice||0,shares=p.fundShares||0,cost=p.fundCost||0;
-          const cur=p.fundCurrency||'CNY';
-          const mkt=shares*price,pnlVal=mkt-shares*cost,pct=(cost>0&&shares>0)?pnlVal/(shares*cost)*100:0;
-          name=p.name||p.fundCode||'—';
-          sub=`${p.fundCode?escOvHtml(String(p.fundCode))+' · ':''}${fmt(shares,2)}份`;
-          amt=price?fc(mkt,cur,2):'待更新净值';
-          cnyStr=price&&cur!=='CNY'?`≈ ${fc(cny,'CNY',0)}`:'';
-          pnl=price?`<div class="ov-prod-pnl ${pnlVal>=0?'pos':'neg'}">${pnlVal>=0?'+':''}${fc(pnlVal,cur,2)} (${pnlVal>=0?'+':''}${safePctFixed(pct,1)}%)</div>`:'';
-          perfBar=price?ovPerfBarHtml(pct):'';
-        } else if(p.type==='term_deposit'){
-          const cur=p.tdCur||'AUD',curVal=tdCurVal(p),acc=tdAccruedVsOrig(p),daysLeft=tdDaysLeft(p);
-          const wk=curVal*(p.rate||0)/100/52;
-          const ratePct=p.rate||0;
-          name=p.name||'定期存款';
-          sub=`本周约 +${fc(wk,cur,2)}${daysLeft!==null?` · ${daysLeft}天后到期`:''}`;
-          amt=fc(curVal,cur,2);
-          pnl=`<div class="ov-prod-pnl pos">+${fc(acc,cur,2)} 应计</div>`;
-          return `<div class="ov-prod-row" data-ov-td="1">
-          <div class="ov-prod-main">
-            <div class="ov-prod-name">${escOvHtml(name)}</div>
-            ${sub?`<div class="ov-prod-sub">${escOvHtml(sub)}</div>`:''}
-          </div>
-          <div class="ov-prod-rate">${ratePct}%</div>
-          <div class="ov-prod-right">
-            <div class="ov-prod-metrics">
-              <div class="ov-prod-amt">${amt}</div>
-              ${pnl}
-            </div>
-          </div>
-          <div class="ov-prod-actions">
-            <button class="ov-row-btn" aria-label="编辑资产" onclick="event.stopPropagation();editProduct(${p.id})">✏️</button>
-            <button class="ov-row-btn danger" aria-label="删除资产" onclick="event.stopPropagation();deleteProduct(${p.id})">✕</button>
-          </div>
-        </div>`;
-        } else {
-          name=p.name||'—';
-          sub=p.note||(r.id==='us'&&p.type==='cash'&&(p.currency||'CNY')==='USD'?'美元现金 · 可与 Tiger 预估现金/应计利息对应':'');
-          amt=fc(p.amount,p.currency||'CNY',2);
-          cnyStr=p.currency!=='CNY'?`≈ ${fc(cny,'CNY',0)}`:'';
-          if(r.id==='us'&&p.type==='cash'&&(p.currency||'CNY')==='USD'&&acny>0){
-            sub=(sub?sub+' · ':'')+`占账户 ${(cny/acny*100).toFixed(1)}%`;
-          }
-        }
-        return `<div class="ov-prod-row${ovRowExtra}">
-          <div class="ov-prod-main">
-            ${nameHtml||`<div class="ov-prod-name">${escOvHtml(name)}</div>`}
-            ${sub?`<div class="ov-prod-sub">${escOvHtml(sub)}</div>`:''}
-          </div>
-          <div class="ov-prod-right">
-            <div class="ov-prod-metrics">
-              <div class="ov-prod-amt">${amt}</div>
-              ${cnyStr?`<div class="ov-prod-cny">${cnyStr}</div>`:''}
-              ${pnl}
-              ${perfBar}
-            </div>
-          </div>
-          <div class="ov-prod-actions">
-            <button class="ov-row-btn" aria-label="编辑资产" onclick="event.stopPropagation();editProduct(${p.id})">✏️</button>
-            <button class="ov-row-btn danger" aria-label="删除资产" onclick="event.stopPropagation();deleteProduct(${p.id})">✕</button>
-          </div>
-        </div>`;
-      }).join('');
-      return `<div class="ov-acc-block">
-        <div class="ov-acc-name">
-          <span>${escOvHtml(acc)}</span>
-          <div style="display:flex;align-items:center;gap:8px">
-            <span class="ov-acc-total">${fc(alocal,r.cur,0)}</span>
-            <button class="ov-acc-add-btn" onclick="openModal(${JSON.stringify(r.id)},${JSON.stringify(acc)})" title="添加到${escAttr(acc)}">＋</button>
-          </div>
-        </div>
-        ${prodRows}
-      </div>`;
-    }).join('')
-    :`<div class="ov-empty">暂无资产</div>`;
-
-    // Extra stats for US column: single row, 3-currency PnL
-    let extraStats = '';
-    let col = 'var(--green)', sign = '+', pnlAUD = 0, pnlUSD = 0, pnlCNY = 0, pnlPct = 0, totalAUD_us = 0;
-    let usStockCny=0,usIdleCny=0,usGrowth=null;
-    if(r.id === 'us' && ps.length && Number(D.settings?.usPrincipalAUD)>0 && valuationStatus('us').complete){
-      usStockCny=sumStockUsCNY(ps);
-      usIdleCny=regionUsIdleCnyTotal(ps);
-      usGrowth=getUsPrincipalGrowth();
-      totalAUD_us=usGrowth.currentAUD;
-      pnlAUD=usGrowth.pnlAUD;
-      pnlUSD=usGrowth.pnlUSD;
-      pnlCNY=usGrowth.pnlCNY;
-      pnlPct=usGrowth.pnlPct;
-      const isPos=usGrowth.isPos;
-      col = isPos ? 'var(--green)' : 'var(--red)';
-      sign = isPos ? '+' : '';
-      extraStats = 'us';
-    }
-
-    const vCNY = fc(rcny,'CNY',0);
-    const vUSD = fc(fromCNY(rcny,'USD'),'USD',0);
-    const vAUD = fc(fromCNY(rcny,'AUD'),'AUD',0);
-    const ovHeadTriple = `<div class="ov-head-triple">
-          <div class="ov-head-cell"><span class="ov-head-cell-lbl">CNY</span><span class="ov-head-cell-val">${vCNY}</span></div>
-          <div class="ov-head-cell"><span class="ov-head-cell-lbl">USD</span><span class="ov-head-cell-val">${vUSD}</span></div>
-          <div class="ov-head-cell"><span class="ov-head-cell-lbl">AUD</span><span class="ov-head-cell-val">${vAUD}</span></div>
-        </div>`;
-    const regionPctAll=cny>0?(rcny/cny*100):0;
-    const regionViz=`<div class="ov-region-viz" title="占全球净值 ${regionPctAll.toFixed(1)}%"><div class="ov-region-viz-fill ${r.id}" style="width:${regionPctAll.toFixed(1)}%"></div><span class="ov-region-viz-pct">${regionPctAll.toFixed(1)}%</span></div>`;
-    const ovNameRow = `<div class="ov-col-name-row"><div class="ov-col-name-block"><span class="ov-col-name">${r.flag} ${r.name}</span><span class="ov-col-meta">${ps.length} 项资产</span></div><button type="button" class="ov-col-add-icon" onclick="openModal('${r.id}')" title="添加资产"><i class="ti ti-plus"></i></button></div>${regionViz}`;
-
-    let headerHTML;
-    if(r.id === 'us' && extraStats) {
-      headerHTML = `${ovNameRow}${ovHeadTriple}
-        <div class="ov-us-sub-row">
-          <div class="ov-us-cap-split" title="证券市值仅含美股持仓；闲置资金为手填 Tiger 闲置或 USD 现金条，与顶部合计一致">
-            <span>证券市值 <strong class="ov-cap-val">${fc(fromCNY(usStockCny,'USD'),'USD',2)}</strong></span>
-            <span class="ov-cap-sep">·</span>
-            <span>闲置资金 <strong class="ov-cap-val">${fc(fromCNY(usIdleCny,'USD'),'USD',2)}</strong></span>
-            <span class="ov-cap-sep">·</span>
-            <span>本金 <strong class="ov-cap-val">${fc(usGrowth.principalAUD,'AUD',0)}</strong></span>
-          </div>
-        </div>
-        <div class="ov-col-meta">相对本金账面变化（含入出金）</div><div class="ov-col-pnl-row">
-          <span class="ov-pnl-item" style="color:${col}">${sign}${fc(pnlAUD,'AUD',0)} <span class="ov-pnl-pct">${sign}${safePctFixed(pnlPct,1)}%</span></span>
-          <span class="ov-pnl-item" style="color:${col}">${sign}${fc(pnlUSD,'USD',0)}</span>
-          <span class="ov-pnl-item" style="color:${col}">${sign}${fc(pnlCNY,'CNY',0)}</span>
-        </div>`;
-    } else {
-      headerHTML = `${ovNameRow}${ovHeadTriple}`;
-    }
-
-    const auOvBanner=r.id==='au'?buildAuTdBanners(ps):'';
-    return `<div class="ov-col ${r.id}">
-      <div class="ov-col-header">${headerHTML}</div>
-      <div class="ov-col-body">${auOvBanner}${accBlocks}</div>
-    </div>`;
-  }).join('');
-  }catch(err){
-    console.error('renderOverview ov-regions',err);
-    const elRg=document.getElementById('ov-regions');
-    if(elRg)elRg.innerHTML='<div class="alert alert-warn" style="margin:12px 0">分区列表渲染失败（常见原因：账户名含引号等特殊字符，或某条资产数据异常）。请按 F12 打开控制台查看报错；可先<strong>导出 JSON</strong>备份，再逐条编辑资产。</div>';
-  }
+  const regionContainer=document.getElementById('ov-regions');
+  if(regionContainer)renderOverviewHoldings();
   try{renderMajorEventsWatch();}catch(e){console.error('renderMajorEventsWatch',e);}
   try{renderOverviewDashboard();}catch(e){console.error('renderOverviewDashboard',e);}
   try{renderNavMiniChart(ovRange);}catch(e){console.error('renderNavMiniChart',e);}
