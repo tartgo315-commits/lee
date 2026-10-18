@@ -34,7 +34,7 @@ check('Previously configured principal is retained, never replaced by a preset',
   assert.equal(vm.runInContext('getUsPrincipalGrowth().principalAUD',context),0);
 });
 check('AI context and structured payload use anonymized builders',()=>{
-  const context=vm.createContext({buildSanitizedPortfolio:()=> 'SAFE SUMMARY',buildEventsCalendarContext:()=> 'PUBLIC EVENTS',getSanitizedPortfolioPayload:()=>[{market:'US'}],buildFullPortfolioText:()=>{throw Error('private builder called');},buildFullPortfolioPayload:()=>{throw Error('private builder called');}});
+  const context=vm.createContext({buildRiskEvidenceContext:()=> 'SAFE LOCAL EVIDENCE',buildSanitizedPortfolio:()=> 'SAFE SUMMARY',buildEventsCalendarContext:()=> 'PUBLIC EVENTS',getSanitizedPortfolioPayload:()=>[{market:'US'}],buildFullPortfolioText:()=>{throw Error('private builder called');},buildFullPortfolioPayload:()=>{throw Error('private builder called');}});
   vm.runInContext(definition('buildAiPortfolioContext')+'\n'+definition('getAiPortfolioPayload'),context);
   assert.ok(vm.runInContext('buildAiPortfolioContext()',context).includes('SAFE SUMMARY'));
   assert.equal(vm.runInContext('getAiPortfolioPayload()[0].market',context),'US');

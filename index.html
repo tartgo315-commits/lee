@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
 <script src="calculation-engine.js"></script>
 <script src="movement-engine.js"></script>
+<script src="portfolio-intelligence.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
 
@@ -988,6 +989,10 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
 #modal-movement{z-index:500}#modal-movement .movement-modal{max-width:min(680px,96vw);background:#10141b!important}body.light #modal-movement .movement-modal{background:#fff!important}.movement-header,.movement-actions{display:flex;align-items:center;justify-content:space-between;gap:12px}.movement-header h2{font-size:18px;margin:0}.movement-modal .fg{min-width:0}.movement-modal textarea{width:100%;resize:vertical;font:inherit;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg-card);color:var(--text-1)}.movement-preview{padding:12px 14px;background:var(--bg-muted);border:1px solid var(--border);border-radius:10px;font-size:13px;line-height:1.7;overflow-wrap:anywhere}.movement-preview p{margin:4px 0}#mv-error{color:var(--dn-soft);font-size:13px}.movement-actions{justify-content:flex-end;margin-top:16px}.movement-entry{border:1px solid var(--border);border-radius:10px;padding:14px;margin:10px 0;font-size:13px;line-height:1.6;overflow-wrap:anywhere}.movement-entry p{margin:5px 0;color:var(--text-2)}.term-portfolio-hd{flex-wrap:wrap}.term-portfolio-hd>.ov-holdings-note{margin-left:auto}
 @media(max-width:768px){.movement-modal .fg-row{grid-template-columns:1fr}.movement-modal input,.movement-modal select,.movement-modal textarea{font-size:16px}.movement-actions .btn{flex:1;padding:0 8px}.term-portfolio-hd>.ov-holdings-note{margin-left:0}}
 
+.ov-holdings-table{font-size:15px;min-width:940px}.ov-holdings-table th{font-size:13px;padding:13px 10px}.ov-holdings-table td{padding:17px 10px}.ov-holding-name{font-size:15px;line-height:1.6}.ov-holding-money{font-size:16px;line-height:1.6}.ov-holding-account{font-size:14px}.ov-holding-sub,.ov-holding-estimate{font-size:13px;line-height:1.6}.ov-group-heading h3{font-size:18px}.ov-group-heading h4{font-size:15px}.ov-group-total strong{font-size:18px}.ov-account-heading .ov-group-total strong{font-size:15px}.ov-group-total span{font-size:13px}.ov-region-tile-title{font-size:15px}.ov-region-tile strong{font-size:22px}.ov-region-tile-meta,.ov-holdings-note{font-size:13px}.product-row .pr-name,.product-row .pr-pnl{font-size:15px}.product-row .pr-amt{font-size:16px}.product-row .pr-sub{font-size:13px;line-height:1.6}.acc-name{font-size:16px}
+.term-intel-risk .ov-insights{display:block;max-height:none;overflow:visible}.risk-heading{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}.portfolio-risk{border-left:3px solid var(--accent-blue);padding:10px 12px;margin:10px 0;background:var(--bg-muted);border-radius:0 8px 8px 0;line-height:1.65;font-size:14px}.portfolio-risk.high{border-left-color:var(--dn-soft)}.portfolio-risk.medium{border-left-color:var(--warn)}.portfolio-risk strong,.portfolio-risk h3{font-size:14px;margin:0;color:var(--text-1)}.portfolio-risk p{margin:6px 0 0;color:var(--text-2)}.portfolio-risk .risk-action{font-size:13px;color:var(--text-3)}.news-relevance,.ov-event-relevance{font-size:13px;color:var(--up-soft);line-height:1.6;margin:6px 0}.event-source{display:inline-block;font-size:12px;color:var(--text-3);margin-top:4px}.news-item-title{font-size:16px;line-height:1.6}
+@media(max-width:768px){.ov-region-tile strong{font-size:19px}.ov-region-tile-title{font-size:13px}.ov-region-tile-meta{font-size:12px}.ov-holdings-table{min-width:940px}}
+
 .history-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 20px;padding:6px;border:1px solid var(--border);border-radius:12px;background:var(--bg-card)}
 .history-tabs [role=tab]{padding:10px 18px;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--text-3);font:inherit;font-size:14px;font-weight:500;cursor:pointer}
 .history-tabs [role=tab]:hover{background:var(--bg-hover);color:var(--text-1)}
@@ -1218,7 +1223,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
               </div>
               <div class="ov-events-list" id="ov-events-list"></div>
               <div class="term-intel-risk">
-                <div class="term-intel-hd"><i class="ti ti-shield-check"></i> 风险提示</div>
+                <div class="term-intel-hd risk-heading"><span><i class="ti ti-shield-check"></i> 持仓风险检查</span><button type="button" class="btn btn-ghost btn-sm" onclick="openRiskAnalysis()">查看分析</button></div>
                 <div id="ov-insights" class="ov-insights"></div>
               </div>
             </div>
@@ -1378,14 +1383,14 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
       <div class="page-header">
         <div>
           <div class="ph-label"><i class="ti ti-news"></i> 资产相关资讯</div>
-          <div class="ph-main" style="font-size:clamp(15px,2.5vw,18px);font-weight:600">按持仓匹配关键词 · 聚合公开 RSS</div>
-          <div class="ph-sub" id="news-sub">与股票代码、区域（中/美/澳）及黄金、基金、定存等类型联动</div>
+          <div class="ph-main" style="font-size:clamp(15px,2.5vw,18px);font-weight:600">优先持仓标的、币种与利率事项</div>
+          <div class="ph-sub" id="news-sub">只显示仍持有资产的相关内容，并注明匹配依据</div>
         </div>
         <div class="ph-actions">
-          <button type="button" class="btn btn-outline btn-sm" id="news-refresh-btn" onclick="refreshNewsFeeds()"><i class="ti ti-refresh"></i> 刷新资讯</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="news-scope" aria-pressed="false" onclick="toggleNewsScope()">查看全部来源</button><button type="button" class="btn btn-outline btn-sm" id="news-refresh-btn" onclick="refreshNewsFeeds()"><i class="ti ti-refresh"></i> 刷新资讯</button>
         </div>
       </div>
-      <div class="alert alert-info" style="margin-bottom:14px">以下为第三方媒体链接与摘要，本站不背书观点。刷新将通过代理拉取 BBC 等公开 RSS，并按你当前账本中的<strong>美股代码、地区与资产类型</strong>计算相关度排序。英文标题/摘要会尝试<strong>自动译成中文</strong>（免费接口，有次数限制且可能失败，译文仅供参考）。也可使用下方快捷搜索打开 Google 新闻。</div>
+      <div class="alert alert-info" style="margin-bottom:14px">公开财经新闻与央行公告在本机按持仓标的、实际计价币种和资产类型匹配；不会仅因提到某个国家就判为相关。默认展示近 7 天内容；旧缓存会按当前持仓重新匹配。译文仅供参考，可点击查看原文。</div>
       <div class="card" style="margin-bottom:14px">
         <div class="card-title">当前关注维度（来自你的资产）</div>
         <div id="news-profile"></div>
@@ -2939,44 +2944,21 @@ function initFinnhubUsLive(){
 // ══ NEWS (RSS + 持仓关键词) ══
 const NEWS_RSS_FEEDS=[
   {src:'BBC 商业',url:'https://feeds.bbci.co.uk/news/business/rss.xml'},
-  {src:'BBC 美国/加拿大',url:'https://feeds.bbci.co.uk/news/world/us_and_canada/rss.xml'},
-  {src:'BBC 亚洲',url:'https://feeds.bbci.co.uk/news/world/asia/rss.xml'}
+  {src:'美联储公告',url:'https://www.federalreserve.gov/feeds/press_monetary.xml'},
+  {src:'澳洲联储公告',url:'https://www.rba.gov.au/rss/rss-cb-media-releases.xml'}
 ];
 let newsFetchBusy=false;
 function escNews(s){
   return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 function buildAssetNewsProfile(){
-  const tickers=new Set();
-  let us=false,cn=false,au=false,gold=false,fund=false,td=false;
-  for(const p of D.products||[]){
-    if(p.region==='us')us=true;
-    if(p.region==='cn')cn=true;
-    if(p.region==='au')au=true;
-    if(p.type==='stock_us'&&p.ticker)tickers.add(String(p.ticker).trim().toUpperCase());
-    if(p.type==='gold')gold=true;
-    if(p.type==='fund_cn')fund=true;
-    if(p.type==='term_deposit')td=true;
-  }
-  const tk=[...tickers];
-  const keywords=[];
-  tk.forEach(t=>keywords.push(t));
-  if(us){keywords.push('Federal Reserve','Wall Street','Nasdaq','S&P','US stocks','dollar','Treasury');}
-  if(cn){keywords.push('China','Beijing','yuan','renminbi','Shanghai','PBOC');}
-  if(au){keywords.push('Australia','Australian','RBA','ASX','Sydney');}
-  if(gold){keywords.push('gold','bullion');}
-  if(fund){keywords.push('fund','investors');}
-  if(td){keywords.push('interest rate','inflation','bond');}
-  const chips=[];
-  if(tk.length)chips.push('美股 '+tk.join(' '));
-  if(cn)chips.push('中国境内');
-  if(us)chips.push('美国市场');
-  if(au)chips.push('澳洲市场');
-  if(gold)chips.push('黄金');
-  if(fund)chips.push('国内基金');
-  if(td)chips.push('定期/利率');
-  if(!chips.length)chips.push('暂无资产 — 添加后将生成关注词');
-  return{tickers:tk,keywords,chips};
+  const profile=PortfolioIntelligence.profile(currentIntelligenceRows()),chips=[];
+  if(profile.tickers.length)chips.push('美股 '+profile.tickers.join(' '));
+  for(const currency of profile.currencies)chips.push(currency+' 计价资产');
+  if(profile.currencies.includes('USD'))chips.push('美国利率');if(profile.currencies.includes('AUD'))chips.push('澳洲利率');
+  if(profile.hasGold)chips.push('黄金');if(profile.hasFunds)chips.push('基金');if(profile.hasDeposits)chips.push('定存到期与利率');
+  if(!chips.length)chips.push('暂无有效持仓关注维度');
+  return{...profile,keywords:profile.tickers,chips};
 }
 function buildNewsQuickLinks(pr){
   const enc=encodeURIComponent;
@@ -2995,20 +2977,11 @@ function buildNewsQuickLinks(pr){
   }));
 }
 function usRegion(pr){return pr.chips.some(c=>c.includes('美国'));}
-function cnRegion(pr){return pr.chips.some(c=>c.includes('中国'));}
+function cnRegion(pr){return pr.hasCnyInvestments;}
 function auRegion(pr){return pr.chips.some(c=>c.includes('澳洲'));}
 function goldHeld(pr){return pr.chips.some(c=>c.includes('黄金'));}
 function fundHeld(pr){return pr.chips.some(c=>c.includes('基金'));}
-function scoreNewsItem(it,pr){
-  const blob=(it.title+' '+(it.desc||'')).toLowerCase();
-  let s=0;
-  for(const kw of pr.keywords){
-    const k=String(kw).toLowerCase();
-    if(k.length<2)continue;
-    if(blob.includes(k))s+=k.length>=5?4:k.length>=3?2:1;
-  }
-  return s;
-}
+function scoreNewsItem(it,pr){return PortfolioIntelligence.relevance(it,pr).score;}
 async function fetchRssXml(feedUrl){
   const t=await fetchProxiedText(feedUrl);
   return typeof t==='string'?t:'';
@@ -3146,17 +3119,13 @@ async function refreshNewsFeeds(){
   try{
     const pr=buildAssetNewsProfile();
     let merged=[];
-    for(const f of NEWS_RSS_FEEDS){
-      try{
-        const xml=await fetchRssXml(f.url);
-        const items=parseRssItems(xml).map(it=>({...it,source:f.src,score:scoreNewsItem(it,pr)}));
-        merged=merged.concat(items);
-      }catch(e){}
-    }
+    const fetched=await Promise.allSettled(NEWS_RSS_FEEDS.map(async f=>parseRssItems(await fetchRssXml(f.url)).map(it=>({...it,source:f.src,...PortfolioIntelligence.relevance(it,pr)}))));
+    for(const result of fetched)if(result.status==='fulfilled')merged.push(...result.value);
+    if(!merged.length)throw Error('资讯源暂不可用，已有缓存保留，请稍后重试');
     merged.sort((a,b)=>b.score-a.score||0);
     const seen=new Set(),uniq=[];
     for(const it of merged){
-      const key=(it.link||'').split('?')[0].slice(0,120);
+      const key=String(it.title||'').toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]/g,'')||it.link;
       if(seen.has(key))continue;
       seen.add(key);
       uniq.push(it);
@@ -3181,29 +3150,17 @@ async function refreshNewsFeeds(){
   return ok;
 }
 function renderNewsPageList(){
-  const listEl=document.getElementById('news-list');
-  const atEl=document.getElementById('news-fetched-at');
-  if(!listEl)return;
-  const c=D.newsCache;
-  if(!c||!c.items||!c.items.length){
-    listEl.innerHTML='<div style="padding:16px;color:var(--text3);font-size:13px">尚无缓存。点击「刷新资讯」拉取 BBC 等公开源；条目按与你持仓关键词的匹配度排序（右侧分数越高越相关）。</div>';
-    if(atEl)atEl.textContent='';
-    return;
+  const list=document.getElementById('news-list'),at=document.getElementById('news-fetched-at');if(!list)return;
+  const all=rankedCurrentNews(newsShowAll?30:7),items=newsShowAll?all:all.filter(it=>it.score>=6);
+  const toggle=document.getElementById('news-scope');if(toggle){toggle.textContent=newsShowAll?'返回与我相关':'查看全部来源';toggle.setAttribute('aria-pressed',String(newsShowAll));}
+  if(at)at.textContent=(newsShowAll?'近30天全部来源':'近7天持仓相关')+' · '+items.length+' 条'+(D.newsCache?.updatedAt?' · 拉取 '+D.newsCache.updatedAt:'');
+  list.replaceChildren();
+  if(!items.length){const empty=document.createElement('p');empty.className='privacy-note';empty.textContent=D.newsCache?.items?.length?'当前缓存没有符合持仓与时间条件的新闻。可刷新资讯，或查看全部来源；不会用泛社会新闻补满。':'尚无资讯缓存，点击「刷新资讯」获取公开财经与央行公告。';list.append(empty);return;}
+  for(const it of items){const link=document.createElement('a');link.className='news-item';link.href=it.link;link.target='_blank';link.rel='noopener noreferrer';
+    const title=document.createElement('strong');title.className='news-item-title';title.textContent=it.titleZh||it.title;link.append(title);
+    if(it.titleZh&&it.titleZh!==it.title){const original=document.createElement('p');original.className='news-item-meta';original.textContent=it.title;link.append(original);}
+    for(const [text,cls] of [[it.reasons.length?'与你相关：'+it.reasons.join('；'):'未匹配当前持仓（全部来源）','news-relevance'],[(it.source||'公开来源')+' · '+it.date,'news-item-meta'],[it.descZh||it.desc||'','news-item-desc']]){if(!text)continue;const line=document.createElement('p');line.className=cls;line.textContent=text;link.append(line);}list.append(link);
   }
-  if(atEl)atEl.textContent='· 更新 '+c.updatedAt;
-  listEl.innerHTML=c.items.map(it=>{
-    const sc=it.score>0?`<span class="news-item-score">相关 ${it.score}</span>`:'';
-    const href=escNews(it.link);
-    const zhTitle=it.titleZh?`<div class="news-item-zh" lang="zh-CN">译：${escNews(it.titleZh)}</div>`:'';
-    const zhDesc=it.descZh?`<div class="news-item-zh muted" lang="zh-CN">摘要译：${escNews(it.descZh)}</div>`:'';
-    return`<a class="news-item" href="${href}" target="_blank" rel="noopener noreferrer">
-      <div class="news-item-hd"><span class="news-item-title" ${it.titleZh?'lang="en"':''}>${escNews(it.title)}</span>${sc}</div>
-      ${zhTitle}
-      <div class="news-item-meta">${escNews(it.source)} · ${escNews(it.pub)}</div>
-      ${it.desc?`<div class="news-item-desc" ${it.descZh?'lang="en"':''}>${escNews(it.desc)}</div>`:''}
-      ${zhDesc}
-    </a>`;
-  }).join('');
 }
 function renderNewsPage(){
   const pr=buildAssetNewsProfile();
@@ -3516,7 +3473,7 @@ function parseNavigationHash(hash){
   return {page,tab,hash:'#/'+page+(tab?'/'+tab:'')};
 }
 function rememberNavigationScroll(){
-  if(navigationCurrent)navigationScroll.set(navigationCurrent,document.querySelector('.main')?.scrollTop||0);
+  if(navigationCurrent)navigationScroll.set(navigationCurrent,document.querySelector('.main')?.scrollTop||document.scrollingElement?.scrollTop||0);
 }
 function commitNavigation(page,tab,scrollRemembered=false){
   if(!navigationReady||navigationApplying)return;
@@ -3524,7 +3481,7 @@ function commitNavigation(page,tab,scrollRemembered=false){
   if(route.hash===navigationCurrent)return;
   if(!scrollRemembered)rememberNavigationScroll();
   history.pushState(null,'',route.hash);navigationCurrent=route.hash;
-  document.querySelector('.main')?.scrollTo({top:0,behavior:'auto'});
+  document.querySelector('.main')?.scrollTo({top:0,behavior:'auto'});window.scrollTo?.({top:0,behavior:'auto'});
 }
 function applyNavigation(){
   const route=parseNavigationHash(location.hash);
@@ -3533,7 +3490,7 @@ function applyNavigation(){
   rememberNavigationScroll();navigationApplying=true;
   try{showPage(route.page,{tab:route.tab});navigationCurrent=route.hash;}
   finally{navigationApplying=false;}
-  document.querySelector('.main')?.scrollTo({top:navigationScroll.get(route.hash)||0,behavior:'auto'});
+  document.querySelector('.main')?.scrollTo({top:navigationScroll.get(route.hash)||0,behavior:'auto'});window.scrollTo?.({top:navigationScroll.get(route.hash)||0,behavior:'auto'});
 }
 function initNavigation(){
   navigationReady=true;
@@ -3726,86 +3683,14 @@ function prepareSanitizedPayload(rawAssets,totalNav){
     };
   }).filter(Boolean);
 }
-function buildSanitizedPortfolio(){
-  const fx=D.fx||{};
-  const cny=totalCNY();
-  const stockPs=D.products.filter(p=>p.type==='stock_us'&&p.ticker);
-  const totalUs=stockPs.reduce((s,p)=>s+(p.currentPrice||0)*(p.shares||0),0);
-  const stocks=stockPs.map((p,i)=>{
-    const val=(p.currentPrice||0)*(p.shares||0);
-    const wt=totalUs>0?val/totalUs*100:0;
-    const pct=p.currentPrice&&p.costPrice?((p.currentPrice-p.costPrice)/p.costPrice*100):null;
-    return {
-      code:`标的${String.fromCharCode(65+i)}`,
-      assetClass:'美股',
-      weightPct:wt,
-      pnlPct:pct,
-      hasStopLoss:p.stopLoss!=null&&isFinite(Number(p.stopLoss))&&Number(p.stopLoss)>0,
-      notionalUsd:aiRoundWan(val)
-    };
-  });
-  const golds=D.products.filter(p=>p.type==='gold').map((p,i)=>{
-    const gp=p.goldPrice||0,gc=p.goldCost||0,grams=p.grams||0;
-    const val=grams*gp;
-    return {
-      code:`黄金${String.fromCharCode(65+i)}`,
-      gramsBucket:grams>=100?'100克以上':grams>=50?'50–100克':'50克以下',
-      pnlPct:gc>0&&gp?((gp-gc)/gc*100):null,
-      notionalCny:aiRoundWan(val)
-    };
-  });
-  const funds=D.products.filter(p=>p.type==='fund_cn').map((p,i)=>({
-    code:`基金${String.fromCharCode(65+i)}`,
-    notionalCny:aiRoundWan(toCNY((p.fundPrice||0)*(p.fundShares||0),p.fundCurrency||'CNY')),
-    pnlPct:p.fundCost>0&&p.fundPrice?((p.fundPrice-p.fundCost)/p.fundCost*100):null
-  }));
-  const tds=D.products.filter(p=>p.type==='term_deposit').map((p,i)=>{
-    const end=p.tdContractEnd||p.tdEnd;
-    const days=end?Math.round((new Date(end+'T12:00:00')-new Date())/86400000):null;
-    return {
-      code:`定存${String.fromCharCode(65+i)}`,
-      currency:p.tdCur||p.currency||'AUD',
-      principalBucket:aiBucketAmt(toCNY(p.principal||0,p.tdCur||p.currency||'AUD')),
-      ratePct:p.rate||0,
-      daysToMaturity:days
-    };
-  });
-  const snaps=[...(D.navHistory||[])].filter(n=>n&&n.date&&n.cny!=null).sort((a,b)=>a.date.localeCompare(b.date));
-  const navTrend=snaps.slice(-5).map(s=>`${s.date} ${aiBucketAmt(Number(s.cny))}`).join(' → ');
-  const usPct=cny>0?totalCNY('us')/cny*100:0;
-  const auPct=cny>0?totalCNY('au')/cny*100:0;
-  const cnPct=cny>0?totalCNY('cn')/cny*100:0;
-  const goalAmt=D.goal?.amount||0;
-  const goalPct=goalAmt>0?(cny/goalAmt*100):null;
-  const payload=prepareSanitizedPayload(buildRawAssetsFromProducts(),cny);
-  const lines=[
-    `总净值（脱敏）：${aiBucketAmt(cny)}（CNY 口径，精确值已模糊）`,
-    `汇率快照：USD/CNY=${fx.USD||'—'} · AUD/CNY=${fx.AUD||'—'}`,
-    `区域配置：中国 ${aiBucketPct(cnPct)} · 美国 ${aiBucketPct(usPct)} · 澳洲 ${aiBucketPct(auPct)}`,
-    goalAmt>0?`财富目标：${aiBucketAmt(goalAmt)} · 进度 ${goalPct!=null?goalPct.toFixed(0)+'%':'—'}`:'财富目标：未设定',
-    '',
-    '【美股持仓（代号化）】',
-    stocks.length?stocks.map(s=>`${s.code} · ${s.assetClass} · 仓位${s.weightPct.toFixed(0)}% · 盈亏${s.pnlPct!=null?(s.pnlPct>=0?'+':'')+s.pnlPct.toFixed(1)+'%':'—'} · 名义约$${(s.notionalUsd/10000).toFixed(0)}万 · 止损${s.hasStopLoss?'已设':'未设'}`).join('\n'):'无',
-    '',
-    '【黄金】',
-    golds.length?golds.map(g=>`${g.code} · ${g.gramsBucket} · 盈亏${g.pnlPct!=null?g.pnlPct.toFixed(1)+'%':'—'} · ${aiBucketAmt(g.notionalCny)}`).join('\n'):'无',
-    '',
-    '【基金】',
-    funds.length?funds.map(f=>`${f.code} · ${aiBucketAmt(f.notionalCny)} · 盈亏${f.pnlPct!=null?f.pnlPct.toFixed(1)+'%':'—'}`).join('\n'):'无',
-    '',
-    '【定存】',
-    tds.length?tds.map(t=>`${t.code} · ${t.currency} · ${t.principalBucket} · ${t.ratePct}%p.a. · 距到期${t.daysToMaturity!=null?t.daysToMaturity+'天':'—'}`).join('\n'):'无',
-    '',
-    `【NAV 趋势（近5条，脱敏）】${navTrend||'无'}`,
-    '',
-    '【资产占比矩阵（脱敏 JSON）】',
-    payload.length?payload.map(p=>`${p.market}·${p.asset_type}·${p.currency} · 占比${p.allocation_percentage}%（${p.allocation_bucket}）· 名义${aiBucketAmt(p.notional_cny_blurred)} · ${p.status}`).join('\n'):'无'
-  ];
-  return lines.join('\n');
-}
 function getSanitizedPortfolioPayload(){
-  const cny=totalCNY();
-  return prepareSanitizedPayload(buildRawAssetsFromProducts(),cny);
+  const rows=currentIntelligenceRows(),known=WealthMath.sum(rows.filter(row=>row.valuation.complete).map(row=>row.valuation.cny));
+  return rows.filter(row=>!row.valuation.complete||row.valuation.cny>0).map((row,index)=>({code:'资产'+(index+1),market:row.region,asset_type:row.type,currency:row.valuation.currency||row.product.currency||row.product.tdCur||row.product.fundCurrency||'未知',allocation_percentage:row.valuation.complete&&known>0?Math.round(row.valuation.cny/known*1000)/10:null,status:!row.valuation.complete?'INCOMPLETE_VALUATION':row.valuation.estimated?'ESTIMATED':'VALUED'}));
+}
+function buildSanitizedPortfolio(){
+  const state=valuationStatus(),rows=getSanitizedPortfolioPayload();
+  const report=WealthMath.performance(D.performanceTracking,D.cashFlows||[],state.knownCny,today(),state.complete,D.movementLog||[]);
+  return ['日期：'+today(),'【当前持仓概况（只含代号、计价币种与占比）】','占比口径：'+(state.complete?'全账本估值':'仅已知部分估值，不能代表全部资产')+'；账户所在地不是底层币种，基金未穿透。',...rows.map(row=>row.code+' · '+row.asset_type+' · '+row.currency+' · 占比 '+(row.allocation_percentage===null?'未知':row.allocation_percentage+'%')+' · '+row.status),'【收益核算】'+(report.available?'资金调整后盈亏方向：'+(report.profit>0?'正':report.profit<0?'负':'持平')+'；年化 XIRR：'+(report.annualized.rate===null?'暂不能判断':(report.annualized.rate*100).toFixed(1)+'%'):'暂不可用：'+report.reason),'未提供完整行情序列、日常开支和生活费预算；不能判断价格趋势或现金可支撑月数。','账户名、产品名、代码、精确余额、用途、原始流水与备注不在本摘要中。'].join('\n');
 }
 function describeProductForAi(p){
   if(!p)return null;
@@ -3930,6 +3815,7 @@ function buildFullPortfolioText(){
 function buildAiPortfolioContext(){
   return[
     buildSanitizedPortfolio(),
+    buildRiskEvidenceContext(),
     '',
     '═══════════════════════════════════════',
     '【大事件日历 + 持仓相关新闻 RSS】',
@@ -3951,196 +3837,36 @@ async function postAiAdvisor(body){
   return r;
 }
 
-function runAiAdvisor(){
-  const result=document.getElementById('ai-advisor-result');
-  const el=document.getElementById('ai-diagnosis-output');
-  if(!result||!el)return;
-  resetAiChat();
-  result.style.display='block';
-  updateCopilotWealthEmpty();
-  const fx=D.fx||{};
-  const cny=totalCNY();
-  const stocks=D.products.filter(p=>p.type==='stock_us'&&p.ticker&&p.currentPrice>0&&p.costPrice>0);
-  const golds=D.products.filter(p=>p.type==='gold'&&p.goldPrice>0);
-  const tds=D.products.filter(p=>p.type==='term_deposit');
-  const goal=D.goal;
-  const snaps=[...(D.navHistory||[])].filter(n=>n&&n.date&&n.cny!=null&&!isNaN(Number(n.cny))).sort((a,b)=>a.date.localeCompare(b.date));
-  const sections=[];
-  if(cny<=0){
-    el.innerHTML='<div style="font-size:13px;color:var(--text3);line-height:1.7">暂无有效净值数据，请先添加资产。</div>';
-    updateCopilotWealthEmpty();
-    return;
-  }
-  const stockLines=[];
-  stocks.forEach(p=>{
-    const T=escOvHtml(String(p.ticker||'').trim().toUpperCase());
-    const pct=(p.currentPrice-p.costPrice)/p.costPrice*100;
-    const val=p.currentPrice*(p.shares||0);
-    if(pct>50)stockLines.push(`⚠️ <b>${T}</b> 已盈利 <b style="color:var(--green)">${pct.toFixed(1)}%</b>（$${val.toFixed(0)}），浮盈较大，可考虑分批止盈或上移止损线保护利润`);
-    else if(pct>20)stockLines.push(`✅ <b>${T}</b> 盈利 <b style="color:var(--green)">${pct.toFixed(1)}%</b>，趋势良好，继续持有观察`);
-    else if(pct<-10)stockLines.push(`🔴 <b>${T}</b> 亏损 <b style="color:var(--red)">${Math.abs(pct).toFixed(1)}%</b>，留意止损位，评估是否补仓或减仓`);
-    else if(pct<0)stockLines.push(`🟡 <b>${T}</b> 小幅亏损 <b style="color:var(--red)">${Math.abs(pct).toFixed(1)}%</b>，暂在成本附近震荡`);
-    else stockLines.push(`📊 <b>${T}</b> 盈利 ${pct.toFixed(1)}%，持仓正常`);
-    const sl=p.stopLoss!=null&&isFinite(Number(p.stopLoss))?Number(p.stopLoss):null;
-    if(sl!=null&&sl>0&&p.currentPrice>0){
-      const distStop=(p.currentPrice-sl)/p.currentPrice*100;
-      if(distStop<5)stockLines.push(`🚨 <b>${T}</b> 现价 $${p.currentPrice.toFixed(2)} 距止损 $${sl.toFixed(2)} 仅剩 <b style="color:var(--red)">${distStop.toFixed(1)}%</b>，请高度关注！`);
-    }
-  });
-  if(stockLines.length)sections.push({title:'📈 美股持仓分析',lines:stockLines});
-  const concLines=[];
-  const totalUs=stocks.reduce((s,p)=>s+(p.currentPrice||0)*(p.shares||0),0);
-  if(totalUs>0){
-    stocks.forEach(p=>{
-      const wt=(p.currentPrice*p.shares)/totalUs*100;
-      if(wt>45)concLines.push(`⚠️ <b>${escOvHtml(String(p.ticker||'').trim().toUpperCase())}</b> 占美股仓位 <b>${wt.toFixed(1)}%</b>，单一标的集中度偏高`);
-    });
-  }
-  const usAuPct=(totalCNY('us')+totalCNY('au'))/cny*100;
-  if(usAuPct>65){
-    const uRate=Number(fx.USD)>0?Number(fx.USD):7.25;
-    const usdExposure=totalCNY('us')/uRate;
-    const deltaApprox=Math.round(usdExposure*0.1);
-    concLines.push(`💱 美+澳资产占总净值 <b>${usAuPct.toFixed(1)}%</b>，汇率波动对净值影响较大。USD/CNY 每变动 0.1，美股美元仓位约影响净值 <b>¥${deltaApprox.toLocaleString('zh-CN')}</b>（粗略估算）`);
-  }
-  if(concLines.length)sections.push({title:'⚖️ 集中度与汇率风险',lines:concLines});
-  if(golds.length){
-    const goldLines=[];
-    golds.forEach(p=>{
-      const cost=p.goldCost||0,price=p.goldPrice||0,grams=p.grams||0;
-      const pct=cost>0?(price-cost)/cost*100:0;
-      const goldVal=grams*price;
-      const goldPct=cny>0?goldVal/cny*100:0;
-      const nm=escOvHtml(p.name||'黄金积存');
-      if(cost>0&&pct>25)goldLines.push(`🥇 <b>${nm}</b> 黄金积存盈利 <b style="color:var(--green)">${pct.toFixed(1)}%</b>，占总净值 ${goldPct.toFixed(1)}%。黄金已处历史高位区间，可适量减持锁定收益`);
-      else goldLines.push(`🥇 <b>${nm}</b> 黄金积存${cost>0?`盈利 <b>${pct.toFixed(1)}%</b>`:'暂无成本价'}，作为抗通胀配置可继续持有`);
-    });
-    sections.push({title:'🏅 黄金配置',lines:goldLines});
-  }
-  if(tds.length){
-    const tdLines=[];
-    const now=new Date();
-    tds.forEach(p=>{
-      const end=p.tdContractEnd||p.tdEnd;
-      if(!end)return;
-      const days=Math.round((new Date(end+'T12:00:00')-now)/86400000);
-      const nm=escOvHtml(p.name||'定期');
-      if(days<=30)tdLines.push(`🚨 <b>${nm}</b> 还有 <b style="color:var(--red)">${days} 天</b>到期，请提前考虑续存或转投`);
-      else if(days<=90)tdLines.push(`📅 <b>${nm}</b> 还有 <b>${days} 天</b>到期（${escOvHtml(String(end))}），${p.rate||0}% p.a.`);
-    });
-    if(tdLines.length)sections.push({title:'🏦 定存到期提醒',lines:tdLines});
-  }
-  if(goal&&goal.amount>0){
-    const goalLines=[];
-    const pct=cny/goal.amount*100;
-    const remaining=goal.amount-cny;
-    if(pct>=100)goalLines.push(`🎉 已达成目标 ¥${Number(goal.amount).toLocaleString('zh-CN')}！可考虑上调目标或优化资产结构`);
-    else if(pct>=95)goalLines.push(`🏁 距目标仅差 <b>¥${Math.round(remaining).toLocaleString('zh-CN')}</b>（${(100-pct).toFixed(1)}%），预计本月可达成`);
-    else if(snaps.length>=2){
-      const oldest=snaps[0],newest=snaps[snaps.length-1];
-      const days=Math.max(1,(new Date(newest.date+'T12:00:00')-new Date(oldest.date+'T12:00:00'))/86400000);
-      const growthPerDay=(Number(newest.cny)-Number(oldest.cny))/days;
-      if(growthPerDay>0&&remaining>0){
-        const daysLeft=Math.ceil(remaining/growthPerDay);
-        const eta=new Date(Date.now()+daysLeft*86400000);
-        goalLines.push(`🎯 目标进度 <b>${pct.toFixed(1)}%</b>，差 ¥${Math.round(remaining).toLocaleString('zh-CN')}。按近期日均增长 ¥${Math.round(growthPerDay).toLocaleString('zh-CN')} 估算，预计 <b>${eta.getFullYear()}年${eta.getMonth()+1}月</b>达成`);
-      }else goalLines.push(`🎯 目标进度 <b>${pct.toFixed(1)}%</b>，近期净值有所回落或增速不足，请关注持仓变化`);
-    }else goalLines.push(`🎯 目标进度 <b>${pct.toFixed(1)}%</b>，还差 ¥${Math.round(remaining).toLocaleString('zh-CN')}（快照≥2条后可估算达成时间）`);
-    sections.push({title:'🏆 目标达成分析',lines:goalLines});
-  }
-  const liqLines=[];
-  const cashCny=D.products.filter(p=>p.type==='cash').reduce((s,p)=>s+toCNY(p.amount||0,p.currency||'CNY'),0);
-  const cashPct=cashCny/cny*100;
-  if(cashPct<10)liqLines.push(`⚠️ 活期现金占比仅 <b>${cashPct.toFixed(1)}%</b>（¥${Math.round(cashCny).toLocaleString('zh-CN')}），流动性偏低，建议保留至少 3-6 个月生活费的现金`);
-  else if(cashPct>30)liqLines.push(`💡 活期现金占比 <b>${cashPct.toFixed(1)}%</b>，略显偏高，可考虑将部分转入定存或低风险理财以提高收益`);
-  else liqLines.push(`✅ 活期现金占比 ${cashPct.toFixed(1)}%，流动性配置合理`);
-  sections.push({title:'💧 流动性评估',lines:liqLines});
-  const ts=new Date().toLocaleString('zh-CN');
-  const aiHasStop=p=>{
-    const sl=p.stopLoss;
-    return sl!=null&&sl!==''&&isFinite(Number(sl))&&Number(sl)>0;
-  };
-  const summaryHtml=[];
-  let score=70;
-  const stockPnlPcts=stocks.map(p=>(p.currentPrice-p.costPrice)/p.costPrice*100);
-  const avgStockPnl=stockPnlPcts.length?stockPnlPcts.reduce((a,b)=>a+b,0)/stockPnlPcts.length:0;
-  if(stocks.length){
-    if(avgStockPnl>20)score+=10;
-    else if(avgStockPnl<-5)score-=10;
-  }
-  const usAuPct2=(totalCNY('us')+totalCNY('au'))/cny*100;
-  if(usAuPct2>70)score-=5;
-  if(goal&&goal.amount>0){
-    const gPct=cny/goal.amount*100;
-    if(gPct>=98)score+=10;
-    else if(gPct>=90)score+=5;
-  }
-  const noStopLoss=stocks.filter(p=>!aiHasStop(p)&&(p.currentPrice-p.costPrice)/p.costPrice*100>20);
-  if(noStopLoss.length)score-=5*noStopLoss.length;
-  score=Math.max(0,Math.min(100,score));
-  const scoreColor=score>=80?'var(--green)':score>=60?'var(--gold)':'var(--red)';
-  const scoreLabel=score>=85?'优秀':score>=75?'良好':score>=60?'中等':'需关注';
-  const risks=[];
-  if(noStopLoss.length)risks.push(`${noStopLoss.map(p=>escOvHtml(String(p.ticker||'').trim().toUpperCase())).join('、')} 无止损保护（盈利超20%但未设止损）`);
-  if(usAuPct2>68)risks.push(`美+澳资产占 ${usAuPct2.toFixed(0)}%，汇率风险集中`);
-  const bigLosers=stocks.filter(p=>(p.currentPrice-p.costPrice)/p.costPrice*100<-5);
-  if(bigLosers.length)risks.push(`${bigLosers.map(p=>escOvHtml(String(p.ticker||'').trim().toUpperCase())).join('、')} 持续亏损，需关注基本面`);
-  if(!risks.length)risks.push('暂无明显风险，继续保持');
-  const risksShow=risks.slice(0,3);
-  const actions=[];
-  const nvda=stocks.find(p=>String(p.ticker||'').trim().toUpperCase()==='NVDA');
-  if(nvda){
-    const np=(nvda.currentPrice-nvda.costPrice)/nvda.costPrice*100;
-    if(np>50&&!aiHasStop(nvda))actions.push(`🔴 <b>最优先</b>：NVDA 已盈利 ${np.toFixed(0)}%，建议立即设置移动止损或止盈价，保护 $${Math.round((nvda.currentPrice-nvda.costPrice)*(nvda.shares||0))} 浮盈`);
-  }
-  if(goal&&goal.amount>0&&cny/goal.amount>=0.97&&cny<goal.amount){
-    actions.push(`🟡 <b>目标冲刺</b>：距¥${Number(goal.amount).toLocaleString('zh-CN')}目标仅差 ¥${Math.round(goal.amount-cny).toLocaleString('zh-CN')}，可考虑减少不必要支出加速达成`);
-  }
-  if(bigLosers.length){
-    actions.push(`🟡 <b>止损评估</b>：${bigLosers.map(p=>escOvHtml(String(p.ticker||'').trim().toUpperCase())).join('、')} 处于亏损，建议设定最大亏损容忍位（如 -15%）作为强制止损线`);
-  }
-  if(usAuPct2>65){
-    actions.push(`🟢 <b>长期优化</b>：美澳资产占比 ${usAuPct2.toFixed(0)}%，人民币升值时净值会承压，可逐步增加境内优质资产比例至 35% 以上`);
-  }
-  const topActions=actions.slice(0,3);
-  summaryHtml.push(`
-<div style="background:linear-gradient(135deg,rgba(16,185,129,.06),rgba(10,15,13,.9));border:1.5px solid rgba(16,185,129,.22);border-radius:var(--r);padding:18px 20px;margin-bottom:16px">
-  <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;flex-wrap:wrap">
-    <div style="text-align:center;flex-shrink:0">
-      <div class="ai-pb-score-ring" style="color:${scoreColor}">${score}</div>
-      <div style="font-size:10px;color:rgba(167,243,208,.5);font-family:var(--mono);margin-top:2px">组合健康度</div>
-      <div style="font-size:12px;font-weight:600;color:${scoreColor}">${scoreLabel}</div>
-    </div>
-    <div style="flex:1;min-width:200px">
-      <div style="height:8px;background:rgba(16,185,129,.12);border-radius:999px;overflow:hidden;margin-bottom:8px">
-        <div style="height:100%;width:${score}%;background:${scoreColor};border-radius:999px;transition:width .6s ease"></div>
-      </div>
-      <div style="font-size:12px;color:#a7f3d0;line-height:1.6">
-        美股平均盈亏 <b style="color:${avgStockPnl>=0?'#34d399':'#f87171'}">${stocks.length?(avgStockPnl>=0?'+':'')+avgStockPnl.toFixed(1)+'%':'—'}</b> ·
-        美+澳占比 <b>${usAuPct2.toFixed(0)}%</b> ·
-        目标进度 <b style="color:#6ee7b7">${goal&&goal.amount>0?(cny/goal.amount*100).toFixed(1)+'%':'未设'}</b>
-      </div>
-    </div>
-  </div>
-  <div style="margin-bottom:14px">
-    <div style="font-size:11px;font-weight:700;color:rgba(167,243,208,.55);font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px">⚡ 主要风险</div>
-    ${risksShow.map(r=>`<div style="font-size:12px;color:#d1fae5;line-height:1.6;padding:3px 0;border-bottom:1px dashed rgba(16,185,129,.15)">• ${r}</div>`).join('')}
-  </div>
-  <div>
-    <div style="font-size:11px;font-weight:700;color:rgba(167,243,208,.55);font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px">🎯 优先行动清单</div>
-    ${topActions.length?topActions.map((a,i)=>`<div style="font-size:13px;color:#ecfdf5;line-height:1.7;margin-bottom:6px;padding:8px 12px;background:rgba(16,185,129,.06);border-radius:var(--r-sm);border-left:3px solid ${i===0?'#f87171':i===1?'#fbbf24':'#34d399'}">${a}</div>`).join(''):`<div style="font-size:13px;color:rgba(167,243,208,.5);line-height:1.7;padding:8px 12px;background:rgba(16,185,129,.04);border-radius:var(--r-sm)">暂无需额外优先行动，保持观察即可。</div>`}
-  </div>
-</div>`);
-  const sectionsHtml=sections.map(s=>`<div style="margin-bottom:18px">
-      <div class="ai-pb-section-title">${s.title}</div>
-      ${s.lines.map(l=>`<div class="ai-pb-body" style="margin-bottom:5px;padding-left:4px">${l}</div>`).join('')}
-    </div>`).join('');
-  el.innerHTML=summaryHtml.join('')+sectionsHtml+
-    `<div class="ai-pb-disclaimer">📊 分析时间：${ts} · 本地规则引擎 · 使用真实持仓 · 仅供参考，不构成投资建议</div>`;
-  updateCopilotWealthEmpty();
-  if(topActions.length) setAiDailyBriefFromText(topActions[0].replace(/<[^>]+>/g,''));
-  else updateTopbarAiSummary(`${scoreLabel} · 健康度 ${score}`);
+function currentIntelligenceRows(){return buildOverviewHoldingRows(D.products,valuationContext(),usManualIdleUsd);}
+function currentRiskReport(){
+  const baseline=new Set(D.performanceTracking?.movementBaselineIds||[]);
+  const pending=(D.movementLog||[]).filter(e=>e.reviewRequired&&!e.reversedAt&&!(e.kind==='trade'&&e.reviewedAt)&&!baseline.has(e.id)).length;
+  const cacheCount=[...stockPriceSourceBySym.entries()].filter(([symbol,meta])=>meta.source==='cache'&&(D.products||[]).some(p=>p.type==='stock_us'&&Number(p.shares)>0&&String(p.ticker||'').toUpperCase()===symbol)).length;
+  return PortfolioIntelligence.riskReport(currentIntelligenceRows(),today(),{pendingChanges:pending,cacheCount});
 }
+function buildRiskEvidenceContext(){
+  const report=currentRiskReport();
+  return ['【本机核对事实：只使用这些依据解释风险，不代表买卖信号】','比例口径：'+(report.missing?'已知部分估值；完整组合比例未知':'当前账本完整估值')+'；未穿透基金底层币种。',...report.items.map(item=>'- '+item.title+'：'+item.evidence+' 可核对事项：'+item.action),'记录资金的用途、账户名称、精确余额和变动日志不在本段发送。'].join('\n');
+}
+let riskExpanded=false;
+function renderOverviewRisk(){
+  const root=document.getElementById('ov-insights');if(!root)return;const report=currentRiskReport();root.replaceChildren();
+  const shown=riskExpanded?report.items:report.items.slice(0,3);
+  for(const item of shown){const card=document.createElement('div');card.className='portfolio-risk '+item.level;const title=document.createElement('strong'),text=document.createElement('p'),action=document.createElement('p');title.textContent=item.title;text.textContent=item.evidence;action.className='risk-action';action.textContent=item.action;card.append(title,text,action);root.append(card);}
+  if(!shown.length){const line=document.createElement('p');line.className='privacy-note';line.textContent='添加有效资产后显示持仓检查；没有触发已检查规则，不代表没有风险。';root.append(line);}
+  if(report.items.length>3){const button=document.createElement('button');button.type='button';button.className='btn btn-ghost btn-sm';button.textContent=riskExpanded?'收起提示':'其余 '+(report.items.length-3)+' 项检查';button.setAttribute('aria-expanded',String(riskExpanded));button.addEventListener('click',()=>{riskExpanded=!riskExpanded;renderOverviewRisk();});root.append(button);}
+}
+function openRiskAnalysis(){openAiModal();const tab=document.querySelector('.ov-copilot-tab[onclick*="wealth"]');if(tab)setCopilotTab('wealth',tab);runAiAdvisor();}
+function runAiAdvisor(){
+  const result=document.getElementById('ai-advisor-result'),el=document.getElementById('ai-diagnosis-output');if(!result||!el)return;
+  resetAiChat();result.style.display='block';el.replaceChildren();
+  const report=currentRiskReport(),header=document.createElement('p');header.className='privacy-note';header.textContent='本地持仓检查 · '+new Date().toLocaleString('zh-CN')+' · 基于账本和报价，不是实时市场预测';el.append(header);
+  for(const item of report.items){const card=document.createElement('section');card.className='portfolio-risk '+item.level;const title=document.createElement('h3'),evidence=document.createElement('p'),action=document.createElement('p');title.textContent=item.title;evidence.textContent='依据：'+item.evidence;action.textContent='下一步：'+item.action;card.append(title,evidence,action);el.append(card);}
+  const note=document.createElement('p');note.className='privacy-note';note.textContent=report.items.length?'可点击「AI 诊断」进一步解释这些事实；AI 不应把净值变动当投资收益，也不会仅因盈利或亏损就判断趋势。':'当前没有足够持仓依据，不生成健康评分或买卖结论。';el.append(note);updateCopilotWealthEmpty();
+}
+function rankedCurrentNews(days=7){return PortfolioIntelligence.rankNews(D.newsCache?.items||[],buildAssetNewsProfile(),today(),days);}
+let newsShowAll=false;
+function toggleNewsScope(){newsShowAll=!newsShowAll;renderNewsPageList();}
 
 let aiChatState={active:false,portfolio:'',provider:'gemini',model:'',messages:[]};
 
@@ -4318,81 +4044,325 @@ let ovEventsFilter='all';
 let ovEventsExpanded=false;
 
 const MACRO_EVENTS_WATCH=[
-  {date:'2026-05-07',title:'FOMC 利率决议',region:'us',cat:'monetary',impact:'high',
-    fact:'联邦基金利率目标区间维持 4.25%–4.50% 不变；声明强调通胀仍高于 2% 目标但继续回落，劳动力市场供需更趋平衡。',
-    expected:'按兵不动→短债与成长股偏利好，美元偏中性；若意外鹰派则美股科技承压、美元走强。',
-    actual:'决议公布当日标普 500 约 +0.6%，纳指跑赢；10Y 美债收益率下行约 4bp，DXY 小幅走弱；市场解读为「偏鸽暂停」。'},
-  {date:'2026-05-12',title:'美国 4 月 CPI 通胀数据',region:'us',cat:'market',impact:'high',
-    fact:'4 月核心 CPI 同比 +3.2%（预期 +3.4%），环比 +0.2%；整体 CPI 同比 +3.1%，能源与住房分项放缓。',
-    expected:'低于预期→降息预期升温，利好美股与黄金，压制美元；高于预期则反向。',
-    actual:'数据公布后标普期货约 +1.0%，黄金日内走强；FedWatch 显示 9 月降息概率升至约 62%；成长板块领涨。'},
-  {date:'2026-05-13',title:'澳大利亚联邦预算案（2026-27）',region:'au',cat:'policy',impact:'high',
-    fact:'预算维持小幅盈余路径，加大基建与医疗支出；个人减税幅度温和，赤字占 GDP 比例略下调。',
-    expected:'扩张性财政→短期 AUD 与本地周期股偏强；若赤字超预期则 AUD 承压、长端收益率上行。',
-    actual:'预算公布后 AUD/USD 日内约 +0.4%；本地银行与基建相关板块相对大盘跑赢；2Y 澳债收益率变动有限。'},
-  {date:'2026-05-31',title:'5 月收官 · 资金再平衡',region:'global',cat:'market',impact:'medium',
-    fact:'5 月最后一个交易日，被动基金与养老金完成月度调仓；VIX 月末较月中略升。',
-    expected:'月末流动性偏紧，指数成分调整带来尾盘波动；美科技股若前期涨幅大易出现获利了结。',
-    actual:'标普 5 月全月约 +2.1%；月末最后两日成交量放大，MAG7 内部出现分化，资金向防御与现金类短暂轮动。'},
-  {date:'2026-06-02',title:'RBA 利率决议',region:'au',cat:'monetary',impact:'high',
-    fact:'现金利率维持 4.10% 不变；声明指出通胀继续缓和但仍需时间回到目标区间，对劳动力市场「仍偏紧」。',
-    expected:'维持→AUD 震荡、定存利率预期稳定；降息则 AUD 走弱、本地资产估值受益。',
-    actual:'决议后 AUD/USD 约 -0.3%；ASX 200 小幅收涨；市场定价 8 月前降息概率约 45%，与决议前变化不大。'},
-  {date:'2026-06-06',title:'美国 5 月非农就业数据',region:'us',cat:'market',impact:'high',
-    fact:'非 farm 新增就业 +14.2 万（预期 +16 万），失业率 4.0%；平均时薪同比 +3.8%，劳动参与率持平。',
-    expected:'就业降温→支撑降息叙事，利好债券与成长股；超预期强劲则推迟降息、美元反弹。',
-    actual:'公布后 2Y 美债收益率约 -6bp，标普日内 +0.5%；美元对一篮子货币走弱；科技 vs 金融板块轮动加剧。'},
-  {date:'2026-06-10',title:'美国 5 月 CPI 通胀数据',region:'us',cat:'market',impact:'high',
-    fact:'BLS 美东 6/10 08:30 公布：5 月 CPI 季调环比 +0.5%（4 月 +0.6%），未季调同比 +4.2%；核心 CPI 同比 +3.1%。',
-    expected:'高于预期→收益率与美元偏强，高估值美股承压；低于预期则相反。为 6/17 FOMC 前最后一次关键通胀读数。',
-    actual:'整体 CPI 同比 +4.2%、核心 +3.1%；环比 +0.5% 仍偏热，市场关注 6/17 FOMC 措辞。'},
-  {date:'2026-06-10',title:'中国 5 月 CPI / PPI 数据',region:'cn',cat:'market',impact:'high',
-    fact:'国家统计局 6/10 09:30：5 月 CPI 同比 +1.2%、环比 -0.1%；核心 CPI +1.1%。PPI 同比 +3.9%、环比 +0.5%。',
-    expected:'CPI 温和、PPI 回升→政策仍有空间但上游成本传导需关注；影响 A 股/港股情绪与人民币资产。',
-    actual:'CPI +1.2% 总体平稳，PPI +3.9% 为 2022 年 8 月以来同比新高，上游价格压力仍存。'},
-  {date:'2026-06-11',title:'美国 5 月 PPI 生产者价格指数',region:'us',cat:'market',impact:'high',
-    fact:'BLS 美东 6/11 08:30 公布 5 月 PPI（非 CPI，但同为关键通胀前瞻）。',
-    expected:'PPI 偏强→下游 CPI 粘性担忧、收益率上行；偏弱则缓解 Fed 鹰派压力。'},
-  {date:'2026-06-17',title:'FOMC 利率决议',region:'us',cat:'monetary',impact:'high',
-    expected:'公布利率决定、经济预测摘要（SEP）与鲍威尔发布会；点阵图将定调下半年降息次数预期，直接影响美元、美债与美股估值。'},
-  {date:'2026-06-30',title:'二季度末 · 机构再平衡窗口',region:'global',cat:'market',impact:'medium',
-    expected:'季末指数调仓、基金窗口期与流动性季节性收紧；半年度收官或放大波动，注意美股末日期权到期（6/27）。'},
-  {date:'2026-07-14',title:'美国 6 月 CPI 通胀数据',region:'us',cat:'market',impact:'high',
-    expected:'核心通胀走势决定 Fed 是否开启降息周期；低于预期利好美债与成长股，高于预期则美元与短端利率反弹。'},
-  {date:'2026-07-29',title:'FOMC 利率决议',region:'us',cat:'monetary',impact:'high',
-    expected:'关注声明对「双重使命」权衡的措辞；若释放 9 月降息信号，Risk-on 资产或迎来新一轮行情。'},
-  {date:'2026-08-21',title:'杰克逊霍尔全球央行年会',region:'global',cat:'monetary',impact:'high',
-    expected:'鲍威尔主题演讲往往定调全球货币政策方向；2018–2024 年该窗口平均 VIX 上升，需防范波动率跳升。'},
-  {date:'2026-09-02',title:'RBA 利率决议',region:'au',cat:'monetary',impact:'high',
-    expected:'若启动降息周期，AUD 承压但本地股票与定存再定价；与你的 AUD 定存/现金敞口直接相关。'},
-  {date:'2026-09-17',title:'FOMC 利率决议',region:'us',cat:'monetary',impact:'high',
-    expected:'秋季关键议息，劳动力市场与通胀数据将决定点阵图是否下修；影响美股仓位与美元汇率敞口。'},
-  {date:'2026-10-15',title:'美国 CPI 通胀数据',region:'us',cat:'market',impact:'high',
-    expected:'大选前最后几份关键通胀数据之一；读数偏离预期易引发单日 ±1% 以上的指数波动。'},
-  {date:'2026-11-03',title:'美国中期选举',region:'us',cat:'policy',impact:'high',
-    expected:'国会控制权变化影响财税、监管与财政支出；历史统计显示选举前后 2 周波动率高于年均约 20%。'},
-  {date:'2026-11-05',title:'FOMC 利率决议',region:'us',cat:'monetary',impact:'high',
-    expected:'选举后首场 FOMC，政治不确定性下降但政策路径或调整；关注鲍威尔对财政政策的评论。'},
-  {date:'2026-12-09',title:'FOMC 年终利率决议',region:'us',cat:'monetary',impact:'high',
-    expected:'全年收官议息 + 新点阵图，定调来年降息幅度；年末流动性收紧或放大跨资产波动。'},
-  {date:'2027-01-01',title:'新年度 · 资产配置窗口',region:'global',cat:'market',impact:'medium',
-    expected:'新税年/年度目标检视窗口；适合再平衡区域配置、确认流动性缓冲与定存续存计划。'},
-  {date:'2027-01-26',title:'澳洲联邦大选（预计窗口）',region:'au',cat:'policy',impact:'high',
-    expected:'选举结果影响 AUD、移民与住房政策；若政权更迭，本地银行与基建板块或出现政策溢价重估。'},
-  {date:'2027-02-04',title:'RBA 利率决议',region:'au',cat:'monetary',impact:'high',
-    expected:'年初首场 RBA，定存续存利率与 AUD 走势的关键参考；结合大选后财政立场一并评估。'},
-  {date:'2027-03-05',title:'中国全国两会',region:'cn',cat:'policy',impact:'high',
-    expected:'GDP 目标、赤字率与产业/地产政策定调；直接影响 A 股/港股情绪与人民币资产配比。'},
-  {date:'2027-03-17',title:'FOMC 利率决议',region:'us',cat:'monetary',impact:'high',
-    expected:'春季议息，评估银行信贷条件；若经济软着陆确认，美股或延续盈利驱动行情。'},
-  {date:'2027-04-15',title:'美国个税申报截止日',region:'us',cat:'market',impact:'medium',
-    expected:'补税现金流冲击约数百亿美元量级；历史上截止日前后 1 周消费与金融板块偶有异常波动。'},
-  {date:'2027-05-11',title:'澳大利亚联邦预算案（预计）',region:'au',cat:'policy',impact:'high',
-    expected:'新财年预算决定税收与支出结构；影响 AUD、本地利率与定存产品定价。'},
-  {date:'2027-05-05',title:'RBA 利率决议',region:'au',cat:'monetary',impact:'high',
-    expected:'预算季后的利率路径沟通；与定存到期、AUD 敞口再配置高度相关。'},
-  {date:'2027-06-08',title:'FOMC 利率决议',region:'us',cat:'monetary',impact:'high',
-    expected:'年中议息，总结上半年通胀回落与就业韧性；为下半年资产配置定调。'}
+  {
+    "date": "2026-10-28",
+    "title": "FOMC 利率决议",
+    "region": "us",
+    "cat": "monetary",
+    "impact": "high",
+    "source": "美联储官方日程",
+    "sourceUrl": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm",
+    "checkedAt": "2026-10-18",
+    "scheduleOnly": true
+  },
+  {
+    "date": "2026-12-09",
+    "title": "FOMC 利率决议",
+    "region": "us",
+    "cat": "monetary",
+    "impact": "high",
+    "source": "美联储官方日程",
+    "sourceUrl": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm",
+    "checkedAt": "2026-10-18",
+    "scheduleOnly": true
+  },
+  {
+    "date": "2027-01-27",
+    "title": "FOMC 利率决议",
+    "region": "us",
+    "cat": "monetary",
+    "impact": "high",
+    "source": "美联储官方日程",
+    "sourceUrl": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm",
+    "checkedAt": "2026-10-18",
+    "scheduleOnly": true
+  },
+  {
+    "date": "2027-03-17",
+    "title": "FOMC 利率决议",
+    "region": "us",
+    "cat": "monetary",
+    "impact": "high",
+    "source": "美联储官方日程",
+    "sourceUrl": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm",
+    "checkedAt": "2026-10-18",
+    "scheduleOnly": true
+  },
+  {
+    "date": "2027-04-28",
+    "title": "FOMC 利率决议",
+    "region": "us",
+    "cat": "monetary",
+    "impact": "high",
+    "source": "美联储官方日程",
+    "sourceUrl": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm",
+    "checkedAt": "2026-10-18",
+    "scheduleOnly": true
+  },
+  {
+    "date": "2027-06-09",
+    "title": "FOMC 利率决议",
+    "region": "us",
+    "cat": "monetary",
+    "impact": "high",
+    "source": "美联储官方日程",
+    "sourceUrl": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm",
+    "checkedAt": "2026-10-18",
+    "scheduleOnly": true
+  },
+  {
+    "date": "2027-07-28",
+    "title": "FOMC 利率决议",
+    "region": "us",
+    "cat": "monetary",
+    "impact": "high",
+    "source": "美联储官方日程",
+    "sourceUrl": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm",
+    "checkedAt": "2026-10-18",
+    "scheduleOnly": true
+  },
+  {
+    "date": "2027-09-15",
+    "title": "FOMC 利率决议",
+    "region": "us",
+    "cat": "monetary",
+    "impact": "high",
+    "source": "美联储官方日程",
+    "sourceUrl": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm",
+    "checkedAt": "2026-10-18",
+    "scheduleOnly": true
+  },
+  {
+    "date": "2026-11-03",
+    "title": "RBA 利率决议",
+    "region": "au",
+    "cat": "monetary",
+    "impact": "high",
+    "source": "澳洲联储官方日程",
+    "sourceUrl": "https://www.rba.gov.au/schedules-events/board-meeting-schedules.html",
+    "checkedAt": "2026-10-18",
+    "scheduleOnly": true
+  },
+  {
+    "date": "2026-12-08",
+    "title": "RBA 利率决议",
+    "region": "au",
+    "cat": "monetary",
+    "impact": "high",
+    "source": "澳洲联储官方日程",
+    "sourceUrl": "https://www.rba.gov.au/schedules-events/board-meeting-schedules.html",
+    "checkedAt": "2026-10-18",
+    "scheduleOnly": true
+  },
+  {
+    "date": "2027-02-09",
+    "title": "RBA 利率决议",
+    "region": "au",
+    "cat": "monetary",
+    "impact": "high",
+    "source": "澳洲联储官方日程",
+    "sourceUrl": "https://www.rba.gov.au/schedules-events/board-meeting-schedules.html",
+    "checkedAt": "2026-10-18",
+    "scheduleOnly": true
+  },
+  {
+    "date": "2027-03-23",
+    "title": "RBA 利率决议",
+    "region": "au",
+    "cat": "monetary",
+    "impact": "high",
+    "source": "澳洲联储官方日程",
+    "sourceUrl": "https://www.rba.gov.au/schedules-events/board-meeting-schedules.html",
+    "checkedAt": "2026-10-18",
+    "scheduleOnly": true
+  },
+  {
+    "date": "2027-05-04",
+    "title": "RBA 利率决议",
+    "region": "au",
+    "cat": "monetary",
+    "impact": "high",
+    "source": "澳洲联储官方日程",
+    "sourceUrl": "https://www.rba.gov.au/schedules-events/board-meeting-schedules.html",
+    "checkedAt": "2026-10-18",
+    "scheduleOnly": true
+  },
+  {
+    "date": "2027-06-22",
+    "title": "RBA 利率决议",
+    "region": "au",
+    "cat": "monetary",
+    "impact": "high",
+    "source": "澳洲联储官方日程",
+    "sourceUrl": "https://www.rba.gov.au/schedules-events/board-meeting-schedules.html",
+    "checkedAt": "2026-10-18",
+    "scheduleOnly": true
+  },
+  {
+    "date": "2027-08-10",
+    "title": "RBA 利率决议",
+    "region": "au",
+    "cat": "monetary",
+    "impact": "high",
+    "source": "澳洲联储官方日程",
+    "sourceUrl": "https://www.rba.gov.au/schedules-events/board-meeting-schedules.html",
+    "checkedAt": "2026-10-18",
+    "scheduleOnly": true
+  },
+  {
+    "date": "2027-09-28",
+    "title": "RBA 利率决议",
+    "region": "au",
+    "cat": "monetary",
+    "impact": "high",
+    "source": "澳洲联储官方日程",
+    "sourceUrl": "https://www.rba.gov.au/schedules-events/board-meeting-schedules.html",
+    "checkedAt": "2026-10-18",
+    "scheduleOnly": true
+  },
+  {
+    "date": "2026-11-10",
+    "time": "08:30",
+    "timeZone": "America/New_York",
+    "title": "美国 CPI 数据发布",
+    "region": "us",
+    "cat": "market",
+    "impact": "high",
+    "source": "美国劳工统计局日程",
+    "sourceUrl": "https://www.bls.gov/schedule/news_release/cpi.htm",
+    "checkedAt": "2026-10-18",
+    "scheduleOnly": true
+  },
+  {
+    "date": "2026-12-10",
+    "time": "08:30",
+    "timeZone": "America/New_York",
+    "title": "美国 CPI 数据发布",
+    "region": "us",
+    "cat": "market",
+    "impact": "high",
+    "source": "美国劳工统计局日程",
+    "sourceUrl": "https://www.bls.gov/schedule/news_release/cpi.htm",
+    "checkedAt": "2026-10-18",
+    "scheduleOnly": true
+  },
+  {
+    "date": "2027-01-13",
+    "time": "08:30",
+    "timeZone": "America/New_York",
+    "title": "美国 CPI 数据发布",
+    "region": "us",
+    "cat": "market",
+    "impact": "high",
+    "source": "美国劳工统计局日程",
+    "sourceUrl": "https://www.bls.gov/schedule/news_release/cpi.htm",
+    "checkedAt": "2026-10-18",
+    "scheduleOnly": true
+  },
+  {
+    "date": "2027-02-11",
+    "time": "08:30",
+    "timeZone": "America/New_York",
+    "title": "美国 CPI 数据发布",
+    "region": "us",
+    "cat": "market",
+    "impact": "high",
+    "source": "美国劳工统计局日程",
+    "sourceUrl": "https://www.bls.gov/schedule/news_release/cpi.htm",
+    "checkedAt": "2026-10-18",
+    "scheduleOnly": true
+  },
+  {
+    "date": "2027-03-10",
+    "time": "08:30",
+    "timeZone": "America/New_York",
+    "title": "美国 CPI 数据发布",
+    "region": "us",
+    "cat": "market",
+    "impact": "high",
+    "source": "美国劳工统计局日程",
+    "sourceUrl": "https://www.bls.gov/schedule/news_release/cpi.htm",
+    "checkedAt": "2026-10-18",
+    "scheduleOnly": true
+  },
+  {
+    "date": "2027-04-13",
+    "time": "08:30",
+    "timeZone": "America/New_York",
+    "title": "美国 CPI 数据发布",
+    "region": "us",
+    "cat": "market",
+    "impact": "high",
+    "source": "美国劳工统计局日程",
+    "sourceUrl": "https://www.bls.gov/schedule/news_release/cpi.htm",
+    "checkedAt": "2026-10-18",
+    "scheduleOnly": true
+  },
+  {
+    "date": "2027-05-12",
+    "time": "08:30",
+    "timeZone": "America/New_York",
+    "title": "美国 CPI 数据发布",
+    "region": "us",
+    "cat": "market",
+    "impact": "high",
+    "source": "美国劳工统计局日程",
+    "sourceUrl": "https://www.bls.gov/schedule/news_release/cpi.htm",
+    "checkedAt": "2026-10-18",
+    "scheduleOnly": true
+  },
+  {
+    "date": "2027-06-10",
+    "time": "08:30",
+    "timeZone": "America/New_York",
+    "title": "美国 CPI 数据发布",
+    "region": "us",
+    "cat": "market",
+    "impact": "high",
+    "source": "美国劳工统计局日程",
+    "sourceUrl": "https://www.bls.gov/schedule/news_release/cpi.htm",
+    "checkedAt": "2026-10-18",
+    "scheduleOnly": true
+  },
+  {
+    "date": "2027-07-14",
+    "time": "08:30",
+    "timeZone": "America/New_York",
+    "title": "美国 CPI 数据发布",
+    "region": "us",
+    "cat": "market",
+    "impact": "high",
+    "source": "美国劳工统计局日程",
+    "sourceUrl": "https://www.bls.gov/schedule/news_release/cpi.htm",
+    "checkedAt": "2026-10-18",
+    "scheduleOnly": true
+  },
+  {
+    "date": "2027-08-11",
+    "time": "08:30",
+    "timeZone": "America/New_York",
+    "title": "美国 CPI 数据发布",
+    "region": "us",
+    "cat": "market",
+    "impact": "high",
+    "source": "美国劳工统计局日程",
+    "sourceUrl": "https://www.bls.gov/schedule/news_release/cpi.htm",
+    "checkedAt": "2026-10-18",
+    "scheduleOnly": true
+  },
+  {
+    "date": "2027-09-14",
+    "time": "08:30",
+    "timeZone": "America/New_York",
+    "title": "美国 CPI 数据发布",
+    "region": "us",
+    "cat": "market",
+    "impact": "high",
+    "source": "美国劳工统计局日程",
+    "sourceUrl": "https://www.bls.gov/schedule/news_release/cpi.htm",
+    "checkedAt": "2026-10-18",
+    "scheduleOnly": true
+  }
 ];
 
 function localTodayISO(){return today();}
@@ -4414,6 +4384,7 @@ function eventSourceTimeZone(ev){
 
 function eventDefaultClock(ev){
   if(ev.time)return ev.time;
+  if(ev.scheduleOnly)return null;
   if(ev.personal)return null;
   if(ev.region==='us')return ev.cat==='monetary'?'14:00':ev.cat==='market'?'08:30':'09:00';
   if(ev.region==='cn')return ev.cat==='market'?'09:30':'09:00';
@@ -4447,6 +4418,7 @@ function fmtEventInTz(utcDate,tz,withTime){
 }
 
 function renderEventDualTzHtml(ev){
+  if(ev.scheduleOnly&&!ev.time){const date=ev.date.slice(5).replace('-','月')+'日';return '<div class="tz-line cn">'+date+'<br>'+(ev.region==='us'?'美东日程':'澳洲日程')+'</div>';}
   const clock=eventDefaultClock(ev);
   if(!clock){
     const d=new Date(ev.date+'T12:00:00');
@@ -4558,35 +4530,8 @@ function parseNewsPubDate(pub){
   if(isNaN(d.getTime()))return null;
   return d.toISOString().slice(0,10);
 }
-function getWatchNewsItems(minScore=1){
-  const c=D.newsCache;
-  if(!c||!c.items||!c.items.length)return [];
-  const today=new Date(localTodayISO()+'T00:00:00');
-  const past=new Date(today);past.setDate(past.getDate()-30);
-  return c.items
-    .filter(it=>(it.score||0)>=minScore)
-    .map(it=>{
-      const date=parseNewsPubDate(it.pub)||localTodayISO();
-      return{
-        kind:'news',
-        date,
-        title:it.titleZh||it.title,
-        titleEn:it.titleZh?it.title:'',
-        desc:it.descZh||it.desc||'',
-        link:it.link,
-        source:it.source,
-        pub:it.pub,
-        score:it.score||0,
-        personal:true,
-        impact:it.score>=8?'high':'medium',
-        region:'global',
-        cat:'news'
-      };
-    })
-    .filter(it=>{
-      const d=new Date(it.date+'T00:00:00');
-      return d>=past&&d<=today;
-    });
+function getWatchNewsItems(minScore=6){
+  return rankedCurrentNews(7).filter(it=>it.score>=Math.max(6,minScore)).map(it=>({...it,kind:'news',title:it.titleZh||it.title,titleEn:it.titleZh?it.title:'',desc:it.descZh||it.desc||'',personal:false,impact:'medium',region:'global',cat:'news'}));
 }
 function renderNewsWatchRowHtml(ev){
   const days=eventDaysUntil(ev.date);
@@ -4596,17 +4541,18 @@ function renderNewsWatchRowHtml(ev){
   let countdown='';
   if(days===0)countdown='今天';
   else if(days<0)countdown=`${Math.abs(days)} 天前`;
-  const titleEn=ev.titleEn?`<div class="ov-event-news-en" lang="en">${escOvHtml(ev.titleEn)}</div>`:'';
+  const titleEn=ev.titleEn&&ev.titleEn!==ev.title?`<div class="ov-event-news-en" lang="en">${escOvHtml(ev.titleEn)}</div>`:'';
   const desc=ev.desc?`<div class="ov-event-desc">${escOvHtml(ev.desc)}</div>`:'';
   return `<a class="ov-event-row ov-event-news${isToday?' today':''} past" href="${escOvHtml(ev.link)}" target="_blank" rel="noopener noreferrer">
     <div class="ov-event-date"><div class="tz-line cn">${d.getMonth()+1}月${d.getDate()}日</div><span>${yearLbl.trim()||'本年'}</span>${countdown?`<div class="countdown past-days">${countdown}</div>`:''}</div>
     <div class="ov-event-body">
       <div class="ov-event-title">${escOvHtml(ev.title)}</div>
+      <div class="ov-event-relevance">${escOvHtml((ev.reasons||[]).join('；'))}</div>
       ${titleEn}
       ${desc}
       <div class="ov-event-tags">
-        <span class="ov-event-tag region-global">📰 持仓资讯</span>
-        <span class="ov-event-tag impact-med">相关 ${ev.score}</span>
+        <span class="ov-event-tag region-global">📰 相关资讯</span>
+        <span class="ov-event-tag impact-med">${escOvHtml((ev.reasons||[]).slice(0,2).join(' · '))}</span>
         <span class="ov-event-tag">${escOvHtml(ev.source||'')}</span>
       </div>
     </div>
@@ -4616,7 +4562,8 @@ function mergeWatchEvents(){
   const today=new Date(localTodayISO()+'T00:00:00');
   const past=new Date(today);past.setDate(past.getDate()-30);
   const horizon=new Date(today);horizon.setDate(horizon.getDate()+365);
-  const all=[...MACRO_EVENTS_WATCH.map(e=>({...e,personal:false})),...collectPersonalWatchEvents()];
+  const profile=buildAssetNewsProfile();
+  const all=[...MACRO_EVENTS_WATCH.map(e=>({...e,personal:false})),...collectPersonalWatchEvents()].map(e=>({...e,relevance:PortfolioIntelligence.eventRelevance(e,profile)})).filter(e=>e.personal||e.relevance.score>0);
   return all
     .filter(e=>{
       const d=new Date(e.date+'T00:00:00');
@@ -4636,30 +4583,10 @@ function mergeWatchEvents(){
 }
 
 function buildEventsCalendarContext(){
-  const events=mergeWatchEvents().filter(ev=>!ev.personal);
-  const today=localTodayISO();
-  const lines=[`今日日期：${today}`,`时间窗口：过去30天 + 未来365天`,`共 ${events.length} 项`,''];
-  events.forEach(ev=>{
-    const days=eventDaysUntil(ev.date);
-    let when='';
-    if(days===0)when='【今天】';
-    else if(days>0)when=`${days}天后`;
-    else when=`${Math.abs(days)}天前（已发生）`;
-    lines.push(`- ${ev.date} ${when} · ${ev.title} · ${ev.region} · ${ev.impact==='high'?'高影响':'中影响'}${ev.personal?' · 个人持仓':''}`);
-    if(ev.fact)lines.push(`  具体内容：${ev.fact}`);
-    if(ev.expected)lines.push(`  预期影响：${ev.expected}`);
-    if(ev.actual&&!ev.actualPending)lines.push(`  实际影响：${ev.actual}`);
-    else if(ev.actualPending)lines.push(`  实际影响：待更新`);
-    else if(ev.desc)lines.push(`  ${ev.desc}`);
-  });
-  const news=getWatchNewsItems(1);
-  if(news.length){
-    lines.push('','【持仓相关资讯（公开 RSS，按关键词匹配）】');
-    news.slice(0,12).forEach(n=>{
-      lines.push(`- ${n.date} · ${n.title} · ${n.source} · 相关度 ${n.score}`);
-      if(n.desc)lines.push(`  ${String(n.desc).slice(0,160)}`);
-    });
-  }
+  const events=mergeWatchEvents().filter(ev=>!ev.personal&&ev.date>=localTodayISO()).slice(0,12);
+  const lines=['今日日期：'+localTodayISO(),'以下为公开日程，未提供结果不能声称已经发生。不是完整市场日历；关注范围为当前币种和持仓。'];
+  for(const ev of events){lines.push('- '+ev.date+' · '+ev.title+' · 关联：'+(ev.relevance?.reasons||[]).join('；')+' · 来源：'+(ev.sourceUrl||'来源待核实')+' · 日程核对：'+(ev.checkedAt||'未提供'));}
+  for(const n of getWatchNewsItems(6).slice(0,5)){lines.push('- 公开新闻 '+n.date+' · '+n.title+' · 匹配依据：'+(n.reasons||[]).join('；')+' · 原文：'+n.link);}
   return lines.join('\n');
 }
 
@@ -4745,10 +4672,14 @@ function setEventsFilter(filter,btn){
 
 function selectOverviewEvents(items,expanded,asOf,filter){
   if(expanded)return items.slice();
-  if(filter==='news')return items.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,4);
-  const future=items.filter(e=>e.kind==='event'&&e.date>=asOf).sort((a,b)=>a.date.localeCompare(b.date));
-  const news=items.filter(e=>e.kind==='news').sort((a,b)=>b.date.localeCompare(a.date));
-  return [...future.slice(0,4),...news.slice(0,Math.max(0,4-future.length))];
+  const news=items.filter(e=>e.kind==='news').sort((a,b)=>(b.score||0)-(a.score||0)||b.date.localeCompare(a.date));
+  if(filter==='news')return news.slice(0,4);
+  const days=e=>Math.round((Date.parse(e.date)-Date.parse(asOf))/86400000);
+  const priority=e=>e.personal&&days(e)<=30?0:days(e)<=14?1:e.personal?2:3;
+  const future=items.filter(e=>e.kind==='event'&&e.date>=asOf&&days(e)<=90).sort((a,b)=>priority(a)-priority(b)||a.date.localeCompare(b.date));
+  const urgent=future.filter(e=>e.personal&&days(e)<=7).length;
+  const count=news.some(e=>e.score>=8)&&urgent<4?3:4;
+  return [...future.slice(0,count),...news.slice(0,Math.max(0,4-Math.min(count,future.length)))];
 }
 function toggleOverviewEvents(){ovEventsExpanded=!ovEventsExpanded;renderMajorEventsWatch();}
 function renderMajorEventsWatch(){
@@ -4791,7 +4722,7 @@ function renderMajorEventsWatch(){
   card?.classList.toggle('events-expanded',ovEventsExpanded);
   card?.classList.toggle('events-compact',!ovEventsExpanded);
   if(toggle){toggle.hidden=!ovEventsExpanded&&allCombined.length===combined.length;toggle.textContent=ovEventsExpanded?'收起':'展开全部（'+allCombined.length+'）';toggle.setAttribute('aria-expanded',String(ovEventsExpanded));}
-  if(rangeEl&&!ovEventsExpanded)rangeEl.textContent=(ovEventsFilter==='news'?'最近资讯':'待发生事件优先')+' · 显示 '+combined.length+' / '+allCombined.length+' 项';
+  if(rangeEl&&!ovEventsExpanded)rangeEl.textContent=(ovEventsFilter==='news'?'近7天相关资讯':'到期事项与关联日程优先')+' · 显示 '+combined.length+' / '+allCombined.length+' 项';
   if(!combined.length){
     const emptyMsg=ovEventsFilter==='news'
       ?'暂无持仓相关资讯。可到「资讯」页点击「刷新资讯」。'
@@ -4832,7 +4763,9 @@ function renderMajorEventsWatch(){
       <div class="ov-event-date">${renderEventDualTzHtml(ev)}<span>${yearLbl.trim()||'本年'}</span>${countdown?`<div class="countdown${isPast?' past-days':''}">${countdown}</div>`:''}</div>
       <div class="ov-event-body">
         <div class="ov-event-title">${escOvHtml(ev.title)}</div>
-        ${renderEventImpactHtml(ev,isPast,isToday)}
+        <div class="ov-event-relevance">${escOvHtml((ev.relevance?.reasons||[]).join('；'))}</div>
+        ${ev.sourceUrl?'<a class="event-source" href="'+escOvHtml(ev.sourceUrl)+'" target="_blank" rel="noopener noreferrer">官方日程 · 核对 '+escOvHtml(ev.checkedAt||'')+'</a>':''}
+        ${ev.personal?renderEventImpactHtml(ev,isPast,isToday):''}
         <div class="ov-event-tags">
           <span class="ov-event-tag region-${ev.region||'global'}">${regionLabel[ev.region]||regionLabel.global}</span>
           <span class="ov-event-tag">${catLabel[ev.cat]||ev.cat||'—'}</span>
@@ -6098,45 +6031,7 @@ function renderOverviewDashboard(){
   const elLiqLeg=document.getElementById('ov-liq-legend');
   if(!elI||!mileFirst||!mileDelta||!mileRecent)return;
   const cny=totalCNY();
-  const chips=[];
-  if(!D.navHistory||!D.navHistory.length)
-    chips.push({t:'尚未记录 NAV 快照 — 点击顶栏「快照」便于以后对比',c:'warn'});
-  else{
-    const sorted=[...D.navHistory].filter(n=>n.date).sort((a,b)=>a.date.localeCompare(b.date));
-    const first=sorted[0],last=sorted[sorted.length-1];
-    if(first&&last&&first.date!==last.date&&cny>0){
-      const dd=cny-last.cny;
-      const pc=last.cny>0?(dd/last.cny*100):0;
-      chips.push({t:`较最近快照(${last.date})：${dd>=0?'+':''}${fc(dd,'CNY',0)}（${dd>=0?'+':''}${pc.toFixed(2)}%）`,c:dd>=0?'ok':'warn'});
-    }
-  }
-  if(cny>0){
-    const rCn=totalCNY('cn'),rUs=totalCNY('us'),rAu=totalCNY('au');
-    const mx=Math.max(rCn,rUs,rAu);
-    if(mx/cny>=0.58){
-      const name=rCn>=mx?'中国':rUs>=mx?'美国':'澳洲';
-      chips.push({t:`区域集中度：${name} 约占净值的 ${(mx/cny*100).toFixed(0)}%`,c:'warn'});
-    }
-    const bd0=typeBreakdownForCharts();
-    const liq=bd0.cash+bd0.term_deposit;
-    chips.push({t:`流动性相关（现金+定存）约占 ${(liq/cny*100).toFixed(0)}%`,c:'info'});
-    const fxExp=(rUs+rAu)/cny;
-    if(fxExp>=0.35)
-      chips.push({t:`美+澳区域合计约 ${(fxExp*100).toFixed(0)}% — 汇率会影响人民币净值`,c:'info'});
-    const assignedNav=rCn+rUs+rAu;
-    const miscNav=Math.max(0,cny-assignedNav);
-    if(miscNav>1)
-      chips.push({t:`约有 ${fc(miscNav,'CNY',0)} 未归入中/美/澳（饼图为「未标地区」）— 请编辑资产，将地区选为 中国境内 / 美国 / 澳洲。`,c:'warn'});
-  }
-  const onOverview=document.getElementById('page-overview')?.classList.contains('active');
-  const insightMax=onOverview?3:(window.innerWidth>=1280?4:chips.length);
-  const insightShown=chips.slice(0,insightMax);
-  const insightMore=chips.length>insightMax?`<span class="ov-insight-chip info" title="${escOvHtml(chips.slice(insightMax).map(x=>x.t).join('\n'))}">+${chips.length-insightMax} 条提示</span>`:'';
-  elI.innerHTML=insightShown.length?insightShown.map(x=>{
-    const full=escOvHtml(x.t);
-    const short=x.t.length>36?escOvHtml(x.t.slice(0,34)+'…'):full;
-    return`<span class="ov-insight-chip ${x.c}" title="${full}">${short}</span>`;
-  }).join('')+insightMore:`<span class="ov-insight-chip">添加资产后将显示配置分析与提示</span>`;
+  renderOverviewRisk();
   if(cny<=0){
     destroyOvDashCharts();
     if(elAllocLeg)elAllocLeg.innerHTML='';
@@ -6612,7 +6507,7 @@ function buildAiDailyBriefOneLiner(){
   const cny=totalCNY();
   if(cny<=0) return '添加资产后生成今日解读';
   const td=localTodayISO();
-  if(D.aiDailyBrief?.date===td&&D.aiDailyBrief?.line) return D.aiDailyBrief.line;
+  if(D.aiDailyBrief?.version==='evidence-v1'&&D.aiDailyBrief?.date===td&&D.aiDailyBrief?.line) return D.aiDailyBrief.line;
   const bits=[];
   const upcoming=mergeWatchEvents().filter(e=>eventDaysUntil(e.date)>=0).sort((a,b)=>{
     const imp=x=>x.impact==='high'?0:1;
@@ -6642,7 +6537,7 @@ function buildAiDailyBriefOneLiner(){
   const line=bits.slice(0,2).join(' · ')||'组合平稳，点击查看详情';
   if(!D.aiDailyBrief)D.aiDailyBrief={};
   D.aiDailyBrief.date=td;
-  D.aiDailyBrief.line=line;
+  D.aiDailyBrief.line=line;D.aiDailyBrief.version='evidence-v1';
   return line;
 }
 function updateTopbarAiSummary(text){
