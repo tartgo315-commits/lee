@@ -665,7 +665,7 @@ input[type=text],input[type=number],input[type=date],select,textarea{font-size:v
 .fh-px.fh-flat{color:var(--text-3)}
 .add-row{padding:16px 24px;border-top:1px dashed var(--border-light)}
 #nav-chart-wrap{background:var(--bg-card)!important;border:1px solid var(--border)!important;border-radius:var(--radius-lg)!important;padding:24px!important;margin-bottom:16px!important;box-shadow:none!important}
-#nav-chart-wrap [style*="height:220px"],#nav-chart-wrap>div[style]{height:180px!important}
+
 .hist-wrap{border:1px solid var(--border);border-radius:var(--radius-lg);overflow:auto}
 .hist-table{width:100%;border-collapse:collapse}
 .hist-table th{text-align:left;padding:12px 16px;font-size:var(--text-xs);color:var(--text-4);text-transform:uppercase;letter-spacing:.04em;background:var(--bg-muted);border-bottom:1px solid var(--border);position:sticky;top:0}
@@ -966,6 +966,20 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
 .ov-holdings-status{font-size:13px;line-height:1.6;padding-top:12px;color:var(--text-2)}.ov-holdings-note{font-size:12px;line-height:1.6;color:var(--text-3);margin:8px 0 0}.ov-holdings-empty{text-align:center!important;color:var(--text-3);padding:32px 16px!important}
 @media(max-width:768px){.ov-region-summary{gap:6px}.ov-region-tile{padding:10px 8px}.ov-region-tile strong{font-size:16px}.ov-region-tile-title,.ov-region-tile-meta{font-size:11px}.ov-holding-filters>div{min-width:calc(50% - 10px)}.ov-holding-filters select{font-size:16px}.ov-holdings-scroll{max-width:100%}}
 
+.history-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 20px;padding:6px;border:1px solid var(--border);border-radius:12px;background:var(--bg-card)}
+.history-tabs [role=tab]{padding:10px 18px;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--text-3);font:inherit;font-size:14px;font-weight:500;cursor:pointer}
+.history-tabs [role=tab]:hover{background:var(--bg-hover);color:var(--text-1)}
+.history-tabs [role=tab][aria-selected=true]{background:var(--up-bg);border-color:var(--border-accent);color:var(--up-soft)}
+.history-tabs [role=tab]:focus-visible{outline:2px solid var(--up);outline-offset:2px}
+.history-help{margin:0 0 16px;border:1px solid var(--border);border-radius:10px;padding:12px 16px;color:var(--text-3);font-size:13px;line-height:1.65}.history-help summary{cursor:pointer}.history-help p{margin:8px 0 0}
+.history-chart-plot{height:280px;position:relative;width:100%}.history-chart-plot canvas{width:100%!important;height:100%!important}#nav-chart-empty{position:absolute;left:0;top:50%;transform:translateY(-50%);width:100%;text-align:center;padding:24px;color:var(--text-3);font-size:13px}
+.history-result-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:16px 0}
+.history-result{padding:16px;border:1px solid var(--border);border-radius:10px;background:var(--bg-muted);min-width:0}.history-result span{display:block;font-size:13px;color:var(--text-3);margin-bottom:8px}.history-result strong{display:block;font-size:24px;font-family:var(--mono);font-variant-numeric:tabular-nums;overflow-wrap:anywhere;color:var(--text-1)}.history-result.positive strong{color:var(--up-soft)}.history-result.negative strong{color:var(--dn-soft)}
+.history-section-actions{display:flex;justify-content:flex-end;margin:0 0 16px}
+#cashflow-panel details>summary{cursor:pointer;color:var(--text-2);font-weight:600}
+#history-goal-preview{padding:14px 16px;border:1px solid var(--border-accent);border-radius:10px;background:var(--up-bg);line-height:1.65;font-size:13px;color:var(--text-2);margin:0 0 16px}
+@media(max-width:768px){.history-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.history-tabs [role=tab]{padding:10px 8px}.history-result-grid{grid-template-columns:1fr}.history-chart-plot{height:220px}.flow-row{flex-wrap:wrap}.flow-row>span{flex-basis:100%}}
+
 </style>
 </head>
 <body>
@@ -1227,21 +1241,52 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
     <!-- HISTORY -->
     <div class="page" id="page-history">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:12px">
-        <div style="font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px"><i class="ti ti-chart-line" style="color:var(--accent)"></i> NAV 历史快照</div>
+        <div style="font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px"><i class="ti ti-chart-line" style="color:var(--accent)"></i> 净值与收益</div>
         <button class="btn btn-outline btn-sm" style="border-color:var(--accent-gold);color:var(--accent-gold)" onclick="takeSnapshot()"><i class="ti ti-camera"></i> 记录今日快照</button>
       </div>
-      <div class="alert alert-info" style="display:block;margin-bottom:14px;line-height:1.7;font-size:13px">每次快照会保存<strong>当日折合人民币</strong>下的<strong>分区（中/美/澳）</strong>与<strong>资产类型</strong>（现金、国内基金、黄金、美股、定期、其它）及<strong>汇率</strong>。列表中<strong>较上一快照</strong>指时间更早的那一条（上一条历史记录）。黄金 ETF 联接若登记为「国内基金」会统计在「国内基金」而非「黄金」。</div>
-      <section class="card" id="calculation-panel" aria-label="收益核算与资金流水">
-        <div class="card-title">收益核算与资金流水</div>
+<div class="history-tabs" role="tablist" aria-label="净值与收益" onkeydown="handleHistoryTabKey(event)"><button type="button" role="tab" id="history-tab-trend" data-history-tab="trend" aria-controls="history-panel-trend" aria-selected="true" tabindex="0" onclick="setHistoryTab('trend')">净值走势</button><button type="button" role="tab" id="history-tab-returns" data-history-tab="returns" aria-controls="history-panel-returns" aria-selected="false" tabindex="-1" onclick="setHistoryTab('returns')">收益核算</button><button type="button" role="tab" id="history-tab-flows" data-history-tab="flows" aria-controls="history-panel-flows" aria-selected="false" tabindex="-1" onclick="setHistoryTab('flows')">资金流水</button><button type="button" role="tab" id="history-tab-goal" data-history-tab="goal" aria-controls="history-panel-goal" aria-selected="false" tabindex="-1" onclick="setHistoryTab('goal')">财富目标</button></div>
+<section id="history-panel-trend" role="tabpanel" aria-labelledby="history-tab-trend">
+<p class="privacy-note">快照用于查看资产估值变化；扣除外部入出金后的收益，请查看「收益核算」。</p>      <div id="nav-chart-wrap" style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);padding:20px 24px;margin-bottom:24px;box-shadow:var(--shadow-sm)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--text)">NAV 净值走势</div>
+            <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px">按快照日期 · 人民币</div>
+          </div>
+          <div class="range-tabs">
+            <button type="button" onclick="setNavChartRange('3M')" id="ncr-3m" class="rt">3M</button>
+            <button type="button" onclick="setNavChartRange('6M')" id="ncr-6m" class="rt">6M</button>
+            <button type="button" onclick="setNavChartRange('ALL')" id="ncr-all" class="rt active">ALL</button>
+          </div>
+        </div>
+        <div class="history-chart-plot">
+          <canvas id="nav-history-chart"></canvas>
+          <div id="nav-chart-empty" style="display:none">至少记录两条快照后显示趋势。你可以先记录今日快照。</div>
+        </div>
+      </div>
+      <div class="card mb-0 overflow-hidden p-0">
+        <div class="hist-wrap">
+        <table class="hist-table w-full min-w-[640px] text-left"><thead><tr><th>日期</th><th class="tr">CNY</th><th class="tr">USD</th><th class="tr">AUD</th><th class="tr">变化 CNY</th><th class="tr">变化%</th><th>操作</th></tr></thead>
+        <tbody id="hist-tbody"></tbody></table>
+        </div>
+      </div>
+<details class="history-help"><summary>快照记录规则</summary><p>每次快照会保存<strong>当日折合人民币</strong>下的<strong>分区（中/美/澳）</strong>与<strong>资产类型</strong>（现金、国内基金、黄金、美股、定期、其它）及<strong>汇率</strong>。列表中<strong>较上一快照</strong>指时间更早的那一条（上一条历史记录）。黄金 ETF 联接若登记为「国内基金」会统计在「国内基金」而非「黄金」。</p></details>
+</section>
+<section id="history-panel-returns" role="tabpanel" aria-labelledby="history-tab-returns" hidden>
+<div class="history-section-actions"><button type="button" class="btn btn-ghost btn-sm" onclick="setHistoryTab('flows',true)">管理资金流水 →</button></div>      <section class="card" id="calculation-panel" aria-label="收益核算">
+        <div class="card-title">收益核算</div>
         <p class="privacy-note">先选定核算起点，再补齐此后所有外部入出金。期初估值按起点当日入出金之前填写；同日流水会计入。账户之间转账、买卖持仓不属于全账本外部入出金。流水仅用于核算，不会自动增减资产余额。</p>
         <div class="fg-row c3">
           <div class="fg"><label for="perf-start">核算起点</label><input id="perf-start" type="date"></div>
           <div class="fg"><label for="perf-opening">期初资产估值（CNY）</label><input id="perf-opening" type="number" step="0.01" min="0"></div>
           <div class="calc-actions"><button type="button" class="btn btn-ghost" onclick="useSnapshotOpening()">填入该日快照</button><button type="button" class="btn btn-primary" onclick="savePerformanceStart()">保存核算起点</button></div>
         </div>
-        <p id="performance-summary" class="privacy-note" role="status"></p>
+        <div id="performance-summary" role="status"></div>
         <p id="fx-gain-summary" class="privacy-note"></p>
-        <details>
+      </section>
+
+</section>
+<section id="history-panel-flows" role="tabpanel" aria-labelledby="history-tab-flows" hidden>
+<section class="card" id="cashflow-panel" aria-label="资金流水"><div class="card-title">资金流水</div><p class="privacy-note">这里只登记全账本的外部入出金。账户间转账和持仓买卖不计入；保存流水不会自动修改资产余额。外币流水须填写发生日汇率。</p>        <details id="flow-editor" open>
           <summary>新增或编辑入出金</summary>
           <input id="flow-id" type="hidden">
           <div class="fg-row c3" style="margin-top:12px">
@@ -1258,9 +1303,12 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
         </details>
         <div id="cashflow-list" class="privacy-note"></div>
         <button id="restore-cashflow" type="button" class="btn btn-ghost btn-sm" onclick="restoreCashFlow()">恢复最近删除的流水</button>
-      </section>
-      <section class="card" aria-label="目标情景参数">
-        <div class="card-title">目标情景参数</div><div class="fg-row c2"><div class="fg"><label for="plan-target">目标金额（CNY）</label><input id="plan-target" type="number" min="0" step="0.01"></div><div class="fg"><label for="plan-name">目标名称</label><input id="plan-name" type="text"></div></div><button type="button" class="btn btn-primary" onclick="saveGoalDefinition()">保存目标</button>
+</section>
+</section>
+<section id="history-panel-goal" role="tabpanel" aria-labelledby="history-tab-goal" hidden>
+<div id="history-goal-preview" role="status"></div>
+      <section class="card" aria-label="财富目标">
+        <div class="card-title">财富目标与情景参数</div><div class="fg-row c2"><div class="fg"><label for="plan-target">目标金额（CNY）</label><input id="plan-target" type="number" min="0" step="0.01"></div><div class="fg"><label for="plan-name">目标名称</label><input id="plan-name" type="text"></div></div><button type="button" class="btn btn-primary" onclick="saveGoalDefinition()">保存目标</button>
         <p class="privacy-note">仅按你填写的每月净投入和年收益假设推算，不把历史入金误当投资增速。参数未填写、目标未设置或估值不完整时，不显示达成年月。三种情景均不保证实现。</p>
         <div class="fg-row c4">
           <div class="fg"><label for="plan-monthly">每月净投入（CNY）</label><input id="plan-monthly" type="number" min="0" step="0.01"></div>
@@ -1271,29 +1319,8 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
         <button type="button" class="btn btn-primary" onclick="saveGoalPlan()">保存情景参数</button>
       </section>
 
-      <div id="nav-chart-wrap" style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);padding:20px 24px;margin-bottom:24px;box-shadow:var(--shadow-sm)">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
-          <div>
-            <div style="font-size:13px;font-weight:600;color:var(--text)">NAV 净值走势</div>
-            <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px">按快照日期 · 人民币</div>
-          </div>
-          <div class="range-tabs">
-            <button type="button" onclick="setNavChartRange('3M')" id="ncr-3m" class="rt">3M</button>
-            <button type="button" onclick="setNavChartRange('6M')" id="ncr-6m" class="rt">6M</button>
-            <button type="button" onclick="setNavChartRange('ALL')" id="ncr-all" class="rt active">ALL</button>
-          </div>
-        </div>
-        <div style="height:220px;position:relative;width:100%">
-          <canvas id="nav-history-chart"></canvas>
-        </div>
-        <div id="nav-chart-empty" style="display:none;text-align:center;padding:40px;color:var(--text3);font-size:13px">快照不足 2 条，暂无图表</div>
-      </div>
-      <div class="card mb-0 overflow-hidden p-0">
-        <div class="hist-wrap">
-        <table class="hist-table w-full min-w-[640px] text-left"><thead><tr><th>日期</th><th class="tr">CNY</th><th class="tr">USD</th><th class="tr">AUD</th><th class="tr">变化 CNY</th><th class="tr">变化%</th><th>操作</th></tr></thead>
-        <tbody id="hist-tbody"></tbody></table>
-        </div>
-      </div>
+
+</section>
     </div>
 
     <!-- NEWS -->
@@ -3522,7 +3549,7 @@ function updateGoalBar(){
   renderGoalForecast(cny,target);
 }
 
-function openGoalEdit(){showPage('history');requestAnimationFrame(()=>{const input=document.getElementById('plan-target');input.focus();input.scrollIntoView({block:'center'});});}
+function openGoalEdit(){openHistorySection('goal','plan-target');}
 
 function aiRoundWan(n){
   const v=Number(n);
@@ -6131,8 +6158,61 @@ function renderNavChart(range){
   if(_navChartInst){try{_navChartInst.destroy();}catch(e){}_navChartInst=null;}
   _navChartInst=new Chart(canvas,{type:'line',data:{labels,datasets:[{data:values,borderColor:lineCol,backgroundColor:fillCol,borderWidth:2,pointRadius:filtered.length>30?0:3,pointHoverRadius:5,fill:true,tension:0.35}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' ¥'+Math.round(c.raw).toLocaleString('zh-CN')}}},scales:{x:{grid:{color:gridCol},ticks:{color:textCol,font:{size:10},maxTicksLimit:10}},y:{grid:{color:gridCol},ticks:{color:textCol,font:{size:10},callback:v=>'¥'+(v/10000).toFixed(0)+'万'}}}}});
 }
+const HISTORY_TABS=['trend','returns','flows','goal'];
+let historyActiveTab='trend';
+function setHistoryTab(tab,focus=false){
+  if(!HISTORY_TABS.includes(tab))return;
+  historyActiveTab=tab;
+  for(const name of HISTORY_TABS){
+    const button=document.getElementById('history-tab-'+name),panel=document.getElementById('history-panel-'+name),active=name===tab;
+    if(button){button.setAttribute('aria-selected',String(active));button.tabIndex=active?0:-1;}
+    if(panel)panel.hidden=!active;
+  }
+  if(focus)document.getElementById('history-tab-'+tab)?.focus();
+  if(tab==='trend'&&document.getElementById('page-history')?.classList.contains('active'))requestAnimationFrame(()=>{if(historyActiveTab==='trend'&&document.getElementById('page-history')?.classList.contains('active'))renderNavChart(_navChartRange);});
+}
+function handleHistoryTabKey(event){
+  const tab=event.target.closest('[role="tab"]');if(!tab)return;
+  const index=HISTORY_TABS.indexOf(tab.dataset.historyTab);let next;
+  if(event.key==='ArrowRight')next=(index+1)%HISTORY_TABS.length;
+  else if(event.key==='ArrowLeft')next=(index+HISTORY_TABS.length-1)%HISTORY_TABS.length;
+  else if(event.key==='Home')next=0;
+  else if(event.key==='End')next=HISTORY_TABS.length-1;
+  else return;
+  event.preventDefault();setHistoryTab(HISTORY_TABS[next],true);
+}
+function openHistorySection(tab,field){
+  showPage('history');setHistoryTab(tab);
+  requestAnimationFrame(()=>{
+    document.querySelector('.main')?.scrollTo({top:0,behavior:'auto'});
+    const target=document.getElementById(field||'history-tab-'+tab);target?.focus({preventScroll:true});
+  });
+}
+function renderHistoryPerformanceSummary(element,report,tracking){
+  element.replaceChildren();
+  if(!report.available){element.textContent=report.reason;return;}
+  const range=document.createElement('p');range.className='privacy-note';range.textContent='核算区间 '+tracking.startDate+' 至 '+today();element.append(range);
+  const metrics=document.createElement('div');metrics.className='history-result-grid';
+  const rate=report.annualized.rate;
+  for(const [label,value,tone] of [['净投入',fc(report.netInvested,'CNY',2),''],['资金调整后盈亏',fc(report.profit,'CNY',2),report.profit>0?'positive':report.profit<0?'negative':''],['年化收益 XIRR',rate!==null?(rate*100).toFixed(2)+'%':'暂无','']]){
+    const card=document.createElement('div'),title=document.createElement('span'),amount=document.createElement('strong');card.className='history-result '+tone;title.textContent=label;amount.textContent=value;card.append(title,amount);metrics.append(card);
+  }
+  element.append(metrics);
+  const note=document.createElement('p');note.className='privacy-note';note.textContent=(rate===null?report.annualized.reason+'。':'')+(report.days<90?'区间不足 90 天，短期年化可能波动很大。':'')+'结果以已登记流水完整为前提。';element.append(note);
+}
+function renderHistoryGoalPreview(){
+  const element=document.getElementById('history-goal-preview');if(!element)return;
+  const goal=D.goal,state=valuationStatus();
+  if(!(Number(goal?.amount)>0)){element.textContent='先设置财富目标，再填写每月净投入与情景参数。';return;}
+  if(!state.complete){element.textContent='当前估值不完整，暂不计算达成时间。';return;}
+  const target=goal.currency==='CNY'?Number(goal.amount):toCNY(Number(goal.amount),goal.currency||'CNY');
+  const result=WealthMath.forecast(state.knownCny,target,D.goalPlan,today());
+  element.textContent=result.available?'已保存参数的情景推算：'+result.scenarios.map((scenario,i)=>['保守','基准','乐观'][i]+' '+(scenario.date?scenario.months===0?'已达成':scenario.date.slice(0,7):'100年内未达成')).join('；'):'目标已设置，请填写并保存每月净投入与三种年收益假设。';
+}
+
 function renderHistory(){
   renderCalculationPanel();
+  setHistoryTab(historyActiveTab);
   const hist=[...D.navHistory].sort((a,b)=>b.date.localeCompare(a.date));
   const cny=totalCNY();
   const tbody=document.getElementById('hist-tbody');
@@ -6159,7 +6239,6 @@ function renderHistory(){
       return main+buildHistBreakRow(n,prev||null);
     }).join('');
   }
-  try{renderNavChart(_navChartRange);}catch(e){}
 }
 function takeSnapshot(){
   const quality=valuationStatus();
@@ -6785,17 +6864,16 @@ function refreshValuationNotice(){
   const label=document.querySelector('.term-nav-hero .ov-hero-label');if(label)label.textContent=state.complete?'资产总净值':'已知资产估值（不完整）';
 }
 function calculationMessage(message,type='warn'){showToast({message,type,duration:5000});}
-function renderCalculationPanel(){
+function renderCalculationPanel(refreshForms=true){
   const summary=document.getElementById('performance-summary');if(!summary)return;
   const state=valuationStatus(),tracking=D.performanceTracking;
   const report=WealthMath.performance(tracking,D.cashFlows||[],state.knownCny,today(),state.complete);
+  if(refreshForms){
   const start=document.getElementById('perf-start'),opening=document.getElementById('perf-opening');
   if(document.activeElement!==start)start.value=tracking?.startDate||today();
   if(document.activeElement!==opening)opening.value=tracking?.openingCny??'';
-  if(report.available){
-    const rate=report.annualized.rate;
-    summary.textContent='核算区间 '+tracking.startDate+' 至 '+today()+' · 净投入 '+fc(report.netInvested,'CNY',2)+' · 资金调整后盈亏 '+fc(report.profit,'CNY',2)+' · 年化收益 XIRR '+(rate!==null?(rate*100).toFixed(2)+'%':report.annualized.reason)+(report.days<90?'。区间不足 90 天，短期年化可能波动很大。':'。')+' 结果以已登记流水完整为前提。';
-  }else summary.textContent=report.reason;
+  }
+  renderHistoryPerformanceSummary(summary,report,tracking);
   const split=D.products.map(p=>WealthMath.gainSplit(p,valuationContext()));
   const valid=split.filter(x=>x.complete),missing=split.length-valid.length;
   document.getElementById('fx-gain-summary').textContent='当前持仓账面盈亏（不含已卖出、分红与手续费）：资产价格/利息变动 '+fc(WealthMath.sum(valid.map(x=>x.asset)),'CNY',2)+'；汇率影响 '+fc(WealthMath.sum(valid.map(x=>x.fx)),'CNY',2)+(missing?'。仅覆盖资料完整部分，'+missing+' 条资产缺少成本、投入汇率或估值。':'。');
@@ -6813,11 +6891,14 @@ function renderCalculationPanel(){
   }
   if(!sorted.length)list.textContent='尚无入出金记录。资产之间买卖、账户间划转均不作为全账本的外部入出金。';
   document.getElementById('restore-cashflow').disabled=!(D.cashFlowTrash||[]).length;
+  renderHistoryGoalPreview();
+  if(refreshForms){
   const targetInput=document.getElementById('plan-target'),nameInput=document.getElementById('plan-name');
   if(document.activeElement!==targetInput)targetInput.value=D.goal?.amount>0?(D.goal.currency==='CNY'?D.goal.amount:toCNY(D.goal.amount,D.goal.currency)):'';
   if(document.activeElement!==nameInput)nameInput.value=D.goal?.label||'存款目标';
   const plan=D.goalPlan||{};
   for(const [id,value] of [['plan-monthly',plan.monthlyContribution],['plan-low',plan.rates?.[0]],['plan-base',plan.rates?.[1]],['plan-high',plan.rates?.[2]]]){const input=document.getElementById(id);if(document.activeElement!==input)input.value=value??'';}
+  }
 }
 function exportBeforeCalculationUpgrade(){
   const raw=localStorage.getItem(SK+'_before_calculation_v3');
@@ -6828,7 +6909,7 @@ function exportBeforeCalculationUpgrade(){
 function savePerformanceStart(){
   const startDate=document.getElementById('perf-start').value,openingCny=WealthMath.number(document.getElementById('perf-opening').value);
   if(WealthMath.dayIndex(startDate)===null||startDate>today()||openingCny===null||openingCny<0)return calculationMessage('请填写不晚于今天的核算起点和非负期初估值');
-  D.performanceTracking={startDate,openingCny:WealthMath.round(openingCny),confirmed:true};save();renderCalculationPanel();calculationMessage('已保存核算起点，请补齐此日起的所有外部入出金','success');
+  D.performanceTracking={startDate,openingCny:WealthMath.round(openingCny),confirmed:true};save();document.getElementById('perf-opening').value=D.performanceTracking.openingCny;renderCalculationPanel(false);calculationMessage('已保存核算起点，请补齐此日起的所有外部入出金','success');
 }
 function useSnapshotOpening(){
   const date=document.getElementById('perf-start').value;
@@ -6854,32 +6935,32 @@ function saveCashFlow(){
   const row={id,date,type,currency,amount,fxToCny,note:document.getElementById('flow-note').value.trim()};
   D.cashFlows=Array.isArray(D.cashFlows)?D.cashFlows:[];
   const idx=D.cashFlows.findIndex(f=>f.id===id);if(idx>=0)D.cashFlows[idx]=row;else D.cashFlows.push(row);
-  save();resetCashFlowForm();renderCalculationPanel();updateGoalBar();calculationMessage('流水已保存；不会自动修改资产余额','success');
+  save();resetCashFlowForm();renderCalculationPanel(false);updateGoalBar();calculationMessage('流水已保存；不会自动修改资产余额','success');
 }
 function editCashFlow(id){
   const row=(D.cashFlows||[]).find(f=>f.id===id);if(!row)return;
   for(const [field,value] of [['id',row.id],['date',row.date],['type',row.type],['currency',row.currency],['amount',row.amount],['rate',row.fxToCny],['note',row.note]])document.getElementById('flow-'+field).value=value??'';
-  syncFlowRate();document.querySelector('#calculation-panel details').open=true;document.getElementById('flow-date').focus();
+  syncFlowRate();setHistoryTab('flows');document.getElementById('flow-editor').open=true;document.getElementById('flow-date').focus();
 }
 function deleteCashFlow(id){
   const row=(D.cashFlows||[]).find(f=>f.id===id);if(!row)return;
   D.cashFlowTrash=D.cashFlowTrash||[];D.cashFlowTrash.push({...row,deletedAt:new Date().toISOString()});
-  D.cashFlows=D.cashFlows.filter(f=>f.id!==id);save();renderCalculationPanel();
+  D.cashFlows=D.cashFlows.filter(f=>f.id!==id);save();renderCalculationPanel(false);
 }
 function restoreCashFlow(){
   const row=D.cashFlowTrash?.pop();if(!row)return;
-  delete row.deletedAt;if(!(D.cashFlows||[]).some(f=>f.id===row.id))D.cashFlows.push(row);save();renderCalculationPanel();
+  delete row.deletedAt;if(!(D.cashFlows||[]).some(f=>f.id===row.id))D.cashFlows.push(row);save();renderCalculationPanel(false);
 }
 function saveGoalDefinition(){
   const amount=WealthMath.number(document.getElementById('plan-target').value);
   if(!(amount>0))return calculationMessage('请填写大于零的目标金额');
-  D.goal={amount,currency:'CNY',label:document.getElementById('plan-name').value.trim()||'存款目标'};save();updateGoalBar();calculationMessage('目标已保存','success');
+  D.goal={amount,currency:'CNY',label:document.getElementById('plan-name').value.trim()||'存款目标'};save();updateGoalBar();renderHistoryGoalPreview();calculationMessage('目标已保存','success');
 }
 function saveGoalPlan(){
   const monthlyContribution=WealthMath.number(document.getElementById('plan-monthly').value);
   const rates=['plan-low','plan-base','plan-high'].map(id=>WealthMath.number(document.getElementById(id).value));
   if(monthlyContribution===null||monthlyContribution<0||rates.some(r=>r===null||r<=-100||r>100)||rates[0]>rates[1]||rates[1]>rates[2])return calculationMessage('请填写每月非负净投入及从低到高的三种年收益假设（大于 -100%，不超过 100%）');
-  D.goalPlan={monthlyContribution,rates,confirmed:true};save();updateGoalBar();calculationMessage('情景参数已保存；这是条件推算，不是收益承诺','success');
+  D.goalPlan={monthlyContribution,rates,confirmed:true};save();updateGoalBar();renderHistoryGoalPreview();calculationMessage('情景参数已保存；这是条件推算，不是收益承诺','success');
 }
 function renderGoalForecast(cny,target){
   const el=document.getElementById('goal-eta');if(!el)return;
