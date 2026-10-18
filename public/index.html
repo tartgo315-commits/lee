@@ -9,8 +9,11 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
 <script src="calculation-engine.js"></script>
+<script src="movement-engine.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
+
+
 <script>
 tailwind.config={
   darkMode:'class',
@@ -982,6 +985,9 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
 @media(min-width:769px){.navigation-row>.sidebar{width:auto;min-width:0;flex:0 1 auto;border-bottom:0;background:transparent}}
 @media(max-width:768px){.navigation-row{min-height:0;border:0}.navigation-notices:has(.nav-notice:not([hidden])){padding:6px 12px;min-height:38px}.nav-notice{flex:1 1 0}.nav-notice-popup{right:12px}}
 
+#modal-movement{z-index:500}#modal-movement .movement-modal{max-width:min(680px,96vw)}.movement-header,.movement-actions{display:flex;align-items:center;justify-content:space-between;gap:12px}.movement-header h2{font-size:18px;margin:0}.movement-modal .fg{min-width:0}.movement-modal textarea{width:100%;resize:vertical;font:inherit;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg-card);color:var(--text-1)}.movement-preview{padding:12px 14px;background:var(--bg-muted);border:1px solid var(--border);border-radius:10px;font-size:13px;line-height:1.7;overflow-wrap:anywhere}.movement-preview p{margin:4px 0}#mv-error{color:var(--dn-soft);font-size:13px}.movement-actions{justify-content:flex-end;margin-top:16px}.movement-entry{border:1px solid var(--border);border-radius:10px;padding:14px;margin:10px 0;font-size:13px;line-height:1.6;overflow-wrap:anywhere}.movement-entry p{margin:5px 0;color:var(--text-2)}.term-portfolio-hd{flex-wrap:wrap}.term-portfolio-hd>.ov-holdings-note{margin-left:auto}
+@media(max-width:768px){.movement-modal .fg-row{grid-template-columns:1fr}.movement-modal input,.movement-modal select,.movement-modal textarea{font-size:16px}.movement-actions .btn{flex:1;padding:0 8px}.term-portfolio-hd>.ov-holdings-note{margin-left:0}}
+
 .history-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 20px;padding:6px;border:1px solid var(--border);border-radius:12px;background:var(--bg-card)}
 .history-tabs [role=tab]{padding:10px 18px;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--text-3);font:inherit;font-size:14px;font-weight:500;cursor:pointer}
 .history-tabs [role=tab]:hover{background:var(--bg-hover);color:var(--text-1)}
@@ -1186,7 +1192,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
         <section class="term-zone term-zone-portfolio">
           <div class="term-portfolio-hd">
             <div class="card-title"><i class="ti ti-briefcase"></i> 资产持仓</div>
-            <span class="ov-holdings-note">全部持仓按地区、账户分组展示</span>
+            <span class="ov-holdings-note">全部持仓按地区、账户分组展示</span><button type="button" class="btn btn-ghost btn-sm" onclick="openCashMovement()">记录资金变动</button>
           </div>
           <div id="gold-price-warn" style="display:none;margin-bottom:8px;padding:8px 12px;border-radius:8px;background:var(--warn-bg);border:1px solid rgba(217,119,6,.25);color:var(--warn);font-size:13px;">
             ⚠️ 黄金积存金价未刷新，当前净值未计入黄金市值。请点击顶栏「Au/g」刷新金价。
@@ -1338,10 +1344,13 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
           <div class="fg-row c3">
             <div class="fg"><label for="flow-amount">金额（正数）</label><input id="flow-amount" type="number" min="0" step="any"></div>
             <div class="fg"><label for="flow-rate">发生日汇率（每 1 外币折 CNY）</label><input id="flow-rate" type="number" min="0" step="any"></div>
-            <div class="fg"><label for="flow-note">说明（可选）</label><input id="flow-note" type="text"></div>
+            <div class="fg"><label for="flow-note">原因（必填）</label><input id="flow-note" type="text"></div>
           </div>
           <div class="calc-actions"><button type="button" class="btn btn-primary" onclick="saveCashFlow()">保存流水</button><button type="button" class="btn btn-ghost" onclick="resetCashFlowForm()">清空表单</button></div>
         </details>
+        <div class="calc-actions"><button type="button" class="btn btn-primary" onclick="openCashMovement()">记录资金变动</button><button type="button" class="btn btn-ghost" onclick="restartPerformanceFromCurrent()">以当前资产重新开始核算收益</button></div>
+        <h3 style="font-size:14px;margin-top:18px">资金与资产变动记录</h3><div id="movement-log" aria-live="polite"></div>
+        <h3 style="font-size:14px;margin-top:18px">外部入出金（含补记历史）</h3>
         <div id="cashflow-list" class="privacy-note"></div>
         <button id="restore-cashflow" type="button" class="btn btn-ghost btn-sm" onclick="restoreCashFlow()">恢复最近删除的流水</button>
 </section>
@@ -1753,6 +1762,21 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
   </div>
 </div>
 
+<div class="overlay" id="modal-movement" role="dialog" aria-modal="true" aria-labelledby="mv-title">
+  <div class="modal movement-modal">
+    <div class="movement-header"><h2 id="mv-title">记录变动原因</h2><button type="button" class="btn btn-icon" aria-label="取消记录变动" onclick="cancelMovement()">×</button></div>
+    <p class="privacy-note">确认后统一保存余额与原因。仅补记已有的外部入出金，请到资金流水录入，避免再次改变余额。</p>
+    <div class="fg" id="mv-source-wrap"><label for="mv-source">变动账户</label><select id="mv-source" onchange="changeMovementSource()"></select></div>
+    <div class="fg" id="mv-new-wrap"><label for="mv-new">变动后现金余额</label><input id="mv-new" type="number" min="0" step="0.01" oninput="updateMovementPreview()"></div>
+    <div class="fg-row c2"><div class="fg"><label for="mv-kind">变动类型</label><select id="mv-kind" onchange="updateMovementPreview()"></select></div><div class="fg"><label for="mv-date">实际发生日期</label><input id="mv-date" type="date" onchange="updateMovementPreview()"></div></div>
+    <div class="fg"><label for="mv-reason">原因 / 用途（必填）</label><textarea id="mv-reason" rows="2" maxlength="1000" placeholder="例如：购车首付款、转到澳洲账户、买入股票、修正录入错误" oninput="updateMovementPreview()"></textarea></div>
+    <div id="mv-transfer-wrap" hidden><div class="fg"><label for="mv-target">转入账户</label><select id="mv-target" onchange="updateMovementPreview()"></select></div><div class="fg"><label for="mv-received">实际到账金额（转入账户币种，已扣费用）</label><input id="mv-received" type="number" min="0" step="0.01" oninput="updateMovementPreview()"></div><p class="privacy-note">跨币种填写实际到账金额。费用已体现在转出与到账金额中，不再重复扣款。若尚未到账，请到账后再记录；缺少目标现金项目时先添加该账户的现金余额。</p></div>
+    <div id="mv-fx-wrap" class="fg" hidden><label for="mv-fx">发生日汇率（每 1 外币折 CNY）</label><input id="mv-fx" type="number" min="0" step="any" oninput="updateMovementPreview()"></div>
+    <div class="fg-row c2"><div class="fg"><label for="mv-channel">渠道 / 方式（可选）</label><input type="text" id="mv-channel" placeholder="银行电汇 / 券商入金"></div><div class="fg"><label for="mv-chain">关联批次（可选）</label><input type="text" id="mv-chain" placeholder="同一次跨境资金用同一个名称"></div></div>
+    <div id="mv-preview" class="movement-preview" aria-live="polite"></div><p id="mv-error" role="alert"></p>
+    <div class="movement-actions"><button type="button" class="btn btn-ghost" onclick="cancelMovement()">返回修改</button><button type="button" class="btn btn-primary" id="mv-submit" onclick="commitMovement()">确认变动并保存</button></div>
+  </div>
+</div>
 <script>
 // ══ DATA ══
 /** 本地双击 html 时：可填已部署站点根，用对方 /proxy 拉行情（勿尾斜杠），例 https://你的项目.web.app */
@@ -1760,7 +1784,7 @@ const FIREBASE_PROXY_BASE='';
 /** 线上无同源 /_proxy 时回退（勿尾斜杠）。部署在 Vercel 且接口在 /_proxy 时填你的站点根。 */
 const WO_REMOTE_PROXY_ORIGIN='https://lee-lime.vercel.app';
 const SK='wo_v2';
-const blank=()=>({products:[],navHistory:[],fx:{USD:7.24,AUD:4.75},nextId:1,settings:{accountingTimeZone:'Asia/Shanghai'},cashFlows:[],usAccountMeta:{},goal:{amount:0,currency:'CNY',label:'存款目标'}});
+const blank=()=>({products:[],navHistory:[],fx:{USD:7.24,AUD:4.75},nextId:1,settings:{accountingTimeZone:'Asia/Shanghai'},cashFlows:[],movementLog:[],usAccountMeta:{},goal:{amount:0,currency:'CNY',label:'存款目标'}});
 let D=blank();
 
 // ══ Asset schema v2（统一 market / asset_type / risk_profile / yield_config）══
@@ -3247,16 +3271,10 @@ function regionUsIdleCnyTotal(ps){
   return accs.reduce((s,a)=>s+accountUsIdleCny(ps.filter(p=>p.account===a),a),0);
 }
 function setUsAccountIdle(acc,val){
-  if(!D.usAccountMeta)D.usAccountMeta={};
-  const k=usMetaKey(acc);
-  const v=parseFloat(String(val==null?'':val).replace(/,/g,''));
-  if(val===''||val==null||String(val).trim()===''||isNaN(v)||v<0){
-    if(D.usAccountMeta[k]){delete D.usAccountMeta[k].idleUsd;if(!Object.keys(D.usAccountMeta[k]).length)delete D.usAccountMeta[k];}
-  }else{
-    D.usAccountMeta[k]={...D.usAccountMeta[k]||{},idleUsd:v};
-  }
-  save();renderOverview();renderSidebar();
-  if(document.getElementById('page-us')?.classList.contains('active'))renderRegion('us');
+  const raw=String(val??'').replace(/,/g,'').trim(),amount=WealthMath.number(raw),key=usMetaKey(acc),previous=D.usAccountMeta?.[key]||null;
+  if(raw===''){if(!previous)return;const after={...previous};delete after.idleUsd;stageMovement('m:'+key,Object.keys(after).length?after:null);return;}
+  if(amount===null||amount<0)return calculationMessage('请填写非负的实际美元闲置余额');
+  stageMovement('m:'+key,{...previous||{},idleUsd:amount});
 }
 function commitUsIdleInput(region,idx){
   const inp=document.getElementById('usidle-'+region+'-'+idx);
@@ -6687,6 +6705,121 @@ function updateFundModalTip(){
   }
 }
 
+let pendingMovement=null;
+function movementLabel(ref,value){const i=WealthMovements.info(ref,value);return (OVERVIEW_REGIONS[i.region]||'其他')+' · '+i.account+(ref.startsWith('p:')?' · '+(value?.name||value?.ticker||'资产'):' · 闲置美元');}
+function openCashMovement(ref,proposed){
+  const accounts=WealthMovements.cashAccounts(D);if(!accounts.length){calculationMessage('请先添加一个现金余额项目，再记录资金变动');return;}
+  const selected=accounts.find(a=>a.ref===ref)||accounts[0];
+  const value=WealthMovements.read(D,selected.ref),after=JSON.parse(JSON.stringify(value));
+  if(proposed!==undefined){if(selected.ref.startsWith('m:'))after.idleUsd=proposed;else after.amount=proposed;}
+  stageMovement(selected.ref,after,true);
+}
+function stageMovement(ref,after,standalone=false){
+  const before=WealthMovements.read(D,ref);
+  pendingMovement={ref,before:before?JSON.parse(JSON.stringify(before)):null,after:after?JSON.parse(JSON.stringify(after)):null,standalone,id:crypto.randomUUID(),timestamp:new Date().toISOString(),returnFocus:document.activeElement};
+  for(const id of ['mv-reason','mv-fx','mv-channel','mv-chain','mv-received'])document.getElementById(id).value='';
+  document.getElementById('mv-date').value=today();document.getElementById('mv-kind').value='';document.getElementById('mv-error').textContent='';
+  const source=document.getElementById('mv-source');source.replaceChildren();
+  for(const row of WealthMovements.cashAccounts(D)){const option=document.createElement('option');option.value=row.ref;option.textContent=movementLabel(row.ref,WealthMovements.read(D,row.ref))+' · '+fc(row.amount,row.currency,2);source.append(option);}
+  source.value=ref;document.getElementById('mv-source-wrap').hidden=!standalone;
+  document.getElementById('mv-new-wrap').hidden=!standalone;
+  const info=WealthMovements.info(ref,after||before);document.getElementById('mv-new').value=info.amount??'';
+  const target=document.getElementById('mv-target');target.replaceChildren();
+  const empty=document.createElement('option');empty.value='';empty.textContent='选择转入现金账户';target.append(empty);
+  for(const row of WealthMovements.cashAccounts(D)){if(row.ref===ref)continue;const option=document.createElement('option');option.value=row.ref;option.textContent=movementLabel(row.ref,WealthMovements.read(D,row.ref))+' · '+row.currency;target.append(option);}
+  const kind=document.getElementById('mv-kind');kind.replaceChildren();
+  const cash=WealthMovements.info(ref,before||after).cash;
+  const allowed=cash?(after===null?['expense','withdrawal','correction']:before?['deposit','expense','withdrawal','transfer','interest','correction','metadata']:['deposit','opening','correction']):before?['valuation','trade','correction','metadata']:['opening','trade','correction'];
+  for(const [key,label] of [['','请选择变动类型'],...Object.entries(WealthMovements.KINDS).filter(([key])=>allowed.includes(key))]){const option=document.createElement('option');option.value=key;option.textContent=label;kind.append(option);}
+  document.getElementById('mv-submit').textContent=after===null?'确认删除并记录原因':'确认变动并保存';
+  document.getElementById('modal-movement').classList.add('open');updateMovementPreview();requestAnimationFrame(()=>kind.focus());
+}
+function changeMovementSource(){
+  const ref=document.getElementById('mv-source').value;const old=pendingMovement;
+  openCashMovement(ref);if(old?.returnFocus)pendingMovement.returnFocus=old.returnFocus;
+}
+function movementOptions(){return{id:pendingMovement.id,timestamp:pendingMovement.timestamp,today:today(),date:document.getElementById('mv-date').value,kind:document.getElementById('mv-kind').value,reason:document.getElementById('mv-reason').value,fxToCny:document.getElementById('mv-fx').value,targetRef:document.getElementById('mv-target').value,received:document.getElementById('mv-received').value,channel:document.getElementById('mv-channel').value,chainId:document.getElementById('mv-chain').value};}
+function movementAfter(){
+  const after=pendingMovement.after?JSON.parse(JSON.stringify(pendingMovement.after)):null;
+  if(pendingMovement.standalone&&after){const amount=WealthMath.number(document.getElementById('mv-new').value);if(pendingMovement.ref.startsWith('m:'))after.idleUsd=amount;else after.amount=amount;}
+  return after;
+}
+function movementChangeText(change){
+  const before=change.before,after=change.after,left=WealthMovements.info(change.ref,before),right=WealthMovements.info(change.ref,after);
+  const label=movementLabel(change.ref,after||before);
+  if(left.cash||right.cash)return label+'：'+(before&&left.amount!==null?fc(left.amount,left.currency,2):'未登记')+' → '+(after&&right.amount!==null?fc(right.amount,right.currency,2):'移除')+(before&&after&&left.amount!==null&&right.amount!==null&&left.currency===right.currency?'（'+(right.amount-left.amount>0?'+':'')+fc(WealthMath.sum([right.amount,-left.amount]),right.currency,2)+'）':'');
+  const fields={shares:'股数',costPrice:'成本价',currentPrice:'现价',fundShares:'基金份额',fundCost:'基金成本',fundPrice:'基金净值',grams:'克数',goldCost:'黄金成本',goldPrice:'黄金价格',principal:'本金',rate:'年利率',tdPaidInterest:'已付利息',account:'账户',region:'地区',type:'资产类型',currency:'币种',name:'名称',note:'备注'};
+  return label+'：'+(!before?'新增资产':!after?'删除资产':Object.entries(fields).filter(([k])=>String(before[k]??'')!==String(after[k]??'')).map(([k,label])=>label+' '+String(before[k]??'未填')+' → '+String(after[k]??'未填')).join('；')||'合同 / 资料更新');
+}
+function updateMovementPreview(){
+  if(!pendingMovement)return;const options=movementOptions(),after=movementAfter();
+  document.getElementById('mv-transfer-wrap').hidden=options.kind!=='transfer';
+  document.getElementById('mv-fx-wrap').hidden=!['deposit','expense','withdrawal'].includes(options.kind)||WealthMovements.info(pendingMovement.ref,after||pendingMovement.before).currency==='CNY';
+  const preview=document.getElementById('mv-preview');preview.replaceChildren();
+  const line=text=>{const p=document.createElement('p');p.textContent=text;preview.append(p);};
+  line(movementChangeText({ref:pendingMovement.ref,before:pendingMovement.before,after}));
+  if(!options.kind||!options.reason.trim()){line('请选择变动类型并填写原因，保存前可查看两边余额及核算影响。');return;}
+  try{
+    const event=WealthMovements.prepare(D,pendingMovement.ref,after,options);
+    for(const change of event.changes.slice(1))line(movementChangeText(change));
+    if(event.kind==='trade')line('本次只修改当前资产，不会自动结算其他现金或持仓。请记录配套余额，再在变动记录中确认核对。');
+    line(event.flow?'自动登记'+(event.flow.type==='deposit'?'外部入金':'外部出金')+' '+fc(event.flow.amount,event.flow.currency,2)+'；不作为投资盈亏。':event.kind==='transfer'?'内部转账，不增加全账本净投入。实际到账差额及换汇会反映在资产估值中。':event.kind==='interest'?'到账利息 / 分红计入收益，不登记外部入金。':event.reviewRequired?'这项调整需要核对配套余额或收益起点，期间暂停显示收益，避免误算。':'只保存资料 / 行情变化，不登记外部入出金。');
+  }catch(error){line(error.message);}
+}
+function cancelMovement(){document.getElementById('modal-movement').classList.remove('open');const focus=pendingMovement?.returnFocus,meta=pendingMovement?.ref.startsWith('m:');pendingMovement=null;if(meta&&document.getElementById('page-us').classList.contains('active'))renderRegion('us');focus?.focus();}
+function persistMovementLedger(next){
+  if(calculationStorageReadFailed)throw Error('账本读取失败，请先导入有效备份');
+  if(!localStorage.getItem(SK+'_before_movement_v1'))localStorage.setItem(SK+'_before_movement_v1',JSON.stringify(D));
+  localStorage.setItem(SK,JSON.stringify(next));D=next;
+}
+function refreshAfterMovement(){renderOverview();renderSidebar();const active=document.querySelector('.page.active')?.id;if(['page-cn','page-us','page-au'].includes(active))renderRegion(active.slice(5));if(active==='page-history')renderCalculationPanel(false);}
+function commitMovement(){
+  if(!pendingMovement)return;
+  try{
+    if(JSON.stringify(WealthMovements.read(D,pendingMovement.ref))!==JSON.stringify(pendingMovement.before))throw Error('资产已被更新，请取消并重新打开，避免覆盖新资料');
+    const after=movementAfter(),event=WealthMovements.prepare(D,pendingMovement.ref,after,movementOptions());
+    persistMovementLedger(WealthMovements.apply(D,event));
+    const product=after&&pendingMovement.ref.startsWith('p:')?after:null;
+    cancelMovement();closeModal('modal');refreshAfterMovement();queueMovementQuote(product);
+    showToast({message:'变动及原因已保存，可在「资金流水」查看或撤销',type:'success',duration:4000});
+  }catch(error){document.getElementById('mv-error').textContent=error.message;}
+}
+function queueMovementQuote(p){
+  if(!p)return;
+  if(p.type==='gold'&&!p.goldPrice)setTimeout(async()=>{try{const price=await fetchGoldPrice(),live=D.products.find(x=>x.id===p.id);if(price>0&&live){live.goldPrice=price;live.goldUpdated=today();save();refreshAfterMovement();}}catch(e){}},400);
+  if(p.type==='fund_cn'&&p.fundCode&&!p.fundPrice&&p.fundCurrency==='CNY')setTimeout(async()=>{try{const quote=await fetchFundPrice(p.fundCode),live=D.products.find(x=>x.id===p.id);if(quote.price>0&&live){live.fundPrice=quote.price;live.name=live.name||quote.name;save();refreshAfterMovement();}}catch(e){}},400);
+}
+function renderMovementLog(){
+  const list=document.getElementById('movement-log');if(!list)return;list.replaceChildren();
+  for(const event of [...(D.movementLog||[])].reverse()){
+    const card=document.createElement('article');card.className='movement-entry';
+    const title=document.createElement('strong');title.textContent=event.date+' · '+(WealthMovements.KINDS[event.kind]||event.kind)+(event.reversedAt?' · 已撤销':'');card.append(title);
+    for(const value of [event.reason,...event.changes.map(movementChangeText),event.channel?'渠道：'+event.channel:'',event.chainId?'关联批次：'+event.chainId:'','记录时间：'+new Date(event.timestamp).toLocaleString('zh-CN')+(event.reversedAt?' · 撤销时间：'+new Date(event.reversedAt).toLocaleString('zh-CN'):''),event.flow?(event.reversedAt?'原关联入出金流水已随撤销移除。':'已关联收益核算流水，撤销时一并恢复。'):'']){if(!value)continue;const line=document.createElement('p');line.textContent=value;card.append(line);}
+    const details=document.createElement('details'),summary=document.createElement('summary'),full=document.createElement('pre');summary.textContent='查看变动前后完整资料';full.textContent=JSON.stringify(event.changes.map(c=>({account:movementLabel(c.ref,c.after||c.before),before:c.before,after:c.after})),null,2);full.style.cssText='max-height:240px;overflow:auto;white-space:pre-wrap;font-size:12px';details.append(summary,full);card.append(details);
+    if(event.kind==='trade'&&!event.reversedAt&&!event.reviewedAt){const verify=document.createElement('button');verify.type='button';verify.className='btn btn-ghost btn-sm';verify.textContent='已核对配套现金与持仓';verify.addEventListener('click',()=>verifyMovementTrade(event.id));card.append(verify);}
+    if(event.reviewedAt){const verified=document.createElement('p');verified.textContent='已确认配套现金与持仓 · '+new Date(event.reviewedAt).toLocaleString('zh-CN');card.append(verified);}
+    if(!event.reversedAt){const button=document.createElement('button');button.type='button';button.className='btn btn-ghost btn-sm';button.textContent='撤销这次变动';button.addEventListener('click',()=>undoMovement(event.id));card.append(button);}
+    list.append(card);
+  }
+  if(!list.children.length)list.textContent='尚无资金变动记录。修改资产时填写原因，或点击「记录资金变动」。';
+}
+function verifyMovementTrade(id){
+  const event=(D.movementLog||[]).find(e=>e.id===id);if(!event||event.kind!=='trade'||event.reversedAt)return;
+  if(!confirm('请确认这笔买卖 / 存取定期对应的现金和持仓都已记录，且没有将内部交易重复登记为外部入出金。确认后恢复收益核算，系统不会自动补扣现金。'))return;
+  const next=JSON.parse(JSON.stringify(D));next.movementLog.find(e=>e.id===id).reviewedAt=new Date().toISOString();
+  try{persistMovementLedger(next);refreshAfterMovement();calculationMessage('已记录配套余额核对确认','success');}catch(error){calculationMessage(error.message);}
+}
+function undoMovement(id){
+  if(!confirm('撤销会恢复这次变动涉及的余额 / 持仓，并移除关联入出金流水；原因记录仍会保留。是否继续？'))return;
+  try{persistMovementLedger(WealthMovements.reverse(D,id,new Date().toISOString()));refreshAfterMovement();calculationMessage('已恢复变动前数据，撤销记录已保留','success');}catch(error){calculationMessage(error.message);}
+}
+function restartPerformanceFromCurrent(){
+  const state=valuationStatus();if(!state.complete)return calculationMessage('当前估值不完整，不能重新设置收益起点');
+  if(!confirm('将以当前完整估值和今天为新的收益起点；已有变动和快照会保留。是否继续？'))return;
+  const next=JSON.parse(JSON.stringify(D));next.performanceTracking={startDate:today(),openingCny:state.knownCny,confirmed:true,movementBaselineIds:(D.movementLog||[]).map(e=>e.id),includedFlowIds:(D.cashFlows||[]).filter(f=>f.date<=today()).map(f=>f.id)};
+  try{persistMovementLedger(next);renderCalculationPanel();calculationMessage('已从当前资产重新开始核算收益','success');}catch(error){calculationMessage(error.message);}
+}
+
 function saveProduct(){
   const editId=document.getElementById('m-editid').value;
   const region=document.getElementById('m-region').value;
@@ -6708,9 +6841,6 @@ function saveProduct(){
     const gprice=parseFloat(document.getElementById('m-gprice').value)||0;
     if(isNaN(grams)||isNaN(gcost)){status.innerHTML='<div class="alert alert-warn">请填写持有克数和持仓均价</div>';return;}
     p=sanitizeGoldProduct({...p,grams,goldCost:gcost,goldPrice:gprice});
-    if(!gprice)setTimeout(async()=>{
-      try{const price=await fetchGoldPrice();if(price>0){const idx=D.products.findIndex(x=>x.id===p.id);if(idx>=0){D.products[idx].goldPrice=price;D.products[idx].goldUpdated=today();}save();renderOverview();renderSidebar();}}catch(e){}
-    },400);
   } else if(type==='stock_us'){
     const ticker=document.getElementById('m-ticker').value.trim().toUpperCase();
     const shares=parseFloat(document.getElementById('m-shares').value);
@@ -6732,9 +6862,6 @@ function saveProduct(){
     if(isNaN(shares)||isNaN(cost)){status.innerHTML='<div class="alert alert-warn">请填写份额和成本均价</div>';return;}
     p={...p,fundCode:code,fundShares:shares,fundCost:cost,fundPrice:price,fundCurrency,updatedAt:fdate};
     // Only auto-fetch if code provided and no manual price set
-    if(code&&!price&&fundCurrency==='CNY')setTimeout(async()=>{
-      try{const r=await fetchFundPrice(code);if(r.price>0){const idx=D.products.findIndex(x=>x.id===p.id);if(idx>=0){D.products[idx].fundPrice=r.price;D.products[idx].name=D.products[idx].name||r.name;}save();renderRegion(region);renderSidebar();renderOverview();}}catch(e){}
-    },400);
   } else if(type==='term_deposit'){
     const principal=parseFloat(document.getElementById('m-principal').value);
     const rate=parseFloat(document.getElementById('m-rate').value);
@@ -6756,16 +6883,10 @@ function saveProduct(){
     p={...p,amount,currency,updatedAt:date};
   }
 
-  if(editId){
-    const idx=D.products.findIndex(x=>x.id===parseInt(editId));
-    if(idx>=0){
-      let merged={...D.products[idx],...p};
-      if(type==='gold')merged=sanitizeGoldProduct(merged);
-      D.products[idx]=merged;
-    }
-  }else{D.products.push(type==='gold'?sanitizeGoldProduct(p):p);D.nextId++;}
-  save();closeModal('modal');renderRegion(region);renderSidebar();
-  if(document.getElementById('page-overview').classList.contains('active'))renderOverview();
+  const original=editId?D.products.find(x=>x.id===parseInt(editId)):null;
+  p=original?{...original,...p,createdAt:original.createdAt||p.createdAt}:p;
+  if(type==='gold')p=sanitizeGoldProduct(p);
+  stageMovement('p:'+p.id,p);
 }
 
 function editProduct(id){
@@ -6815,11 +6936,8 @@ function editProduct(id){
 }
 
 function deleteProduct(id){
-  const p=D.products.find(x=>x.id===id);
-  if(!p||!confirm('删除「'+(p.name||p.ticker||p.account)+'」？'))return;
-  D.products=D.products.filter(x=>x.id!==id);
-  save();renderRegion(p.region);renderSidebar();
-  if(document.getElementById('page-overview').classList.contains('active'))renderOverview();
+  const p=D.products.find(x=>x.id===id);if(!p)return;
+  stageMovement('p:'+id,null);
 }
 
 // ══ SETTINGS ══
@@ -7018,7 +7136,7 @@ function calculationMessage(message,type='warn'){showToast({message,type,duratio
 function renderCalculationPanel(refreshForms=true){
   const summary=document.getElementById('performance-summary');if(!summary)return;
   const state=valuationStatus(),tracking=D.performanceTracking;
-  const report=WealthMath.performance(tracking,D.cashFlows||[],state.knownCny,today(),state.complete);
+  const report=WealthMath.performance(tracking,D.cashFlows||[],state.knownCny,today(),state.complete,D.movementLog||[]);
   if(refreshForms){
   const start=document.getElementById('perf-start'),opening=document.getElementById('perf-opening');
   if(document.activeElement!==start)start.value=tracking?.startDate||today();
@@ -7037,11 +7155,12 @@ function renderCalculationPanel(refreshForms=true){
     const amount=WealthMath.number(flow.amount),rate=WealthMath.fxRate(flow.currency,{[flow.currency]:flow.fxToCny});
     text.textContent=flow.date+' · '+(flow.type==='deposit'?'入金':'出金')+' · '+fc(amount,flow.currency,2)+' · 折合 '+(amount!==null&&rate!==null?fc(WealthMath.multiply(amount,rate),'CNY',2):'历史汇率缺失')+(flow.note?' · '+flow.note:'');
     row.append(text);
-    for(const [label,action] of [['编辑',()=>editCashFlow(flow.id)],['删除',()=>deleteCashFlow(flow.id)]]){const button=document.createElement('button');button.type='button';button.className='btn btn-ghost btn-sm';button.textContent=label;button.addEventListener('click',action);row.append(button);}
+    for(const [label,action] of flow.movementId?[]:[['编辑',()=>editCashFlow(flow.id)],['删除',()=>deleteCashFlow(flow.id)]]){const button=document.createElement('button');button.type='button';button.className='btn btn-ghost btn-sm';button.textContent=label;button.addEventListener('click',action);row.append(button);}
     list.append(row);
   }
   if(!sorted.length)list.textContent='尚无入出金记录。资产之间买卖、账户间划转均不作为全账本的外部入出金。';
   document.getElementById('restore-cashflow').disabled=!(D.cashFlowTrash||[]).length;
+  renderMovementLog();
   renderHistoryGoalPreview();
   if(refreshForms){
   const targetInput=document.getElementById('plan-target'),nameInput=document.getElementById('plan-name');
@@ -7082,18 +7201,22 @@ function saveCashFlow(){
   const date=document.getElementById('flow-date').value,currency=document.getElementById('flow-currency').value,type=document.getElementById('flow-type').value;
   const amount=WealthMath.number(document.getElementById('flow-amount').value),fxToCny=currency==='CNY'?1:WealthMath.number(document.getElementById('flow-rate').value);
   if(WealthMath.dayIndex(date)===null||date>today()||!(amount>0)||!(fxToCny>0))return calculationMessage('请填写有效日期、正数金额和实际发生日的汇率');
+  if(!document.getElementById('flow-note').value.trim())return calculationMessage('请填写这笔入出金的原因');
   const editId=document.getElementById('flow-id').value,id=editId||crypto.randomUUID();
+  if((D.cashFlows||[]).some(f=>f.id===id&&f.movementId))return calculationMessage('这笔流水由资金变动生成，请从变动记录撤销');
   const row={id,date,type,currency,amount,fxToCny,note:document.getElementById('flow-note').value.trim()};
   D.cashFlows=Array.isArray(D.cashFlows)?D.cashFlows:[];
   const idx=D.cashFlows.findIndex(f=>f.id===id);if(idx>=0)D.cashFlows[idx]=row;else D.cashFlows.push(row);
   save();resetCashFlowForm();renderCalculationPanel(false);updateGoalBar();calculationMessage('流水已保存；不会自动修改资产余额','success');
 }
 function editCashFlow(id){
+  if((D.cashFlows||[]).some(f=>f.id===id&&f.movementId))return calculationMessage('请从资金变动记录查看或撤销');
   const row=(D.cashFlows||[]).find(f=>f.id===id);if(!row)return;
   for(const [field,value] of [['id',row.id],['date',row.date],['type',row.type],['currency',row.currency],['amount',row.amount],['rate',row.fxToCny],['note',row.note]])document.getElementById('flow-'+field).value=value??'';
   syncFlowRate();setHistoryTab('flows');document.getElementById('flow-editor').open=true;document.getElementById('flow-date').focus();
 }
 function deleteCashFlow(id){
+  if((D.cashFlows||[]).some(f=>f.id===id&&f.movementId))return calculationMessage('请从资金变动记录撤销，余额会一并恢复');
   const row=(D.cashFlows||[]).find(f=>f.id===id);if(!row)return;
   D.cashFlowTrash=D.cashFlowTrash||[];D.cashFlowTrash.push({...row,deletedAt:new Date().toISOString()});
   D.cashFlows=D.cashFlows.filter(f=>f.id!==id);save();renderCalculationPanel(false);
@@ -7132,10 +7255,10 @@ function saveAccountingZone(){
   if(bd)bd.addEventListener('click',closeMobileSidebar);
   window.addEventListener('resize',function(){if(!isMobileNav())closeMobileSidebar();scheduleIntelHeightSync();});
   document.addEventListener('keydown',function(e){
-    if(e.key==='Escape'){closeMobileSidebar();closeCmdk();document.querySelectorAll('.overlay.open').forEach(el=>closeModal(el.id));}
+    if(e.key==='Escape'){closeMobileSidebar();closeCmdk();const top=document.getElementById('modal-movement').classList.contains('open')?document.getElementById('modal-movement'):Array.from(document.querySelectorAll('.overlay.open')).at(-1);if(top?.id==='modal-movement')cancelMovement();else if(top)closeModal(top.id);}
     if((e.key==='Enter'||e.key===' ')&&e.target.matches('.fx-chip[role=button]')){e.preventDefault();e.target.click();}
     if(e.key==='Tab'){
-      const overlay=document.querySelector('.overlay.open');
+      const overlay=document.getElementById('modal-movement').classList.contains('open')?document.getElementById('modal-movement'):Array.from(document.querySelectorAll('.overlay.open')).at(-1);
       if(overlay){
         const fields=Array.from(overlay.querySelectorAll('button,input:not([type=hidden]),select,textarea,a[href]')).filter(el=>!el.disabled&&el.getClientRects().length);
         const first=fields[0],last=fields[fields.length-1];

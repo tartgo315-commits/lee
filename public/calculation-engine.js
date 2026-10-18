@@ -157,12 +157,13 @@
     for(let i=0;i<200;i++){const mid=(low+high)/2,fm=f(mid);if(Math.abs(fm)<1e-12||high-low<1e-12)return{rate:Math.expm1(mid),reason:null};if(fl*fm<=0){high=mid;fh=fm;}else{low=mid;fl=fm;}}
     return{rate:null,reason:'年化收益未收敛'};
   }
-  function performance(tracking,flows,currentCny,asOf,complete=true){
+  function performance(tracking,flows,currentCny,asOf,complete=true,movements=[]){
     if(!tracking?.confirmed||dayIndex(tracking.startDate)===null||number(tracking.openingCny)===null||tracking.openingCny<0)return{available:false,reason:'请先设置收益核算起点并补齐区间内入出金'};
     if(!complete||number(currentCny)===null)return{available:false,reason:'当前估值不完整，暂停计算收益'};
     if(asOf<tracking.startDate)return{available:false,reason:'核算起点晚于估值日'};
     if(!Array.isArray(flows)||flows.some(f=>!f||dayIndex(f.date)===null))return{available:false,reason:'流水日期无效，请核对导入记录'};
-    const selected=flows.filter(f=>f.date>=tracking.startDate&&f.date<=asOf);
+    if(tracking.needsReview||!Array.isArray(movements)||movements.some(event=>!event||event.reviewRequired&&!event.reversedAt&&!(event.kind==='trade'&&event.reviewedAt)&&!(tracking.movementBaselineIds||[]).includes(event.id)))return{available:false,reason:'有资产更正、初始登记或持仓调整需要核对；可撤销相关变动，或在确认当前余额后以当前资产重新开始核算'};
+    const selected=flows.filter(f=>f.date>=tracking.startDate&&f.date<=asOf&&!(tracking.includedFlowIds||[]).includes(f.id));
     if(selected.some(f=>dayIndex(f.date)===null||!(number(f.amount)>0)||!['deposit','withdrawal'].includes(f.type)||!(fxRate(f.currency,{[f.currency]:f.fxToCny})>0)))return{available:false,reason:'区间内流水缺少有效金额或历史汇率'};
     const deposits=sum(selected.filter(f=>f.type==='deposit').map(f=>multiply(f.amount,fxRate(f.currency,{[f.currency]:f.fxToCny}))));
     const withdrawals=sum(selected.filter(f=>f.type==='withdrawal').map(f=>multiply(f.amount,fxRate(f.currency,{[f.currency]:f.fxToCny}))));
