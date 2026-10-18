@@ -1775,8 +1775,6 @@ function save(){
 }
 const today=()=>new Date().toISOString().slice(0,10);
 load();
-hydrateStocksFromCacheOnLoad();
-syncTdRateLimitedFromStorage();
 if(!D.goal||typeof D.goal!=='object'||!(Number(D.goal.amount)>0))
   D.goal={amount:0,currency:'CNY',label:'存款目标'};
 maybeRollAuWeeklyCompound();
@@ -2092,23 +2090,103 @@ const STOCK_PRICE_CACHE_KEY='stock_price_cache';
 const TD_LIMIT_UNTIL_KEY='stock_td_limit_until';
 const stockPriceSourceBySym=new Map();
 let __stockTdRateLimited=false;
+const TD_LIMIT_KIND_KEY='stock_td_limit_kind';
+const TD_QUOTE_CACHE_KEY='stock_td_quotes_v1';
+const TD_QUOTE_TTL_MS=60000;
+const tdRequestsInFlight=new Map();
+const tdQuoteMemory=new Map();
+let __stockTdLimitUntil=0,__stockTdLimitKind='unknown';
+function classifyTwelveDataLimit(data,httpStatus){
+  const message=String(data?.error||data?.message||'').toLowerCase();
+  if(Number(data?.code)!==429&&httpStatus!==429&&!/credit.*(?:limit|run out|exhaust)|run out.*credit|quota.*(?:exceed|limit)|rate.?limit/.test(message))return null;
+  const kind=/daily|per day|a day|for (?:the |this )?day|today|24.?hour/.test(message)?'day':/minute|minutely/.test(message)?'minute':'unknown';
+  const now=Date.now(),date=new Date(now);
+  return{rateLimited:true,limitKind:kind,retryAt:kind==='day'?Date.UTC(date.getUTCFullYear(),date.getUTCMonth(),date.getUTCDate()+1):now+60000};
+}
 function syncTdRateLimitedFromStorage(){
   try{
-    const until=parseInt(localStorage.getItem(TD_LIMIT_UNTIL_KEY)||'0',10);
-    if(until>Date.now())__stockTdRateLimited=true;
-    else if(until>0)localStorage.removeItem(TD_LIMIT_UNTIL_KEY);
+    let until=Number(localStorage.getItem(TD_LIMIT_UNTIL_KEY))||0;
+    let kind=localStorage.getItem(TD_LIMIT_KIND_KEY);
+    // Old versions marked every 429 as a full-day outage. Recheck those once
+    // after a short cooldown, without discarding a confirmed daily limit.
+    if(until>Date.now()&&!kind){
+      until=Math.min(until,Date.now()+60000);kind='unknown';
+      localStorage.setItem(TD_LIMIT_UNTIL_KEY,String(until));
+      localStorage.setItem(TD_LIMIT_KIND_KEY,kind);
+    }
+    if(until>__stockTdLimitUntil){__stockTdLimitUntil=until;__stockTdLimitKind=kind||'unknown';}
   }catch(e){}
+  __stockTdRateLimited=__stockTdLimitUntil>Date.now();
+  if(!__stockTdRateLimited){__stockTdLimitUntil=0;__stockTdLimitKind='unknown';}
 }
-function markTdRateLimited(){
+function markTdRateLimited(limit){
+  const until=Number(limit?.retryAt)||Date.now()+60000;
+  syncTdRateLimitedFromStorage();
+  if(until>=__stockTdLimitUntil){__stockTdLimitUntil=until;__stockTdLimitKind=limit?.limitKind||'unknown';}
   __stockTdRateLimited=true;
-  try{
-    const d=new Date();
-    localStorage.setItem(TD_LIMIT_UNTIL_KEY,String(Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate()+1)));
-  }catch(e){}
+  try{localStorage.setItem(TD_LIMIT_UNTIL_KEY,String(__stockTdLimitUntil));localStorage.setItem(TD_LIMIT_KIND_KEY,__stockTdLimitKind);}catch(e){}
 }
 function clearTdRateLimited(){
-  __stockTdRateLimited=false;
-  try{localStorage.removeItem(TD_LIMIT_UNTIL_KEY);}catch(e){}
+  __stockTdRateLimited=false;__stockTdLimitUntil=0;__stockTdLimitKind='unknown';
+  try{localStorage.removeItem(TD_LIMIT_UNTIL_KEY);localStorage.removeItem(TD_LIMIT_KIND_KEY);}catch(e){}
+}
+function readFreshTdQuote(sym){
+  let entry=tdQuoteMemory.get(sym);
+  try{
+    const shared=JSON.parse(localStorage.getItem(TD_QUOTE_CACHE_KEY)||'{}')[sym];
+    if(shared&&(!entry||shared.timestamp>entry.timestamp))entry=shared;
+  }catch(e){}
+  if(entry?.price>0&&Date.now()-entry.timestamp>=0&&Date.now()-entry.timestamp<TD_QUOTE_TTL_MS)return entry;
+  return null;
+}
+function cacheTdQuote(sym,price){
+  const entry={price,timestamp:Date.now()};tdQuoteMemory.set(sym,entry);
+  try{
+    const store=JSON.parse(localStorage.getItem(TD_QUOTE_CACHE_KEY)||'{}');
+    for(const key of Object.keys(store))if(Date.now()-store[key].timestamp>=TD_QUOTE_TTL_MS)delete store[key];
+    store[sym]=entry;localStorage.setItem(TD_QUOTE_CACHE_KEY,JSON.stringify(store));
+  }catch(e){}
+}
+/** Single and batch callers share in-flight symbols and one-minute quotes. */
+async function requestTwelveDataPrices(tickers){
+  const syms=[...new Set(tickers.map(t=>String(t||'').trim().toUpperCase()).filter(Boolean))];
+  const out=new Map();
+  if(!syms.length||!['http:','https:'].includes(location.protocol))return{map:out,rateLimited:false};
+  const missing=[];
+  for(const sym of syms){const quote=readFreshTdQuote(sym);if(quote)out.set(sym,quote.price);else if(!tdRequestsInFlight.has(sym))missing.push(sym);}
+  syncTdRateLimitedFromStorage();
+  if(missing.length&&!__stockTdRateLimited){
+    const job=(async()=>{
+      try{
+        const r=await fetch(location.origin+'/api/stock-price?symbol='+encodeURIComponent(missing.join(',')),{cache:'no-store'});
+        let data;
+        try{data=await r.json();}catch(e){const limit=classifyTwelveDataLimit(null,r.status);if(limit)markTdRateLimited(limit);return new Map();}
+        const limited=classifyTwelveDataLimit(data,r.status);
+        if(limited){markTdRateLimited(limited);return new Map();}
+        const prices=new Map();
+        for(const sym of missing){
+          const entry=missing.length===1?(data[sym]||data):data[sym];
+          const limit=classifyTwelveDataLimit(entry);
+          if(limit){markTdRateLimited(limit);continue;}
+          const price=parseTwelveDataQuotePayload(entry);
+          if(price>0){prices.set(sym,price);cacheTdQuote(sym,price);}
+        }
+        return prices;
+      }catch(e){return new Map();}
+    })();
+    for(const sym of missing){
+      const pending=job.then(prices=>prices.get(sym)||null);
+      tdRequestsInFlight.set(sym,pending);
+      pending.finally(()=>{if(tdRequestsInFlight.get(sym)===pending)tdRequestsInFlight.delete(sym);});
+    }
+  }
+  await Promise.all(syms.map(async sym=>{
+    if(out.has(sym))return;
+    const pending=tdRequestsInFlight.get(sym);
+    if(pending){const price=await pending;if(price>0)out.set(sym,price);}
+  }));
+  syncTdRateLimitedFromStorage();
+  return{map:out,rateLimited:__stockTdRateLimited,limitKind:__stockTdLimitKind,retryAt:__stockTdLimitUntil};
 }
 
 function readStockPriceCacheStore(){
@@ -2143,6 +2221,7 @@ function formatStockCacheAge(ts){
   return '刚刚';
 }
 function updateStockQuoteFallbackBanner(){
+  syncTdRateLimitedFromStorage();
   const el=document.getElementById('stock-quote-fallback-banner');
   if(!el)return;
   const entries=[...stockPriceSourceBySym.values()];
@@ -2151,17 +2230,12 @@ function updateStockQuoteFallbackBanner(){
   if(__stockTdRateLimited&&(yahooUsed||cacheEntries.length)){
     el.style.display='block';
     el.className='alert alert-warn';
-    let resetHint='';
-    try{
-      const until=parseInt(localStorage.getItem(TD_LIMIT_UNTIL_KEY)||'0',10);
-      if(until>Date.now()){
-        const h=new Date(until);
-        resetHint='（Twelve Data 免费额度按 UTC 日重置，约 '+h.toLocaleString('zh-CN',{hour:'2-digit',minute:'2-digit'})+' 北京时间后恢复）';
-      }
-    }catch(e){}
-    el.textContent=cacheEntries.length
-      ?'Twelve Data 今日额度已用尽，行情使用备用数据源；部分标的显示缓存价格'+resetHint
-      :'Twelve Data 今日额度已用尽，行情已切换 Yahoo 备用数据源'+resetHint;
+    const daily=__stockTdLimitKind==='day';
+    const seconds=Math.max(1,Math.ceil((__stockTdLimitUntil-Date.now())/1000));
+    const reason=daily?'Twelve Data 今日额度已用尽':__stockTdLimitKind==='minute'?'Twelve Data 每分钟请求额度暂时用尽':'Twelve Data 请求暂时受限（未确认是每日额度）';
+    const retry=daily?'；每日额度按 UTC 00:00（北京时间 08:00）重置':'；约 '+seconds+' 秒后允许重试';
+    const fallback=cacheEntries.length?'，正在使用备用数据源；部分标的为缓存价格':'，正在使用 Yahoo 备用行情';
+    el.textContent=reason+fallback+retry;
     return;
   }
   if(cacheEntries.length){
@@ -2203,57 +2277,13 @@ function parseTwelveDataQuotePayload(d){
   const p=ext>0?ext:reg;
   return p>0&&isFinite(p)?p:null;
 }
-function isTwelveDataRateLimited(d){
-  if(!d)return false;
-  if(d.code===429)return true;
-  const msg=String(d.error||d.message||'').toLowerCase();
-  return /credit|limit|quota|429|run out/.test(msg);
-}
-/** Twelve Data 经同源 /api/stock-price */
+function isTwelveDataRateLimited(d){return !!classifyTwelveDataLimit(d);}
 async function fetchTwelveDataStockPriceDetailed(ticker){
   const sym=String(ticker||'').trim().toUpperCase();
-  if(!sym||location.protocol!=='https:'&&location.protocol!=='http:')return{price:null,rateLimited:false};
-  try{
-    const r=await fetch(location.origin+'/api/stock-price?symbol='+encodeURIComponent(sym),{cache:'no-store'});
-    let d=null;
-    try{d=await r.json();}catch(e){return{price:null,rateLimited:false};}
-    if(isTwelveDataRateLimited(d))return{price:null,rateLimited:true};
-    const p=parseTwelveDataQuotePayload(d);
-    return{price:p,rateLimited:false};
-  }catch(e){return{price:null,rateLimited:false};}
+  const result=await requestTwelveDataPrices([sym]);
+  return{price:result.map.get(sym)||null,rateLimited:result.rateLimited,limitKind:result.limitKind,retryAt:result.retryAt,timestamp:readFreshTdQuote(sym)?.timestamp};
 }
-async function fetchTwelveDataBatch(tickers){
-  const syms=tickers.map(t=>String(t||'').trim().toUpperCase()).filter(Boolean);
-  if(!syms.length||(location.protocol!=='https:'&&location.protocol!=='http:'))
-    return{map:new Map(),rateLimited:false};
-  try{
-    const r=await fetch(
-      location.origin+'/api/stock-price?symbol='+encodeURIComponent(syms.join(',')),
-      {cache:'no-store'}
-    );
-    const d=await r.json();
-    if(isTwelveDataRateLimited(d))return{map:new Map(),rateLimited:true};
-    const isMulti=syms.length>1;
-    const out=new Map();
-    let rateLimited=false;
-    if(isMulti){
-      for(const sym of syms){
-        const entry=d[sym];
-        if(!entry)continue;
-        if(isTwelveDataRateLimited(entry)){rateLimited=true;continue;}
-        const p=parseTwelveDataQuotePayload(entry);
-        if(p>0)out.set(sym,p);
-      }
-    }else{
-      if(isTwelveDataRateLimited(d))return{map:out,rateLimited:true};
-      const p=parseTwelveDataQuotePayload(d);
-      if(p>0)out.set(syms[0],p);
-    }
-    return{map:out,rateLimited};
-  }catch(e){
-    return{map:new Map(),rateLimited:false};
-  }
-}
+async function fetchTwelveDataBatch(tickers){return requestTwelveDataPrices(tickers);}
 async function fetchTwelveDataStockPrice(ticker){
   const r=await fetchTwelveDataStockPriceDetailed(ticker);
   return r.price;
@@ -2295,13 +2325,13 @@ async function fetchStockPriceYahooOrCacheOnly(ticker){
 async function fetchStockPriceWithFallback(ticker){
   const sym=String(ticker||'').trim().toUpperCase();
   if(!sym)return null;
+  syncTdRateLimitedFromStorage();
   if(__stockTdRateLimited)return fetchStockPriceYahooOrCacheOnly(sym);
   const td=await fetchTwelveDataStockPriceDetailed(sym);
-  if(td.rateLimited)markTdRateLimited();
+  if(td.rateLimited)markTdRateLimited(td);
   if(td.price>0){
-    clearTdRateLimited();
     writeStockPriceCache(sym,td.price);
-    return{price:td.price,source:'twelve',timestamp:Date.now()};
+    return{price:td.price,source:'twelve',timestamp:td.timestamp||Date.now()};
   }
   const yPx=await fetchYahooOnlyStockPrice(sym);
   if(yPx>0){
@@ -2325,7 +2355,7 @@ async function fetchYahooStockPrice(ticker){
 }
 
 // ══ Finnhub：REST 经同源 /api/finnhub-quote（密钥在 Vercel 环境变量 FINNHUB_TOKEN）；浏览器不再持有 token，故不使用 wss ══
-const FINNHUB_WATCH_SYMBOLS=['NVDA','TSLA','PLTR','VOO','CRCL'];
+// Only user-entered holdings consume quote credits.
 /** 后台美股轮询：Twelve Data 批量 → Yahoo → 缓存 fallback；默认 30 分钟 */
 const FINNHUB_QUOTE_POLL_MS=1800000;
 const FH_QUOTE_STAGGER_MS=700;
@@ -2422,7 +2452,7 @@ function patchOverviewStockRow(sym,price){
 }
 const finnhubSubscribed=new Set();
 function finnhubDesiredSymbols(){
-  const s=new Set(FINNHUB_WATCH_SYMBOLS.map(x=>String(x).toUpperCase()));
+  const s=new Set();
   D.products.filter(p=>p.type==='stock_us'&&p.ticker).forEach(p=>s.add(String(p.ticker).trim().toUpperCase()));
   return s;
 }
@@ -2628,46 +2658,67 @@ function mergeYahooFinnhubPrice(yPx,fhRow,sym){
   if(fhFresh)return fh;
   return yPx;
 }
+const STOCK_AUTO_POLL_KEY='stock_auto_poll_v1';
+let stockPollInFlight=null,stockLastPoll=null;
 async function pollFinnhubQuotesOnce(){
-  /* 不在此用 document.hidden 直接 return：手机切后台/系统省电会导致长时间不轮询，页面上像「股价死了」。 */
+  if(document.hidden)return;
+  if(stockPollInFlight)return stockPollInFlight;
+  const signature=[...finnhubDesiredSymbols()].sort().join(',');
+  if(!signature)return;
+  let previous=stockLastPoll;
+  try{const shared=JSON.parse(localStorage.getItem(STOCK_AUTO_POLL_KEY)||'null');if(shared&&(!previous||shared.at>previous.at))previous=shared;}catch(e){}
+  if(previous?.signature===signature&&Date.now()-previous.at>=0&&Date.now()-previous.at<FINNHUB_QUOTE_POLL_MS)return;
+  const reservation={signature,at:Date.now()};
+  stockLastPoll=reservation;
+  try{localStorage.setItem(STOCK_AUTO_POLL_KEY,JSON.stringify(reservation));}catch(e){}
+  stockPollInFlight=runFinnhubQuotePoll().then(updated=>{
+    if(!updated){
+      const retry={signature,at:Date.now()-FINNHUB_QUOTE_POLL_MS+60000};stockLastPoll=retry;
+      try{const current=JSON.parse(localStorage.getItem(STOCK_AUTO_POLL_KEY)||'null');if(current?.at===reservation.at)localStorage.setItem(STOCK_AUTO_POLL_KEY,JSON.stringify(retry));}catch(e){}
+    }
+    return updated;
+  }).finally(()=>{stockPollInFlight=null;});
+  return stockPollInFlight;
+}
+async function runFinnhubQuotePoll(){
   const syms=[...finnhubDesiredSymbols()];
   if(!syms.length)return;
   if(location.protocol!=='http:'&&location.protocol!=='https:')return;
 
+  syncTdRateLimitedFromStorage();
   let tdMap=new Map();
   if(!__stockTdRateLimited){
     const batch=await fetchTwelveDataBatch(syms);
-    if(batch.rateLimited){
-      markTdRateLimited();
-    }else{
-      tdMap=batch.map;
-      if(tdMap.size>0)clearTdRateLimited();
-    }
+    tdMap=batch.map;
+    if(batch.rateLimited)markTdRateLimited(batch);
   }
 
+  let updated=0;
   for(const sym of syms){
     let price=tdMap.get(sym)||null;
     let source=price?'twelve':null;
+    let timestamp=readFreshTdQuote(sym)?.timestamp||Date.now();
     if(price&&price>0){
       writeStockPriceCache(sym,price);
     }else{
-      const fallback=__stockTdRateLimited
-        ?await fetchStockPriceYahooOrCacheOnly(sym)
-        :await fetchStockPriceWithFallback(sym);
+      const fallback=await fetchStockPriceYahooOrCacheOnly(sym);
       if(fallback?.price>0){
         price=fallback.price;
         source=fallback.source;
+        timestamp=fallback.timestamp||Date.now();
       }
     }
     if(!(price>0))continue;
+    updated++;
     patchUsStockLiveRow(sym,price,{
       force:source==='cache',
       source,
-      timestamp:Date.now(),
+      timestamp,
     });
   }
   updateStockQuoteFallbackBanner();
   scheduleOverviewLiveRefresh();
+  return updated;
 }
 function startFinnhubQuotePolling(){
   if(finnhubQuotePollTimer)clearInterval(finnhubQuotePollTimer);
@@ -6757,6 +6808,8 @@ function migrateGoldStrayFundFields(){
   }
   if(patched)save();
 }
+syncTdRateLimitedFromStorage();
+hydrateStocksFromCacheOnLoad();
 renderOverview();
 initIntelHeightObserver();
 renderSidebar();
