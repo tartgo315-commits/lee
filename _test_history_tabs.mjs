@@ -5,7 +5,7 @@ function element(){return{attributes:{},hidden:false,children:[],setAttribute(k,
 for(const name of names){for(const prefix of ['history-tab-','history-panel-']){const el=element();el.id=prefix+name;elements.set(el.id,el);}}
 const target=element();target.id='plan-target';elements.set('plan-target',target);
 elements.set('page-history',{classList:{contains:()=>true}});
-const ctx=vm.createContext({document:{getElementById:id=>elements.get(id),querySelector:()=>({scrollTo:()=>calls.push('scroll')}),createElement:element},requestAnimationFrame:fn=>fn(),renderNavChart:range=>calls.push('chart:'+range),_navChartRange:'3M',showPage:id=>calls.push('page:'+id),fc:(amount,currency)=>currency+':'+amount,today:()=> '2026-10-18'});
+const ctx=vm.createContext({document:{getElementById:id=>elements.get(id),querySelector:()=>({scrollTo:()=>calls.push('scroll')}),createElement:element},requestAnimationFrame:fn=>fn(),renderNavChart:range=>calls.push('chart:'+range),_navChartRange:'3M',commitNavigation:()=>{},showPage:(id,options)=>{calls.push('page:'+id);if(options?.tab)ctx.setHistoryTab(options.tab);},fc:(amount,currency)=>currency+':'+amount,today:()=> '2026-10-18'});
 vm.runInContext(html.slice(start,end),ctx);let passed=0;function test(name,fn){fn();passed++;console.log('PASS '+name);}
 test('History starts on the trend panel',()=>{assert.equal(vm.runInContext('historyActiveTab',ctx),'trend');});
 test('Each tab activates exactly one panel with matching accessibility state',()=>{

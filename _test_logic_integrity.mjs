@@ -65,7 +65,7 @@ for (const [id, label] of CONTAINERS) {
 }
 
 console.log('\n=== showPage 路由语义（应能直达 cn/us/au/history/news/fx） ===');
-const showPageBody = (html.match(/function showPage\(id\)\{[\s\S]*?\n\}/) || [''])[0];
+const showPageBody = (html.match(/function showPage\(id(?:,options=\{\})?\)\{[\s\S]*?\n\}/) || [''])[0];
 for (const id of ['cn', 'us', 'au', 'history', 'news', 'fx', 'overview', 'settings']) {
   const handles =
     showPageBody.includes(`id==='${id}'`) ||

@@ -3447,21 +3447,67 @@ function toggleMobileSidebar(){
   if(sb&&sb.classList.contains('mobile-open'))closeMobileSidebar();
   else openMobileSidebar();
 }
-function showPage(id){
+// Hash routes contain page keys only; account and asset data never enter the URL.
+const NAV_PAGES=['overview','cn','us','au','history','news','fx','settings'];
+const NAV_HISTORY_TABS=['trend','returns','flows','goal'];
+let navigationReady=false,navigationApplying=false,navigationCurrent='';
+const navigationScroll=new Map();
+function parseNavigationHash(hash){
+  const match=/^#\/(overview|cn|us|au|history|news|fx|settings)(?:\/(trend|returns|flows|goal))?$/.exec(hash||'');
+  if(!match||match[1]!=='history'&&match[2])return {page:'overview',tab:null,hash:'#/overview'};
+  const page=match[1],tab=page==='history'?(match[2]||'trend'):null;
+  return {page,tab,hash:'#/'+page+(tab?'/'+tab:'')};
+}
+function rememberNavigationScroll(){
+  if(navigationCurrent)navigationScroll.set(navigationCurrent,document.querySelector('.main')?.scrollTop||0);
+}
+function commitNavigation(page,tab,scrollRemembered=false){
+  if(!navigationReady||navigationApplying)return;
+  const route=parseNavigationHash('#/'+page+(page==='history'?'/'+(tab||historyActiveTab):''));
+  if(route.hash===navigationCurrent)return;
+  if(!scrollRemembered)rememberNavigationScroll();
+  history.pushState(null,'',route.hash);navigationCurrent=route.hash;
+  document.querySelector('.main')?.scrollTo({top:0,behavior:'auto'});
+}
+function applyNavigation(){
+  const route=parseNavigationHash(location.hash);
+  if(location.hash!==route.hash)history.replaceState(null,'',route.hash);
+  if(navigationCurrent===route.hash)return;
+  rememberNavigationScroll();navigationApplying=true;
+  try{showPage(route.page,{tab:route.tab});navigationCurrent=route.hash;}
+  finally{navigationApplying=false;}
+  document.querySelector('.main')?.scrollTo({top:navigationScroll.get(route.hash)||0,behavior:'auto'});
+}
+function initNavigation(){
+  navigationReady=true;
+  window.addEventListener('popstate',applyNavigation);
+  window.addEventListener('hashchange',applyNavigation);
+  applyNavigation();
+}
+document.addEventListener('DOMContentLoaded',initNavigation,{once:true});
+function showPage(id,options={}){
+  if(!NAV_PAGES.includes(id))id='overview';
+  rememberNavigationScroll();
   closeCmdk();
+  const alreadyActive=document.getElementById('page-'+id)?.classList.contains('active');
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
   const nb=document.getElementById('nav-'+id);if(nb)nb.classList.add('active');
   document.getElementById('topbar-title').textContent=titles[id]||id;
-  if(id==='overview')renderOverview();
-  else if(id==='cn')renderRegion('cn');
-  else if(id==='us'){renderRegion('us');try{renderUsStockPanel();}catch(e){}}
-  else if(id==='au')renderRegion('au');
-  else if(id==='history')renderHistory();
-  else if(id==='news')renderNewsPage();
-  else if(id==='fx')renderFXPage();
-  else if(id==='settings')renderSettings();
+  if(id==='history'&&NAV_HISTORY_TABS.includes(options.tab))historyActiveTab=options.tab;
+  if(!alreadyActive){
+    if(id==='overview')renderOverview();
+    else if(id==='cn')renderRegion('cn');
+    else if(id==='us'){renderRegion('us');try{renderUsStockPanel();}catch(e){}}
+    else if(id==='au')renderRegion('au');
+    else if(id==='history')renderHistory();
+    else if(id==='news')renderNewsPage();
+    else if(id==='fx')renderFXPage();
+    else if(id==='settings')renderSettings();
+  }else if(id==='history')setHistoryTab(historyActiveTab,false,false);
+  document.title="LEE's Wealth · "+(titles[id]||id);
+  commitNavigation(id,historyActiveTab,true);
   closeMobileSidebar();
 }
 
@@ -6171,9 +6217,10 @@ function renderNavChart(range){
 }
 const HISTORY_TABS=['trend','returns','flows','goal'];
 let historyActiveTab='trend';
-function setHistoryTab(tab,focus=false){
+function setHistoryTab(tab,focus=false,syncRoute=true){
   if(!HISTORY_TABS.includes(tab))return;
   historyActiveTab=tab;
+  if(syncRoute&&document.getElementById('page-history')?.classList.contains('active'))commitNavigation('history',tab);
   for(const name of HISTORY_TABS){
     const button=document.getElementById('history-tab-'+name),panel=document.getElementById('history-panel-'+name),active=name===tab;
     if(button){button.setAttribute('aria-selected',String(active));button.tabIndex=active?0:-1;}
@@ -6193,7 +6240,7 @@ function handleHistoryTabKey(event){
   event.preventDefault();setHistoryTab(HISTORY_TABS[next],true);
 }
 function openHistorySection(tab,field){
-  showPage('history');setHistoryTab(tab);
+  showPage('history',{tab});
   requestAnimationFrame(()=>{
     document.querySelector('.main')?.scrollTo({top:0,behavior:'auto'});
     const target=document.getElementById(field||'history-tab-'+tab);target?.focus({preventScroll:true});
@@ -6223,7 +6270,7 @@ function renderHistoryGoalPreview(){
 
 function renderHistory(){
   renderCalculationPanel();
-  setHistoryTab(historyActiveTab);
+  setHistoryTab(historyActiveTab,false,false);
   const hist=[...D.navHistory].sort((a,b)=>b.date.localeCompare(a.date));
   const cny=totalCNY();
   const tbody=document.getElementById('hist-tbody');
