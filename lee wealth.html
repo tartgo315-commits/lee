@@ -4906,13 +4906,8 @@ function renderOverviewHoldings(){
         <div><label for="ov-filter-type">资产类型</label><select id="ov-filter-type"></select></div>
         <button type="button" class="btn btn-ghost btn-sm" id="ov-filter-reset">显示全部</button><label class="flat-details-removed"><input type="checkbox" checked id="ov-show-details" onchange="document.getElementById('ov-regions').classList.toggle('show-holding-details',this.checked)"> 展开持仓明细</label>
       </div></details>
-      <div class="ov-holdings-scroll" role="region" aria-label="全部持仓表格" tabindex="0">
-        <table id="ov-holdings-table" class="ov-holdings-table"><caption class="sr-only">全部持仓按地区、账户分组，账户内按人民币估值排序</caption>
-          <colgroup><col style="width:26%"><col style="width:20%"><col style="width:16%"><col style="width:15%"><col style="width:14%"><col style="width:9%"></colgroup>
-          <thead><tr><th scope="col">资产</th><th scope="col">持仓 / 合同信息</th><th scope="col" class="num">原币估值</th><th scope="col" class="num" id="ov-sort-header"><button type="button" id="ov-sort-value">CNY（组内）↓</button></th><th scope="col" class="num">原币账面盈亏</th><th scope="col" class="num">操作</th></tr></thead>
-          <tbody id="ov-holdings-body"></tbody>
-        </table>
-      </div>
+      <div class="ov-region-sort"><span>各地区按账户分组 · 金额为原币，次行为人民币折算</span><button type="button" class="btn btn-ghost btn-sm" id="ov-sort-value">金额从高到低 ↓</button></div>
+      <div id="ov-holdings-table" class="ov-holdings-scroll" role="region" aria-label="各地区并排持仓"><div id="ov-holdings-body" class="ov-region-columns"></div></div>
       <div id="ov-holdings-status" class="ov-holdings-status" role="status" aria-live="polite"></div>
       <p class="ov-holdings-note">账面盈亏仅对应当前持仓，不包含已卖出资产和分红；通过成交入口记录的买入费用计入成本；整体收益请查看「NAV 历史」。</p>`;
     for(const [id,field] of [['ov-filter-region','region'],['ov-filter-account','account'],['ov-filter-type','type']]){
@@ -4950,7 +4945,11 @@ function renderOverviewHoldings(){
     display.push({heading:'region',label:OVERVIEW_REGIONS[region.region],...region});
     for(const account of region.accounts){display.push({heading:'account',label:account.account,...account});display.push(...account.rows);}
   }
+  let regionBody=null;
   for(const row of display){
+    if(row.heading==='region'){
+      const panel=document.createElement('section'),table=document.createElement('table'),caption=document.createElement('caption');panel.className='ov-region-panel';panel.setAttribute('aria-label',row.label+'持仓');table.className='ov-holdings-table';caption.className='sr-only';caption.textContent=row.label+'持仓：资产、持仓信息、原币估值、人民币折算、账面盈亏与操作';regionBody=document.createElement('tbody');table.append(caption,regionBody);panel.append(table);body.append(panel);
+    }
     if(row.heading){
       const tr=document.createElement('tr'),cell=document.createElement('th'),wrap=document.createElement('div'),title=document.createElement(row.heading==='region'?'h3':'h4'),total=document.createElement('div');
       tr.className=row.heading==='region'?'ov-region-heading':'ov-account-heading';
@@ -4958,7 +4957,7 @@ function renderOverviewHoldings(){
       cell.colSpan=6;wrap.className='ov-group-heading';title.textContent=row.label;total.className='ov-group-total';
       text(total,row.count+' 项持仓'+(row.missing?' · '+row.missing+' 项估值不完整':''));
       const amount=document.createElement('strong');amount.textContent=(row.missing?'已知部分 ':'合计 ')+fc(row.knownCny,'CNY',0);total.append(amount);
-      wrap.append(title,total);cell.append(wrap);tr.append(cell);body.append(tr);continue;
+      wrap.append(title,total);cell.append(wrap);tr.append(cell);regionBody.append(tr);continue;
     }
     const p=row.product,v=row.valuation,tr=document.createElement('tr');tr.dataset.holdingKey=row.key;
     const cells=Array.from({length:6},()=>document.createElement('td'));tr.append(...cells);
@@ -4983,27 +4982,27 @@ function renderOverviewHoldings(){
     if(row.manual)text(cells[0],'替代该账户已登记的美元现金余额','ov-holding-sub');
     if(v.estimated)text(cells[0],p.type==='in_transit'?'在途暂估 · 非可用现金':p.tdNeedsReview?'按已填合同参数估算':'使用最近有效价格估值','ov-holding-estimate');
     cells[2].className=cells[3].className=cells[4].className='num';cells[5].className='ov-holding-actions';
-    if(v.complete){text(cells[2],fc(v.amount,v.currency,2),'ov-holding-money');text(cells[3],fc(v.cny,'CNY',0),'ov-holding-money');}
+    if(v.complete){text(cells[2],fc(v.amount,v.currency,2),'ov-holding-money');text(cells[3],'≈ '+fc(v.cny,'CNY',0),'ov-holding-money');}
     else{text(cells[2],'估值不完整','ov-holding-estimate');text(cells[2],v.reason,'ov-holding-sub');text(cells[3],'—');}
     const profit=overviewHoldingProfit(row);
     if(profit?.missing)text(cells[4],'缺少成本','ov-holding-sub');
     else if(profit){text(cells[4],(profit.amount>0?'+':'')+fc(profit.amount,v.currency,2),'ov-holding-money '+(profit.amount>0?'pos':profit.amount<0?'neg':''));text(cells[4],profit.label,'ov-holding-sub');}
-    else text(cells[4],'—','ov-holding-sub');
+    else {text(cells[4],'—','ov-holding-sub');cells[4].classList.add('ov-no-profit');}
     const actions=document.createElement('div');actions.className='ov-holding-action-buttons';
     for(const [action,label,icon,handler] of p.type==='in_transit'?[['receive','处理在途资金','↗',()=>LedgerUI.open('receive',p.id)]]:row.manual?[['account','账户详情','↗',view]]:[['edit',v.complete?'编辑资产':'补齐资料','✎',()=>editProduct(p.id)],['delete','删除资产','×',()=>deleteProduct(p.id)]]){
       const button=document.createElement('button');button.type='button';button.className='btn btn-ghost btn-sm'+(action==='delete'?' danger':'');button.dataset.holdingAction=action;button.setAttribute('aria-label',label);button.title=label;button.textContent=icon;button.addEventListener('click',handler);actions.append(button);
     }
     if(p.type==='term_deposit'){const maturity=document.createElement('button');maturity.type='button';maturity.className='btn btn-ghost btn-sm';maturity.textContent='到期处理';maturity.addEventListener('click',()=>LedgerUI.open('maturity',p.id));actions.prepend(maturity);}
-    cells[5].append(actions);body.append(tr);
+    cells[5].append(actions);regionBody.append(tr);
   }
-  if(!selected.length){const row=document.createElement('tr'),cell=document.createElement('td');cell.colSpan=6;cell.className='ov-holdings-empty';cell.textContent=all.length?'没有符合当前筛选的资产，试试重置筛选。':'尚无资产，点击顶部「添加资产」开始记录。';row.append(cell);body.append(row);}
+  if(!selected.length){const empty=document.createElement('p');empty.className='ov-holdings-empty';empty.textContent=all.length?'没有符合当前筛选的资产，试试重置筛选。':'尚无资产，点击顶部「添加资产」开始记录。';body.append(empty);}
   const missing=selected.filter(row=>!row.valuation.complete).length,known=WealthMath.sum(selected.filter(row=>row.valuation.complete).map(row=>row.valuation.cny));
   document.getElementById('ov-holdings-status').textContent='显示 '+selected.length+' / '+all.length+' 项持仓 · '+(missing?'已知部分估值 ':'折合 CNY 合计 ')+fc(known,'CNY',2)+(missing?' · '+missing+' 项估值不完整':'');
-  document.getElementById('ov-sort-value').textContent='CNY（组内）'+(overviewHoldingFilters.sort==='asc'?'↑':'↓');document.getElementById('ov-sort-header').setAttribute('aria-sort','other');
+  document.getElementById('ov-sort-value').textContent=overviewHoldingFilters.sort==='asc'?'金额从低到高 ↑':'金额从高到低 ↓';
   document.getElementById('ov-filter-summary').textContent=overviewHoldingFilters.region||overviewHoldingFilters.account||overviewHoldingFilters.type?'筛选持仓（已筛选）':'筛选持仓（可选）';
   LedgerUI.refresh();
   if(focusedRegion)Array.from(summary.children).find(button=>button.dataset.region===focusedRegion)?.focus({preventScroll:true});
-  if(focusedKey&&focusedAction){const row=Array.from(body.rows).find(row=>row.dataset.holdingKey===focusedKey);row?.querySelector('[data-holding-action="'+focusedAction+'"]')?.focus({preventScroll:true});}
+  if(focusedKey&&focusedAction){const row=Array.from(body.querySelectorAll('tr')).find(row=>row.dataset.holdingKey===focusedKey);row?.querySelector('[data-holding-action="'+focusedAction+'"]')?.focus({preventScroll:true});}
 }
 
 function renderOverview(){
