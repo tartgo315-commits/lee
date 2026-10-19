@@ -27,3 +27,9 @@
 .term-intel-events #ov-events-card{display:block!important}
 .term-intel-events #ov-events-list,.term-intel-risk #ov-insights,#movement-log,.ledger-content-scroll,.ledger-legacy #cashflow-list,#news-list{max-height:none!important;height:auto!important;overflow:visible!important;scrollbar-gutter:auto;overscroll-behavior:auto}
 .ov-holdings-table thead th{position:static}
+
+/* Fit complete sidebar items to the main holdings card; never add an inner scrollbar. */
+#ov-events-list>[hidden],#ov-insights>[hidden]{display:none!important}
+@media(min-width:1200px){
+ .terminal-dashboard>.term-zone-intel{height:var(--intel-fit-height,0px)!important;min-height:0!important;max-height:none!important;overflow:hidden!important;contain:size;box-sizing:border-box;align-self:start}
+}

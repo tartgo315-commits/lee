@@ -4900,7 +4900,7 @@ function renderOverviewHoldings(){
         <div><label for="ov-filter-type">资产类型</label><select id="ov-filter-type"></select></div>
         <button type="button" class="btn btn-ghost btn-sm" id="ov-filter-reset">显示全部</button><label class="flat-details-removed"><input type="checkbox" checked id="ov-show-details" onchange="document.getElementById('ov-regions').classList.toggle('show-holding-details',this.checked)"> 展开持仓明细</label>
       </div></details>
-      <div class="ov-holdings-scroll" role="region" aria-label="持仓表格，可横向与纵向滚动" tabindex="0">
+      <div class="ov-holdings-scroll" role="region" aria-label="全部持仓表格" tabindex="0">
         <table id="ov-holdings-table" class="ov-holdings-table"><caption class="sr-only">全部持仓按地区、账户分组，账户内按人民币估值排序</caption>
           <colgroup><col style="width:26%"><col style="width:20%"><col style="width:16%"><col style="width:15%"><col style="width:14%"><col style="width:9%"></colgroup>
           <thead><tr><th scope="col">资产</th><th scope="col">持仓 / 合同信息</th><th scope="col" class="num">原币估值</th><th scope="col" class="num" id="ov-sort-header"><button type="button" id="ov-sort-value">CNY（组内）↓</button></th><th scope="col" class="num">原币账面盈亏</th><th scope="col" class="num">操作</th></tr></thead>
@@ -5025,14 +5025,27 @@ function renderOverview(){
 }
 
 // Layout follows natural CSS height; these hooks clear legacy inline sizing only.
-function setIntelView(mode,button){const root=document.querySelector('.term-zone-intel');root.classList.toggle('intel-mode-risk',mode==='risk');root.classList.toggle('intel-mode-events',mode!=='risk');root.querySelectorAll('.intel-switch button').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));}
+function setIntelView(mode,button){const root=document.querySelector('.term-zone-intel');root.classList.toggle('intel-mode-risk',mode==='risk');root.classList.toggle('intel-mode-events',mode!=='risk');root.querySelectorAll('.intel-switch button').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));scheduleIntelHeightSync();}
+let intelFitFrame=0;
 function syncIntelColumnHeight(){
-  const intel=document.querySelector('.term-zone-intel'),list=document.getElementById('ov-events-list');
-  if(intel){intel.style.height='';intel.style.minHeight='';}
-  if(list)list.style.minHeight='';
+  const intel=document.querySelector('.term-zone-intel'),portfolio=document.querySelector('.term-zone-portfolio');
+  if(!intel||!portfolio||!portfolio.getClientRects().length)return;
+  const desktop=window.matchMedia('(min-width:1200px)').matches;
+  intel.style.setProperty('--intel-fit-height',Math.ceil(portfolio.getBoundingClientRect().height)+'px');
+  const risk=intel.classList.contains('intel-mode-risk'),list=document.getElementById(risk?'ov-insights':'ov-events-list');if(!list)return;
+  const rows=Array.from(list.children);for(const row of rows)row.hidden=false;
+  const bottom=intel.getBoundingClientRect().top+portfolio.getBoundingClientRect().height-parseFloat(getComputedStyle(intel).paddingBottom)-1;
+  let shown=0,full=false;
+  for(const row of rows){if(!row.getClientRects().length)continue;const fits=!full&&(desktop?row.getBoundingClientRect().bottom<=bottom:shown<6);if(!fits){row.hidden=true;full=true;}else shown++;}
+  if(!risk){const label=document.getElementById('ov-events-range');if(label)label.textContent=(ovEventsFilter==='news'?'近7天相关资讯':'近期相关事项')+' · 显示 '+shown+' 项';}
 }
-function scheduleIntelHeightSync(){syncIntelColumnHeight();}
-function initIntelHeightObserver(){syncIntelColumnHeight();}
+function scheduleIntelHeightSync(){if(intelFitFrame)return;intelFitFrame=requestAnimationFrame(()=>{intelFitFrame=0;syncIntelColumnHeight();});}
+function initIntelHeightObserver(){
+  const portfolio=document.querySelector('.term-zone-portfolio'),intel=document.querySelector('.term-zone-intel');
+  if(typeof ResizeObserver!=='undefined'){let lastWidth=0;const observer=new ResizeObserver(entries=>{if(entries.some(e=>e.target===portfolio||e.contentRect.width!==lastWidth)){lastWidth=intel?.getBoundingClientRect().width||0;scheduleIntelHeightSync();}});if(portfolio)observer.observe(portfolio);if(intel)observer.observe(intel);}
+  const observer=new MutationObserver(scheduleIntelHeightSync);for(const id of ['ov-events-list','ov-insights']){const list=document.getElementById(id);if(list)observer.observe(list,{childList:true});}
+  document.fonts?.ready.then(scheduleIntelHeightSync);scheduleIntelHeightSync();
+}
 function setRange(days,btn){
   ovRange=days;
   document.querySelectorAll('.rt').forEach(b=>b.classList.remove('active'));
