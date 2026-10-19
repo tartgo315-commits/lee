@@ -83,7 +83,7 @@
     next.movementLog=next.movementLog||[];next.movementLog.push(clone(event));
     next.nextId=Math.max(Number(next.nextId)||1,...next.products.map(p=>(Number(p.id)||0)+1));return next;
   }
-  const quoteKeys=['currentPrice','updatedAt'];
+  const quoteKeys=['currentPrice','updatedAt','marketState','quoteSessions','quoteReference','quoteSelection'];
   function withoutQuote(value){const p=clone(value);if(p)for(const key of quoteKeys)delete p[key];return JSON.stringify(p);}
   function reverse(data,id,timestamp){
     const event=(data.movementLog||[]).find(e=>e.id===id);if(!event||event.reversedAt)throw Error('这条记录不存在或已撤销');

@@ -115,7 +115,7 @@
         if(previous>0){price=previous;estimated=true;}else return{complete:false,cny:null,reason:'缺少有效价格',id:p.id};
       }
       amount=quantity*price;
-      if(type==='stock_us'&&context.quoteMeta?.get(String(p.ticker||'').toUpperCase())?.source==='cache')estimated=true;
+      if(type==='stock_us'&&(p.quoteReference===true||context.quoteMeta?.get(String(p.ticker||'').toUpperCase())?.source==='cache'))estimated=true;
     }else{amount=number(p.amount);currency=p.currency||'CNY';if(type==='in_transit')estimated=true;}
     const rate=fxRate(currency,fx);
     if(amount===null||!Number.isFinite(amount))return{complete:false,cny:null,reason:'金额无效',id:p.id};
