@@ -28,7 +28,7 @@
     }else{
       const soldBasis=M.multiply(oldBasis,qty/held),received=M.sum([gross,-fee]);if(received<0)throw Error('卖出手续费不能超过成交金额');event.changes.push(cashChange(data,account,received));after.costBasisUsd=M.sum([oldBasis,-soldBasis]);after.costPrice=quantity>0?after.costBasisUsd/quantity:0;event.trade.realizedPnl=M.sum([received,-soldBasis]);
     }
-    after.shares=quantity;if(!(n(before?.currentPrice)>0))after.currentPrice=price;after.updatedAt=o.date;event.changes.push({ref:'p:'+id,before,after});return event;
+    after.shares=quantity;delete after.stockList;if(!(n(before?.currentPrice)>0))after.currentPrice=price;after.updatedAt=o.date;event.changes.push({ref:'p:'+id,before,after});return event;
   }
   function matureDeposit(data,o){
     const event=base({...o,reason:o.reason||'定存到期分配'},'deposit_maturity');

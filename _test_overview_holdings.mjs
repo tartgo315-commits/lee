@@ -60,4 +60,31 @@ test('Account order remains stable when valuation sorting changes',()=>{
   const names=sort=>Array.from(context.groupOverviewHoldingRows(context.filterOverviewHoldingRows(rows,{sort}))[0].accounts,g=>g.account);
   assert.deepEqual(names('asc'),names('desc'));
 });
+
+test('Zero stock rows move out of current holdings without hiding invalid quantities or changing value',()=>{
+  const zero={id:31,type:'stock_us',region:'us',account:'示例账户',ticker:'ZERO',shares:0,costPrice:5},watch={...zero,id:32,ticker:'WATCH',stockList:'watch'},invalid={...zero,id:33,shares:null};
+  const source=[...products,zero,watch,invalid],before=JSON.stringify(source),rows=build(source);
+  assert.ok(!rows.some(r=>r.product.id===31||r.product.id===32));assert.ok(rows.some(r=>r.product.id===33));assert.equal(sum(rows),sum(build(products)));assert.equal(JSON.stringify(source),before);
+  assert.equal(context.stockLibraryKind(zero),'history');assert.equal(context.stockLibraryKind(watch),'watch');assert.equal(context.stockLibraryKind({...watch,shares:2}),'current');assert.equal(context.stockLibraryKind(invalid),'current');
+});
+test('Archived record lookup keeps account IDs separate and ignores reversed sales',()=>{
+  const p={id:31},events=[{id:'one',date:'2026-10-01',changes:[{ref:'p:31'}],trade:{side:'sell',realizedPnl:12.5}},{id:'other',date:'2026-10-02',changes:[{ref:'p:32'}],trade:{side:'sell',realizedPnl:500}},{id:'undo',date:'2026-10-03',reversedAt:'2026-10-04',changes:[{ref:'p:31'}],trade:{side:'sell',realizedPnl:50}},{id:'unknown',date:'2026-10-05',changes:[{ref:'p:31'}],trade:{side:'sell'}}];
+  const before=JSON.stringify(events),records=context.stockLibraryRecords(p,events),result=context.stockLibraryRealized(records);assert.deepEqual(Array.from(records,e=>e.id),['unknown','one']);assert.equal(result.amount,12.5);assert.equal(result.known,1);assert.equal(result.sales,2);assert.equal(JSON.stringify(events),before);
+});
+test('Backfilled trades match the same ticker and cash account without counting unknown realized profit',()=>{
+  const p={id:51,type:'stock_us',ticker:'DEMO',account:'券商甲',shares:0},data={products:[p,{id:52,region:'us',account:'券商甲'},{id:53,region:'us',account:'券商乙'}]},events=[{id:'match',date:'2026-10-01',recordOnly:true,changes:[],trade:{side:'sell',ticker:'DEMO',cashRef:'p:52'}},{id:'other',date:'2026-10-02',recordOnly:true,changes:[],trade:{side:'sell',ticker:'DEMO',cashRef:'p:53'}}],records=context.stockLibraryRecords(p,events,data);
+  assert.deepEqual(Array.from(records,e=>e.id),['match']);assert.equal(context.stockLibraryRealized(records).known,0);
+});
+test('Full sale archives the product, rebuy restores it and cash is settled once',()=>{
+  vm.runInContext(fs.readFileSync('movement-engine.js','utf8'),context);vm.runInContext(fs.readFileSync('ledger-workflows.js','utf8'),context);const W=context.WealthMovements,L=context.LedgerWorkflows;
+  let data={products:[{id:51,region:'us',type:'stock_us',account:'券商甲',ticker:'DEMO',shares:2,costPrice:8,currentPrice:10},{id:52,region:'us',type:'cash',account:'券商甲',currency:'USD',amount:100}],nextId:53,movementLog:[],cashFlows:[],fx:{USD:7}};
+  const opts={id:'sell',date:'2026-10-19',today:'2026-10-19',timestamp:'2026-10-19T10:00:00Z',reason:'示例卖出',productId:51,cashRef:'p:52',side:'sell',quantity:2,price:10,fee:1};data=W.apply(data,L.stockTrade(data,opts));assert.equal(context.stockLibraryKind(data.products[0]),'history');assert.equal(data.products[1].amount,119);assert.equal(context.stockLibraryRealized(context.stockLibraryRecords(data.products[0],data.movementLog,data)).amount,3);
+  data.products[0].stockList='watch';data=W.apply(data,L.stockTrade(data,{...opts,id:'rebuy',side:'buy',quantity:1,price:12,fee:0,reason:'示例买回'}));assert.equal(context.stockLibraryKind(data.products[0]),'current');assert.equal(data.products[1].amount,107);assert.equal(data.movementLog.length,2);assert.equal(data.cashFlows.length,0);assert.equal(data.products[0].stockList,undefined);data=W.apply(data,L.stockTrade(data,{...opts,id:'resell',side:'sell',quantity:1,price:13,fee:0}));assert.equal(context.stockLibraryKind(data.products[0]),'history');
+});
+test('Hidden stocks never hide a manual broker cash account or create a review task',()=>{
+  const zero={id:61,type:'stock_us',region:'us',account:'券商甲',ticker:'ZERO',shares:0,costPrice:0,currentPrice:0,stockList:'watch'};
+  assert.deepEqual(Array.from(context.stockRegionAccounts([zero],'us',()=>120)),['券商甲']);assert.equal(context.stockRegionAccounts([zero],'us',()=>null).length,0);
+  const data={products:[],nextId:61,movementLog:[],cashFlows:[],fx:{USD:7}},event=context.prepareWatchStock(data,zero,{id:'watch-zero',timestamp:'2026-10-19T10:00:00Z',date:'2026-10-19',today:'2026-10-19',reason:'示例关注'}),next=context.WealthMovements.apply(data,event);
+  assert.equal(event.reviewRequired,false);assert.equal(event.flow,null);assert.equal(next.cashFlows.length,0);assert.equal(context.WealthMath.productValue(next.products[0],{fx:next.fx}).cny,0);assert.throws(()=>context.prepareWatchStock(data,{...zero,shares:1},{}));
+});
 console.log(passed+' total holdings checks passed.');

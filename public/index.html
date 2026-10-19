@@ -1207,7 +1207,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
         <section class="term-zone term-zone-portfolio">
           <div class="term-portfolio-hd">
             <div class="card-title"><i class="ti ti-briefcase"></i> 资产持仓</div>
-            <span class="ov-holdings-note">全部地区 · 按账户分组</span><button type="button" class="btn btn-ghost btn-sm" onclick="LedgerUI.open('trade')">买卖股票</button><button type="button" class="btn btn-ghost btn-sm" onclick="LedgerUI.open('transfer')">转账</button><button type="button" class="btn btn-ghost btn-sm" onclick="openCashMovement()">现金变动</button><button type="button" class="btn btn-ghost btn-sm" onclick="LedgerUI.showWorkspace()">资金工作台</button><div id="ledger-home-status" class="ledger-controls" aria-label="资金处理状态"></div>
+            <span class="ov-holdings-note">全部地区 · 按账户分组</span><button type="button" class="btn btn-ghost btn-sm" onclick="LedgerUI.open('trade')">买卖股票</button><button type="button" class="btn btn-ghost btn-sm" onclick="LedgerUI.open('transfer')">转账</button><button type="button" class="btn btn-ghost btn-sm" onclick="openCashMovement()">现金变动</button><button type="button" class="btn btn-ghost btn-sm" onclick="LedgerUI.showWorkspace()">资金工作台</button><button type="button" class="btn btn-ghost btn-sm" id="home-stock-library" hidden onclick="openStockLibrary('history')">未持仓股票</button><div id="ledger-home-status" class="ledger-controls" aria-label="资金处理状态"></div>
           </div>
           <div id="gold-price-warn" style="display:none;margin-bottom:8px;padding:8px 12px;border-radius:8px;background:var(--warn-bg);border:1px solid rgba(217,119,6,.25);color:var(--warn);font-size:13px;">
             ⚠️ 黄金积存金价未刷新，当前净值未计入黄金市值。请点击顶栏「Au/g」刷新金价。
@@ -1265,6 +1265,8 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
 
     <!-- US -->
     <div class="page" id="page-us">
+      <div class="stock-library-tabs" role="group" aria-label="美股记录分类"><button type="button" class="btn btn-ghost btn-sm" id="us-view-current" aria-pressed="true" onclick="setUsStockView('current')">当前持仓</button><button type="button" class="btn btn-ghost btn-sm" id="us-view-history" aria-pressed="false" onclick="setUsStockView('history')">历史持仓</button><button type="button" class="btn btn-ghost btn-sm" id="us-view-watch" aria-pressed="false" onclick="setUsStockView('watch')">关注列表</button></div>
+      <div id="us-current-content">
       <div id="us-stock-panel" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:12px;margin-bottom:20px"></div>
       <div class="page-header">
         <div>
@@ -1281,6 +1283,11 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
       </div>
       <div id="us-blocks"></div>
       <div id="us-refresh-status"></div>
+      </div>
+      <section id="us-stock-library" hidden aria-labelledby="stock-library-title"><h2 id="stock-library-title">历史持仓</h2><p id="stock-library-note" class="privacy-note"></p>
+        <form id="stock-watch-form" class="stock-watch-form" onsubmit="addWatchStock(event)" hidden><label>股票代码<input name="ticker" required placeholder="如 AAPL" maxlength="15"></label><label>名称（选填）<input name="stockname" placeholder="股票名称"></label><label>券商账户<input name="account" required placeholder="所属账户"></label><button type="submit" class="btn btn-primary btn-sm">添加关注</button><p id="stock-watch-error" role="alert"></p></form>
+        <div id="stock-library-list"></div>
+      </section>
     </div>
 
     <!-- AU -->
@@ -2683,7 +2690,7 @@ function patchOverviewStockRow(sym,price){if(price>0&&document.getElementById('p
 const finnhubSubscribed=new Set();
 function finnhubDesiredSymbols(){
   const s=new Set();
-  D.products.filter(p=>p.type==='stock_us'&&p.ticker).forEach(p=>s.add(String(p.ticker).trim().toUpperCase()));
+  D.products.filter(p=>p.type==='stock_us'&&p.ticker&&!(p.shares!==null&&p.shares!==''&&Number(p.shares)===0)).forEach(p=>s.add(String(p.ticker).trim().toUpperCase()));
   return s;
 }
 function finnhubSendSub(ws,sym,sub){
@@ -3582,7 +3589,7 @@ function renderSidebar(){
   document.getElementById('sb-cny').textContent=fc(cny,'CNY');
   document.getElementById('sb-usd').textContent=fc(fromCNY(cny,'USD'),'USD');
   document.getElementById('sb-aud').textContent=fc(fromCNY(cny,'AUD'),'AUD');
-  ['cn','us','au'].forEach(r=>{const el=document.getElementById('nc-'+r);if(el)el.textContent=D.products.filter(p=>p.region===r).length;});
+  ['cn','us','au'].forEach(r=>{const el=document.getElementById('nc-'+r);if(el)el.textContent=D.products.filter(p=>p.region===r&&!isZeroStock(p)).length;});
   // FX strip（交叉汇率由 FX_RATES 矩阵衍生）
   FX_RATES.syncCross();
   const flags={USD:'🇺🇸',AUD:'🇦🇺'};
@@ -4827,8 +4834,64 @@ function ovPerfBarHtml(pct){
   const cls=pct>=0?'pos':'neg';
   return`<div class="ov-perf-bar ${cls}"><div class="ov-perf-fill" style="width:${w}%"></div></div>`;
 }
+let usStockView='current';
+function openStockLibrary(view='history'){showPage('us');if(view==='history'&&!D.products.some(p=>stockLibraryKind(p)==='history'))view='watch';setUsStockView(view);}
+function setUsStockView(view){usStockView=['current','history','watch'].includes(view)?view:'current';renderStockLibrary();}
+function saveStockList(p,list){
+  p=D.products.find(row=>String(row.id)===String(p.id));
+  if(!isZeroStock(p))throw Error('仍有持股，请先通过买卖入口记录实际卖出，不能隐藏持仓。');
+  const event=WealthMovements.prepare(D,'p:'+p.id,{...p,stockList:list},{id:crypto.randomUUID(),timestamp:new Date().toISOString(),date:today(),today:today(),kind:'metadata',reason:(list==='watch'?'移入关注列表：':'保留为未持仓记录：')+(p.ticker||p.name)});
+  persistMovementLedger(WealthMovements.apply(D,event));refreshAfterMovement();
+}
+function addWatchStock(event){
+  event.preventDefault();const form=event.currentTarget,ticker=form.elements.ticker.value.trim().toUpperCase(),account=form.elements.account.value.trim(),name=form.elements.stockname.value.trim();
+  document.getElementById('stock-watch-error').textContent='';
+  try{
+    if(!/^[A-Z][A-Z0-9.\-]{0,14}$/.test(ticker))throw Error('请填写有效股票代码');if(!account)throw Error('请填写所属券商账户');
+    const existing=D.products.find(p=>p.type==='stock_us'&&String(p.ticker||'').toUpperCase()===ticker&&(p.account||'未分类')===account);
+    if(existing){if(!isZeroStock(existing))throw Error('这个账户已经持有该股票，请在当前持仓中查看。');saveStockList(existing,'watch');return;}
+    const id=Math.max(Number(D.nextId)||1,...D.products.map(p=>(Number(p.id)||0)+1)),p={id,type:'stock_us',region:'us',account,ticker,name:name||ticker,shares:0,costPrice:0,currentPrice:0,stockList:'watch',createdAt:today(),updatedAt:today()};
+    const record=prepareWatchStock(D,p,{id:crypto.randomUUID(),timestamp:new Date().toISOString(),date:today(),today:today(),reason:'添加关注股票 '+ticker+'（未持仓）'});
+    persistMovementLedger(WealthMovements.apply(D,record));form.reset();refreshAfterMovement();
+  }catch(error){document.getElementById('stock-watch-error').textContent=error.message;}
+}
+function renderStockLibrary(){
+  const root=document.getElementById('us-stock-library');if(!root)return;
+  const zero=D.products.filter(isZeroStock),history=zero.filter(p=>stockLibraryKind(p)==='history'),watch=zero.filter(p=>stockLibraryKind(p)==='watch');
+  for(const [key,label,count] of [['current','当前持仓',D.products.filter(p=>p.type==='stock_us'&&!isZeroStock(p)).length],['history','历史持仓',history.length],['watch','关注列表',watch.length]]){
+    const button=document.getElementById('us-view-'+key);button.textContent=label+'（'+count+'）';button.setAttribute('aria-pressed',String(usStockView===key));button.classList.toggle('active',usStockView===key);
+  }
+  document.getElementById('us-current-content').hidden=usStockView!=='current';root.hidden=usStockView==='current';
+  const shortcut=document.getElementById('home-stock-library');if(shortcut){shortcut.hidden=!zero.length;shortcut.textContent='未持仓股票（'+zero.length+'）';}
+  if(usStockView==='current')return;
+  document.getElementById('stock-watch-form').hidden=usStockView!=='watch';
+  document.getElementById('stock-library-title').textContent=usStockView==='watch'?'关注列表':'历史持仓 / 未持仓记录';
+  document.getElementById('stock-library-note').textContent=usStockView==='watch'?'这里的股票当前没有持仓，不计入首页持仓和当前持仓风险。实际买入后会自动回到首页。':'零持仓自动移到这里，资料和操作记录保留。已有卖出成交才显示已登记的实现盈亏，不根据旧成本猜测收益。';
+  const account=document.querySelector('#stock-watch-form [name="account"]');if(!account.value)account.value=D.products.find(p=>p.region==='us'&&p.account)?.account||'';
+  const list=document.getElementById('stock-library-list');list.replaceChildren();const rows=usStockView==='watch'?watch:history;
+  const node=(tag,value,cls)=>{const e=document.createElement(tag);if(value!==undefined)e.textContent=value;if(cls)e.className=cls;return e;};
+  const button=(label,fn)=>{const b=node('button',label,'btn btn-ghost btn-sm');b.type='button';b.addEventListener('click',()=>{try{fn();}catch(error){showToast({message:error.message,type:'warn'});}});return b;};
+  for(const p of rows){
+    const card=node('article',undefined,'stock-library-card'),head=node('div',undefined,'stock-library-card-head'),info=node('div'),actions=node('div',undefined,'stock-library-actions'),records=stockLibraryRecords(p,D.movementLog,D),realized=stockLibraryRealized(records),hasHeld=records.some(e=>(e.changes||[]).some(c=>c.ref==='p:'+p.id&&(Number(c.before?.shares)>0||Number(c.after?.shares)>0)));
+    info.append(node('h3',p.name||p.ticker||'未命名股票'),node('p',(p.ticker||'—')+' · '+(p.account||'未分类')+' · 0 股','privacy-note'));head.append(info,actions);card.append(head);
+    card.append(node('p',usStockView==='watch'?'仅关注 · 未持仓':hasHeld?'已无持仓 · 记录已保留':'未持仓记录 · 缺少历史成交，未计算收益','privacy-note'));
+    if(realized.known){card.append(node('p',(realized.known<realized.sales?'已知部分已实现盈亏：':'已登记卖出已实现盈亏：')+fc(realized.amount,'USD',2),'stock-library-realized'));}
+    actions.append(button('买入',()=>LedgerUI.open('trade',p.id)),button('编辑资料',()=>editProduct(p.id)),button(usStockView==='watch'?'移到历史记录':'移入关注列表',()=>saveStockList(p,usStockView==='watch'?'history':'watch')));
+    if(records.length){const timeline=node('div',undefined,'stock-library-records');for(const e of records){let label=e.date+' · '+((e.kind==='opening'&&(e.changes||[]).some(c=>c.after?.stockList==='watch'))?'添加关注':WealthMovements.KINDS[e.kind]||e.kind);if(e.trade)label+=' · '+(e.trade.side==='sell'?'卖出':'买入')+' '+e.trade.quantity+' 股 @ '+fc(e.trade.price,'USD',4)+(e.recordOnly?'（仅补历史）':'');timeline.append(node('p',label));}card.append(timeline);}
+    list.append(card);
+  }
+  if(!rows.length)list.append(node('p',usStockView==='watch'?'暂无关注股票，可在上方添加。':'暂无零持仓股票。卖出归零后会自动显示在这里。','privacy-note'));
+}
+
 const OVERVIEW_REGIONS={cn:'中国境内',us:'美国',au:'澳洲',other:'未标地区'};
 const OVERVIEW_TYPES={in_transit:'在途资金',cash:'现金 / 活期',fund_cn:'基金 / 理财',gold:'黄金',stock_us:'美股',term_deposit:'定期存款',other:'其他'};
+function isZeroStock(p){return p?.type==='stock_us'&&p.shares!==null&&p.shares!==''&&p.shares!==undefined&&Number.isFinite(Number(p.shares))&&Number(p.shares)===0;}
+function stockLibraryRecords(p,events,data={}){return(events||[]).filter(e=>{if(e.reversedAt)return false;if((e.changes||[]).some(c=>c.ref==='p:'+p.id))return true;if(!e.recordOnly||String(e.trade?.ticker||'').toUpperCase()!==String(p.ticker||'').toUpperCase())return false;const ref=e.trade.cashRef||'',cash=ref.startsWith('p:')?(data.products||[]).find(c=>String(c.id)===ref.slice(2)):null,account=ref.startsWith('m:us::')?ref.slice(6):cash?.region==='us'?cash.account:null;return account!==null&&account!==undefined&&account===(p.account||'未分类');}).sort((a,b)=>String(b.date).localeCompare(String(a.date))||String(b.timestamp||'').localeCompare(String(a.timestamp||'')));}
+function stockLibraryKind(p){return!isZeroStock(p)?'current':p.stockList==='watch'?'watch':'history';}
+function stockRegionAccounts(products,region,manualIdle){return[...new Set(products.map(p=>p.account||'未分类'))].filter(account=>products.some(p=>(p.account||'未分类')===account&&!isZeroStock(p))||(region==='us'&&Number.isFinite(manualIdle(account))));}
+function prepareWatchStock(data,p,options){if(!isZeroStock(p)||p.stockList!=='watch'||WealthMath.number(p.costPrice)!==0||WealthMath.number(p.currentPrice)!==0)throw Error('关注股票必须为零持仓且不带资产金额');const record=WealthMovements.prepare(data,'p:'+p.id,p,{...options,kind:'opening'});record.reviewRequired=false;return record;}
+function stockLibraryRealized(records){const sales=records.filter(e=>e.trade?.side==='sell');const known=sales.filter(e=>Number.isFinite(e.trade.realizedPnl));return{sales:sales.length,known:known.length,amount:WealthMath.sum(known.map(e=>e.trade.realizedPnl))};}
+
 let overviewHoldingFilters={region:'',account:'',type:'',sort:'desc'};
 function overviewHoldingAccountKey(region,account){return JSON.stringify([region,account]);}
 function buildOverviewHoldingRows(products,context,manualIdle){
@@ -4840,6 +4903,7 @@ function buildOverviewHoldingRows(products,context,manualIdle){
   }
   const rows=[];
   for(const p of products){
+    if(isZeroStock(p))continue;
     const account=String(p.account||'未分类');
     if(p.region==='us'&&overrides.has(account)&&isUsdIdleProduct(p))continue;
     const region=Object.hasOwn(OVERVIEW_REGIONS,p.region)?p.region:'other';
@@ -5000,7 +5064,7 @@ function renderOverviewHoldings(){
   document.getElementById('ov-holdings-status').textContent='显示 '+selected.length+' / '+all.length+' 项持仓 · '+(missing?'已知部分估值 ':'折合 CNY 合计 ')+fc(known,'CNY',2)+(missing?' · '+missing+' 项估值不完整':'');
   document.getElementById('ov-sort-value').textContent=overviewHoldingFilters.sort==='asc'?'金额从低到高 ↑':'金额从高到低 ↓';
   document.getElementById('ov-filter-summary').textContent=overviewHoldingFilters.region||overviewHoldingFilters.account||overviewHoldingFilters.type?'筛选持仓（已筛选）':'筛选持仓（可选）';
-  LedgerUI.refresh();
+  LedgerUI.refresh();renderStockLibrary();
   if(focusedRegion)Array.from(summary.children).find(button=>button.dataset.region===focusedRegion)?.focus({preventScroll:true});
   if(focusedKey&&focusedAction){const row=Array.from(body.querySelectorAll('tr')).find(row=>row.dataset.holdingKey===focusedKey);row?.querySelector('[data-holding-action="'+focusedAction+'"]')?.focus({preventScroll:true});}
 }
@@ -5116,7 +5180,7 @@ function renderUsStockPanel(){
     el.style.cssText='display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:12px;margin-bottom:20px';
     page.insertBefore(el,page.firstChild);
   }
-  const stocks=D.products.filter(p=>p.type==='stock_us'&&String(p.ticker||'').trim());
+  const stocks=D.products.filter(p=>p.type==='stock_us'&&!isZeroStock(p)&&String(p.ticker||'').trim());
   if(!stocks.length){el.innerHTML='';return;}
   el.innerHTML=stocks.map(p=>{
     const valuation=WealthMath.productValue(p,valuationContext());
@@ -5167,7 +5231,7 @@ function renderUsStockPanel(){
 
 function renderRegion(region){
   refreshValuationNotice();
-  const ps=D.products.filter(p=>p.region===region);
+  const ps=D.products.filter(p=>p.region===region&&!isZeroStock(p));
   const rcny=totalCNY(region);
   const primaryCur={cn:'CNY',us:'USD',au:'AUD'}[region];
   const primaryVal=fromCNY(rcny,primaryCur);
@@ -5184,7 +5248,7 @@ function renderRegion(region){
     if(elUs)elUs.textContent=fc(rcny,'CNY')+' | '+fc(fromCNY(rcny,'AUD'),'AUD');
     updateUsGrowthDisplay();
     try{renderUsStockPanel();}catch(e){}
-    if(elUb)elUb.innerHTML=buildAccountBlocks(ps,region);
+    if(elUb)elUb.innerHTML=buildAccountBlocks(D.products.filter(p=>p.region===region),region);
     finnhubSyncSubscriptions();
     try{renderUsStockPanel();}catch(e){}
   } else if(region==='au'){
@@ -5196,17 +5260,18 @@ function renderRegion(region){
     document.getElementById('au-blocks').innerHTML=buildAccountBlocks(ps,region);
   }
   attachToggleEvents();
-  if(region==='us')try{renderUsStockPanel();}catch(e){}
+  if(region==='us'){try{renderUsStockPanel();}catch(e){}renderStockLibrary();}
 }
 
 function buildAccountBlocks(ps,region){
   if(!ps.length)return `<div class="empty-state"><div class="empty-ico">📭</div><div class="empty-ttl">暂无资产</div><div class="empty-sub">点右上角「＋ 添加」</div></div>`;
-  const accounts=[...new Set(ps.map(p=>p.account||'未分类'))];
+  const accounts=stockRegionAccounts(ps,region,usManualIdleUsd);
+  if(!accounts.length)return '<div class="privacy-note">暂无当前持仓，已归零的股票可在上方「历史持仓」查看。</div>';
   const primaryCur={cn:'CNY',us:'USD',au:'AUD'}[region];
   const icons={cn:'🏦',us:'📈',au:'🏛️'};
   const usRank=t=>({stock_us:0,cash:1,other:2,fund_cn:3,gold:4,term_deposit:5}[t]??6);
   return accounts.map((acc,accIdx)=>{
-    const aps=ps.filter(p=>p.account===acc);
+    const aps=ps.filter(p=>(p.account||'未分类')===acc&&!isZeroStock(p));
     const productCashCny=region==='us'?sumUsdCashCNY(aps):0;
     const man=region==='us'?usManualIdleUsd(acc):null;
     let acny=aps.reduce((s,p)=>s+pCNY(p),0);
@@ -5683,7 +5748,7 @@ async function refreshGold(){
 
 // ══ REFRESH STOCKS ══
 async function refreshStocks(){
-  const stocks=D.products.filter(p=>p.type==='stock_us'&&p.ticker);
+  const stocks=D.products.filter(p=>p.type==='stock_us'&&!isZeroStock(p)&&p.ticker);
   if(!stocks.length){alert('没有美股持仓');return;}
   const el=document.getElementById('us-refresh-status');
   el.innerHTML='<div class="alert alert-info">🔄 正在全量校准美股（Yahoo 盘前·盘后·延长时段；与券商「盘后」口径对齐；盘中 Finnhub 逐笔仅常规时段生效）...</div>';
@@ -5837,7 +5902,7 @@ async function refreshAllQuotes(){
       }catch(e){lines.push('黄金失败');}
     }
 
-    const stocks=D.products.filter(p=>p.type==='stock_us'&&p.ticker);
+    const stocks=D.products.filter(p=>p.type==='stock_us'&&!isZeroStock(p)&&p.ticker);
     if(stocks.length){
       show('🔄 正在并行刷新美股…');
       const okSt=await Promise.all(stocks.map(async s=>{
