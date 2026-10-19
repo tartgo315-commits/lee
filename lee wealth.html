@@ -2251,19 +2251,26 @@ function mergeStockQuotes(prices){
   const out=use.length%2?use[m2]:(use[m2-1]+use[m2])/2;
   return Math.round(out*1e4)/1e4;
 }
-/** 拉取跨域文本：Firebase / 同源 /proxy → 远程 WO_REMOTE_PROXY_ORIGIN/_proxy → 本机 /_proxy（不再使用公共 CORS 代理，避免 Vercel 下浏览器报错）。 */
+/** 只接受可解析的行情；失败、超时或错误页面继续切换代理。 */
 let quoteAuthRequired=false;
+function validProxyPayload(targetUrl,text){
+  const body=String(text||'').trim();if(!body||/^Proxy error:/i.test(body))return false;
+  let target;try{target=new URL(targetUrl);}catch{return false;}
+  if(/(^|\.)finance.yahoo.com$/i.test(target.hostname)&&/^\/v[78]\/finance\//.test(target.pathname)){
+    try{const data=JSON.parse(body);if(target.pathname.includes('/chart/')){const rows=data?.chart?.result;return !data.chart.error&&Array.isArray(rows)&&rows.some(row=>row&&typeof row==='object'&&(Number(row.meta?.regularMarketPrice)>0||Number(row.meta?.fulldayPrice)>0||row.indicators?.quote?.[0]?.close?.some(p=>Number(p)>0)));}return !data?.quoteResponse?.error&&Array.isArray(data?.quoteResponse?.result)&&data.quoteResponse.result.some(row=>['regularMarketPrice','preMarketPrice','postMarketPrice','overnightMarketPrice','fulldayPrice'].some(k=>Number(row[k]?.raw??row[k])>0));}catch{return false;}
+  }
+  return true;
+}
 async function fetchProxiedText(targetUrl){
   const qs='?url='+encodeURIComponent(targetUrl);
   async function tryOne(full){
+    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),8000);
     try{
-      const r=await fetch(full,{cache:'no-store',mode:'cors'});
+      const r=await fetch(full,{cache:'no-store',mode:'cors',signal:controller.signal});
       if(r.status===401&&new URL(full,location.origin).origin===location.origin)quoteAuthRequired=true;
       if(!r.ok)return'';
-      const t=await r.text();
-      if(t&&t.length&&!/^Proxy error:/i.test(t))return t;
-    }catch(e){}
-    return'';
+      const t=await r.text();return validProxyPayload(targetUrl,t)?t:'';
+    }catch(e){return'';}finally{clearTimeout(timer);}
   }
   const urls=[];
   const add=u=>{if(u&&!urls.includes(u))urls.push(u);};
@@ -2271,17 +2278,12 @@ async function fetchProxiedText(targetUrl){
   if(b)add(b+'/proxy'+qs);
   if(location.protocol==='http:'||location.protocol==='https:'){
     add(location.origin+'/api/proxy'+qs);
-    add(location.origin+'/proxy'+qs);
     const ro=(typeof WO_REMOTE_PROXY_ORIGIN==='string'&&WO_REMOTE_PROXY_ORIGIN.trim())?WO_REMOTE_PROXY_ORIGIN.replace(/\/$/,''):'';
-    if(ro){
-      add(ro+'/_proxy'+qs);
-      add(ro+'/proxy'+qs);
-    }
-  }
-  if(/^(localhost|127\.0\.0\.1)$/i.test(location.hostname)){
-    add(location.origin+'/_proxy'+qs);
+    if(ro)add(ro+'/api/proxy'+qs);
     add(location.origin+'/proxy'+qs);
+    if(ro){add(ro+'/_proxy'+qs);add(ro+'/proxy'+qs);}
   }
+  if(/^(localhost|127\.0\.0\.1)$/i.test(location.hostname))add(location.origin+'/_proxy'+qs);
   for(const u of urls){const t=await tryOne(u);if(t)return t;}
   return '';
 }
@@ -2506,15 +2508,13 @@ async function fetchTwelveDataStockPrice(ticker){
   const r=await fetchTwelveDataStockPriceDetailed(ticker);
   return r.price;
 }
-/** 仅 Yahoo（经 /api/proxy）+ Stooq，不占 Twelve Data 额度 */
+/** chart 已含盘前盘后；成功即更新，不再等待经常拒绝匿名访问的 v7。 */
 async function fetchYahooOnlyStockPrice(ticker){
   const sym=String(ticker||'').trim().toUpperCase();if(!sym)return null;
-  const chart='https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(sym)+'?interval=5m&range=5d&includePrePost=true',quote='https://query1.finance.yahoo.com/v7/finance/quote?symbols='+encodeURIComponent(sym);
-  const results=await Promise.allSettled([fetchTextCrossOrigin(chart),fetchTextCrossOrigin(quote)]);
-  const p1=results[0].status==='fulfilled'?parseYahooChartPrice(results[0].value,sym):null,p2=results[1].status==='fulfilled'?parseYahooV7Quote(results[1].value):null;
-  if(!(p1>0)&&!(p2>0))return null;
-  const selected=StockSessions.select(yahooQuoteMetaBySym.get(sym)?.snapshot);if(selected?.price)return selected.price;
-  if(p2>0||p1>0)return p2||p1;
+  const chart='https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(sym)+'?interval=5m&range=5d&includePrePost=true';
+  try{const price=parseYahooChartPrice(await fetchTextCrossOrigin(chart),sym);if(price>0)return price;}catch(e){}
+  const quote='https://query1.finance.yahoo.com/v7/finance/quote?symbols='+encodeURIComponent(sym);
+  try{const price=parseYahooV7Quote(await fetchTextCrossOrigin(quote));if(price>0)return StockSessions.select(yahooQuoteMetaBySym.get(sym)?.snapshot)?.price||price;}catch(e){}
   return null;
 }
 /** 不占 Twelve Data：Yahoo → 缓存（自动轮询在额度用尽时用此路径） */
