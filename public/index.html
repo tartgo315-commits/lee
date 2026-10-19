@@ -2527,7 +2527,7 @@ async function fetchStockPriceYahooOrCacheOnly(ticker){
 async function fetchStockPriceWithFallback(ticker){
   const sym=String(ticker||'').trim().toUpperCase();if(!sym)return null;syncTdRateLimitedFromStorage();
   if(__stockTdRateLimited)return fetchStockPriceYahooOrCacheOnly(sym);
-  const [tdResult,yResult]=await Promise.allSettled([fetchTwelveDataStockPriceDetailed(sym),fetchStockPriceYahooOrCacheOnly(sym)]),td=tdResult.status==='fulfilled'?tdResult.value:null,y=yResult.status==='fulfilled'?yResult.value:null;
+  const [tdResult,yResult]=await Promise.allSettled([quoteWithin(fetchTwelveDataStockPriceDetailed(sym),6500),fetchStockPriceYahooOrCacheOnly(sym)]),td=tdResult.status==='fulfilled'?tdResult.value:null,y=yResult.status==='fulfilled'?yResult.value:null;
   if(td?.rateLimited)markTdRateLimited(td);
   if(y?.price>0&&(y.source==='yahoo'||StockSessions.preferExtendedCache(y)))return y;
   if(td?.price>0){const result={price:td.price,source:'twelve',timestamp:td.timestamp||Date.now()};writeStockPriceCache(sym,td.price,result);return result;}
@@ -5756,9 +5756,12 @@ function redrawAllAfterFullQuoteRefresh(){
 }
 
 /** 仅更新行情；快照与资讯由各自入口执行。 */
+function quoteWithin(promise,ms){
+  let timer;return Promise.race([Promise.resolve(promise),new Promise(resolve=>{timer=setTimeout(()=>resolve(null),ms);})]).finally(()=>clearTimeout(timer));
+}
 async function refreshOneStockQuote(stock){
   const before=Number(stock.currentPrice),startedAt=Date.now();try{
-    const result=await fetchStockPriceWithFallback(stock.ticker);
+    const result=await quoteWithin(fetchStockPriceWithFallback(stock.ticker),20000);
     if(result?.price>0){const applied=patchUsStockLiveRow(stock.ticker,result.price,{force:true,source:result.source,timestamp:result.timestamp})===true;return{source:result.source==='cache'||result.source==='twelve'&&result.timestamp<startedAt?'cache':result.source,applied,changed:applied&&Math.abs(before-Number(stock.currentPrice))>0.000001};}
   }catch(e){}return{source:null,applied:false,changed:false};
 }
@@ -5781,104 +5784,34 @@ function showQuoteRefreshResult(rows,before){
 }
 
 async function refreshAllQuotes(){
-  const strip=document.getElementById('global-refresh-status');
-  const btn=document.getElementById('refresh-all-btn');
-  const snapBtn=document.getElementById('snap-btn');
-  const busy=on=>{
-    if(btn){btn.disabled=!!on;btn.style.opacity=on?'.55':'1';}
-    if(snapBtn){snapBtn.disabled=!!on;snapBtn.style.opacity=on?'.55':'1';}
-  };
-  if(quoteRefreshBusy){
-    showToast({message:'正在刷新中，请稍候…',type:'info',duration:2200});
-    return;
-  }
-  busy(true);
-  quoteRefreshBusy=true;
-  __woSyncToastId=showToast({message:'正在刷新行情…',type:'loading',duration:0});
-  const beforeTotal=totalCNY(),stockResults=[];quoteAuthRequired=false;
-  if(strip)strip.className='global-refresh-strip';
-  const lines=[];
-  const show=msg=>{if(strip) strip.innerHTML='<div class="alert alert-info" style="margin:0">'+msg+'</div>';};
-
+  const strip=document.getElementById('global-refresh-status'),btn=document.getElementById('refresh-all-btn'),snapBtn=document.getElementById('snap-btn');
+  if(quoteRefreshBusy){showToast({message:'正在刷新中，请稍候…',type:'info',duration:2200});return;}
+  const busy=on=>{for(const el of [btn,snapBtn])if(el){el.disabled=!!on;el.style.opacity=on?'.55':'1';}};
+  busy(true);quoteRefreshBusy=true;quoteAuthRequired=false;
+  __woSyncToastId=showToast({message:'正在并行刷新行情…',type:'loading',duration:0});
+  const beforeTotal=totalCNY(),stockResults=[],states=new Map(),jobs=[];
+  const progress=()=>{if(strip){strip.className='global-refresh-strip quote-refresh-summary';strip.textContent=[...states].map(([label,status])=>label+' '+status).join(' · ');}};
+  const add=(label,work)=>{states.set(label,'刷新中');jobs.push(async()=>{let ok=false;try{ok=await work();}catch(e){}states.set(label,ok?'已更新':'未取到新数据，保留原值');refreshOVTotals();progress();});};
   try{
     maybeRollAuWeeklyCompound();
-    show('🔄 正在刷新汇率…');
-    try{
-      const fx=await fetchCNYRates();
-      if(fx&&applyFxRatesIfStable(fx,true)){
-        lines.push('汇率');
-        const nCn=D.products.filter(p=>p.region==='cn').length;
-        const nAu=D.products.filter(p=>p.region==='au').length;
-        if(nCn||nAu)lines.push('中'+nCn+'·澳'+nAu+'条已折算');
-        save();
-        redrawAllAfterFullQuoteRefresh();
-      }else lines.push('汇率失败');
-    }catch(e){lines.push('汇率失败');}
-
-    show('🔄 正在刷新比特币…');
-    try{
-      const btc=await fetchBtcPrice();
-      if(btc?.usd>0){
-        updateBtcTicker(btc);
-        lines.push('BTC');
-      }else lines.push('BTC失败');
-    }catch(e){lines.push('BTC失败');}
-
+    add('汇率',async()=>{const fx=await quoteWithin(fetchCNYRates(),12000);if(!fx||!applyFxRatesIfStable(fx,true))return false;save();return true;});
+    add('BTC',async()=>{const q=await quoteWithin(fetchBtcPrice(),10000);if(!(q?.usd>0))return false;updateBtcTicker(q);return true;});
     const golds=D.products.filter(p=>p.type==='gold');
-    if(golds.length){
-      show('🔄 正在刷新金价（Au99.99）…');
-      try{
-        const price=await fetchGoldPrice();
-        if(price>0){
-          golds.forEach(g=>{g.goldPrice=price;g.goldUpdated=today();});
-          lines.push('黄金×'+golds.length);
-          updateGoldChip();
-          save();
-          redrawAllAfterFullQuoteRefresh();
-        }else lines.push('黄金失败');
-      }catch(e){lines.push('黄金失败');}
-    }
-
+    if(golds.length)add('黄金',async()=>{const price=await quoteWithin(fetchGoldPrice(),16000);if(!(price>0))return false;golds.forEach(g=>{g.goldPrice=price;g.goldUpdated=today();});updateGoldChip();save();return true;});
     const stocks=[...new Map(D.products.filter(p=>p.type==='stock_us'&&!isZeroStock(p)&&p.ticker).map(p=>[String(p.ticker).trim().toUpperCase(),p])).values()];
-    if(stocks.length){
-      show('正在刷新美股并重算总资产…');
-      const results=await Promise.all(stocks.map(refreshOneStockQuote));
-      stockResults.push(...results);save();redrawAllAfterFullQuoteRefresh();
-    }
-
+    if(stocks.length)add('美股',async()=>{const rows=await Promise.all(stocks.map(refreshOneStockQuote));stockResults.push(...rows);save();redrawAllAfterFullQuoteRefresh();return rows.every(r=>r.applied&&r.source!=='cache');});
     const funds=D.products.filter(p=>p.type==='fund_cn'&&p.fundCode&&String(p.fundCode).trim()&&(p.fundCurrency||'CNY')==='CNY');
-    const fundsNonCny=D.products.filter(p=>p.type==='fund_cn'&&p.fundCode&&String(p.fundCode).trim()&&(p.fundCurrency||'CNY')!=='CNY');
-    if(fundsNonCny.length)lines.push('非CNY基金×'+fundsNonCny.length+'（未接批量刷新）');
-    if(funds.length){
-      show('🔄 正在并行刷新基金净值…');
-      const okFd=await Promise.all(funds.map(async f=>{
-        try{
-          const res=await fetchFundPrice(f.fundCode,{prev:f.fundPrice||0,force:true});
-          if(res.price>0){f.fundPrice=res.price;f.name=f.name||res.name;f.updatedAt=res.date||today();return {ok:1};}
-        }catch(e){}
-        return {ok:0,code:String(f.fundCode)};
-      }));
-      const okn=okFd.filter(x=>x.ok).length;
-      const bad=okFd.filter(x=>!x.ok).map(x=>x.code);
-      lines.push('基金'+okn+'/'+funds.length+(okn<funds.length?' 失败:'+bad.join(','):''));
-      save();
-      redrawAllAfterFullQuoteRefresh();
-    }
-
-    save();
-    redrawAllAfterFullQuoteRefresh();
-
-    refreshCurrentView();
-
+    if(funds.length)add('基金',async()=>{const rows=await Promise.all(funds.map(async f=>{const res=await quoteWithin(fetchFundPrice(f.fundCode,{prev:f.fundPrice||0,force:true}),12000);if(!(res?.price>0))return false;f.fundPrice=res.price;f.name=f.name||res.name;f.updatedAt=res.date||today();return true;}));save();return rows.every(Boolean);});
+    progress();await Promise.all(jobs.map(work=>work()));
+    save();redrawAllAfterFullQuoteRefresh();refreshCurrentView();
     showQuoteRefreshResult(stockResults,beforeTotal);
+    const failed=[...states].filter(([label,status])=>status!=='已更新').map(([label])=>label);
+    if(strip){strip.textContent+=' · '+[...states].map(([label,status])=>label+' '+status).join(' · ');if(failed.length)strip.classList.add('quote-refresh-warn');}
   }catch(e){
-    if(strip) strip.innerHTML='<div class="alert alert-warn" style="margin:0">⚠️ 刷新中断：'+(e.message||e)+'</div>';
+    if(strip){strip.className='global-refresh-strip quote-refresh-summary quote-refresh-warn';strip.textContent='刷新中断，已保留现有估值：'+(e.message||e);}
     showToast({message:'同步中断：'+(e.message||String(e)),type:'warn',duration:5200});
   }finally{
-    dismissToast(__woSyncToastId);
-    __woSyncToastId=null;
-    busy(false);
-    quoteRefreshBusy=false;
+    dismissToast(__woSyncToastId);__woSyncToastId=null;busy(false);quoteRefreshBusy=false;
     try{updateTdExpiryChip();}catch(e){}
   }
 }
@@ -6362,6 +6295,10 @@ function renderReverseRates(){
 }
 /** 以 CNY 为基准拉 USD/AUD（及 USDAUD）。多源依次尝试：currency-api(CF/jsDelivr) → er-api → Frankfurter → allorigins 代理 → exchangerate.host */
 async function fetchCNYRates(){
+  async function directJson(url){
+    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),3000);
+    try{const response=await fetch(url,{cache:'no-store',signal:controller.signal});if(!response.ok)return null;return await response.json();}catch(e){return null;}finally{clearTimeout(timer);}
+  }
   const apply=(rates)=>{
     const fx={};
     if(!rates)return null;
@@ -6413,8 +6350,7 @@ async function fetchCNYRates(){
   ];
   for(const u of directUrls){
     try{
-      const r=await fetch(u,{cache:'no-store'});
-      const d=await r.json();
+      const d=await directJson(u);
       const fx=parseFxFromJson(d);
       if(fx)return fx;
     }catch(e){}
@@ -6425,8 +6361,7 @@ async function fetchCNYRates(){
     if(fx)return fx;
   }
   try{
-    const r=await fetch('https://api.exchangerate.host/latest?base=CNY&symbols=USD,AUD',{cache:'no-store'});
-    const d=await r.json();
+    const d=await directJson('https://api.exchangerate.host/latest?base=CNY&symbols=USD,AUD');
     const fx=parseFxFromJson(d);
     if(fx)return fx;
   }catch(e){}

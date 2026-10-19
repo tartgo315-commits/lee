@@ -37,10 +37,10 @@ const html=fs.readFileSync('index.html','utf8'),code=[...html.matchAll(/<script(
 const definition=name=>{const m=code.match(new RegExp('(?:async )?function '+name+'\\([^)]*\\)\\{[\\s\\S]*?\\n\\}'));assert.ok(m,name);return m[0];};
 async function asyncTest(name,fn){await fn();count++;console.log('PASS '+name);}
 await asyncTest('Manual refresh fetches Yahoo even when Twelve Data succeeds',async()=>{
-  const x=vm.createContext({Promise,Date,__stockTdRateLimited:false,syncTdRateLimitedFromStorage(){},markTdRateLimited(){},fetchTwelveDataStockPriceDetailed:async()=>({price:100}),fetchStockPriceYahooOrCacheOnly:async()=>({price:110,source:'yahoo',quoteAt:now}),writeStockPriceCache(){}});vm.runInContext(definition('fetchStockPriceWithFallback'),x);const r=await x.fetchStockPriceWithFallback('DEMO');assert.equal(r.price,110);assert.equal(r.source,'yahoo');
+  const x=vm.createContext({Promise,quoteWithin:promise=>promise,Date,__stockTdRateLimited:false,syncTdRateLimitedFromStorage(){},markTdRateLimited(){},fetchTwelveDataStockPriceDetailed:async()=>({price:100}),fetchStockPriceYahooOrCacheOnly:async()=>({price:110,source:'yahoo',quoteAt:now}),writeStockPriceCache(){}});vm.runInContext(definition('fetchStockPriceWithFallback'),x);const r=await x.fetchStockPriceWithFallback('DEMO');assert.equal(r.price,110);assert.equal(r.source,'yahoo');
 });
 await asyncTest('Failed Yahoo requests never promote old memory data as a fresh quote',async()=>{
-  const x=vm.createContext({Promise,StockSessions:S,fetchTextCrossOrigin:async()=>'',parseYahooChartPrice:()=>null,parseYahooV7Quote:()=>null,yahooQuoteMetaBySym:new Map([['DEMO',{snapshot:S.fromQuote({symbol:'DEMO',regularMarketPrice:100},'',now)}]])});vm.runInContext(definition('fetchYahooOnlyStockPrice'),x);assert.equal(await x.fetchYahooOnlyStockPrice('DEMO'),null);
+  const x=vm.createContext({Promise,quoteWithin:promise=>promise,StockSessions:S,fetchTextCrossOrigin:async()=>'',parseYahooChartPrice:()=>null,parseYahooV7Quote:()=>null,yahooQuoteMetaBySym:new Map([['DEMO',{snapshot:S.fromQuote({symbol:'DEMO',regularMarketPrice:100},'',now)}]])});vm.runInContext(definition('fetchYahooOnlyStockPrice'),x);assert.equal(await x.fetchYahooOnlyStockPrice('DEMO'),null);
 });
 
 await asyncTest('Verified quote updates every account for a ticker, preserving holdings and cash',async()=>{
@@ -54,7 +54,7 @@ await asyncTest('Cache roundtrip retains quote execution time separately from ca
 
 await asyncTest('A regular-price fallback cannot overwrite a known extended-session cache outside regular hours',async()=>{
   class NightClock extends Date{static now(){return Date.parse('2026-10-19T01:00:00Z');}}
-  const cached={price:105,source:'cache',selection:{kind:'overnight',price:105,estimated:true}},x=vm.createContext({Promise,Date:NightClock,StockSessions:S,__stockTdRateLimited:false,syncTdRateLimitedFromStorage(){},markTdRateLimited(){},fetchTwelveDataStockPriceDetailed:async()=>({price:100}),fetchStockPriceYahooOrCacheOnly:async()=>cached,writeStockPriceCache(){}});vm.runInContext(definition('fetchStockPriceWithFallback'),x);const r=await x.fetchStockPriceWithFallback('DEMO');assert.equal(r.price,105);assert.equal(r.source,'cache');
+  const cached={price:105,source:'cache',selection:{kind:'overnight',price:105,estimated:true}},x=vm.createContext({Promise,quoteWithin:promise=>promise,Date:NightClock,StockSessions:S,__stockTdRateLimited:false,syncTdRateLimitedFromStorage(){},markTdRateLimited(){},fetchTwelveDataStockPriceDetailed:async()=>({price:100}),fetchStockPriceYahooOrCacheOnly:async()=>cached,writeStockPriceCache(){}});vm.runInContext(definition('fetchStockPriceWithFallback'),x);const r=await x.fetchStockPriceWithFallback('DEMO');assert.equal(r.price,105);assert.equal(r.source,'cache');
   assert.equal(S.preferExtendedCache(cached,Date.parse('2026-10-19T14:00:00Z')),false);
 });
 assert.equal(fs.readFileSync('stock-sessions.js','utf8'),fs.readFileSync('public/stock-sessions.js','utf8'));console.log(count+' extended-session checks passed.');
