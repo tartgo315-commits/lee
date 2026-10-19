@@ -4845,6 +4845,9 @@ function buildOverviewHoldingRows(products,context,manualIdle){
 function filterOverviewHoldingRows(rows,filters){
   const selected=rows.filter(row=>(!filters.region||row.region===filters.region)&&(!filters.account||overviewHoldingAccountKey(row.region,row.account)===filters.account)&&(!filters.type||row.type===filters.type));
   return selected.sort((a,b)=>{
+    // Keep each US account's manual available cash ahead of its investments.
+    const cashFirst=Number(b.region==='us'&&b.manual)-Number(a.region==='us'&&a.manual);
+    if(cashFirst)return cashFirst;
     if(a.valuation.complete!==b.valuation.complete)return a.valuation.complete?-1:1;
     return ((a.valuation.cny||0)-(b.valuation.cny||0))*(filters.sort==='asc'?1:-1)||String(a.product.name||'').localeCompare(String(b.product.name||''));
   });
