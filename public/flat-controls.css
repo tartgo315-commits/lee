@@ -20,3 +20,10 @@
 .ai-pb-header,.ai-pb-toolbar{flex-wrap:wrap}.ai-pb-select+.flat-options{margin:0}
 @media(max-width:768px){.flat-option{min-height:38px;font-size:14px}.flat-options{gap:5px}.navigation-notices{padding:5px 12px!important}.navigation-notices .nav-notice{flex-basis:100%}.ov-holding-filters>div{flex-basis:100%}.assistant-data{max-height:20vh}.fg-row{min-width:0}}
 .acc-chevron{display:none!important}
+
+/* Let dashboard sections grow with their content; use the page scrollbar. */
+.ov-holdings-scroll{max-height:none!important;height:auto!important;overflow-x:auto!important;overflow-y:visible!important;overscroll-behavior:auto;scrollbar-gutter:auto}
+.term-zone-intel,.term-intel-events,.term-intel-events #ov-events-card{height:auto!important;max-height:none!important;overflow:visible!important;flex:none!important}
+.term-intel-events #ov-events-card{display:block!important}
+.term-intel-events #ov-events-list,.term-intel-risk #ov-insights,#movement-log,.ledger-content-scroll,.ledger-legacy #cashflow-list,#news-list{max-height:none!important;height:auto!important;overflow:visible!important;scrollbar-gutter:auto;overscroll-behavior:auto}
+.ov-holdings-table thead th{position:static}
