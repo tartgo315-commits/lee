@@ -1038,6 +1038,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
 <link rel="stylesheet" href="ledger-workflows.css">
 <link rel="stylesheet" href="ledger-assistant.css">
 <link rel="stylesheet" href="flat-controls.css">
+<link rel="stylesheet" href="compact-dashboard.css">
 </head>
 <body>
 <div id="pin-overlay" class="pin-overlay" style="display:none" aria-modal="true" role="dialog" aria-labelledby="pin-overlay-title">
@@ -1206,12 +1207,12 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
         <section class="term-zone term-zone-portfolio">
           <div class="term-portfolio-hd">
             <div class="card-title"><i class="ti ti-briefcase"></i> 资产持仓</div>
-            <span class="ov-holdings-note">全部地区 · 按账户分组</span><button type="button" class="btn btn-ghost btn-sm" onclick="LedgerUI.open('trade')">买卖股票</button><button type="button" class="btn btn-ghost btn-sm" onclick="LedgerUI.open('transfer')">转账</button><button type="button" class="btn btn-ghost btn-sm" onclick="openCashMovement()">现金变动</button><button type="button" class="btn btn-ghost btn-sm" onclick="LedgerUI.showWorkspace()">资金工作台</button>
+            <span class="ov-holdings-note">全部地区 · 按账户分组</span><button type="button" class="btn btn-ghost btn-sm" onclick="LedgerUI.open('trade')">买卖股票</button><button type="button" class="btn btn-ghost btn-sm" onclick="LedgerUI.open('transfer')">转账</button><button type="button" class="btn btn-ghost btn-sm" onclick="openCashMovement()">现金变动</button><button type="button" class="btn btn-ghost btn-sm" onclick="LedgerUI.showWorkspace()">资金工作台</button><div id="ledger-home-status" class="ledger-controls" aria-label="资金处理状态"></div>
           </div>
           <div id="gold-price-warn" style="display:none;margin-bottom:8px;padding:8px 12px;border-radius:8px;background:var(--warn-bg);border:1px solid rgba(217,119,6,.25);color:var(--warn);font-size:13px;">
             ⚠️ 黄金积存金价未刷新，当前净值未计入黄金市值。请点击顶栏「Au/g」刷新金价。
           </div>
-          <div id="ledger-home-status" class="ledger-controls" aria-label="资金处理状态"></div><div id="ov-regions"></div>
+          <div id="ov-regions"></div>
         </section>
 
         <aside class="term-zone term-zone-intel intel-mode-events"><div class="intel-switch" aria-label="事件与风险切换"><button type="button" class="btn btn-ghost btn-sm" aria-pressed="true" onclick="setIntelView('events',this)">近期事件</button><button type="button" class="btn btn-ghost btn-sm" aria-pressed="false" onclick="setIntelView('risk',this)">风险检查</button></div>
