@@ -16,6 +16,7 @@
 <script src="ledger-assistant-ui.js"></script>
 <script src="portfolio-intelligence.js"></script>
 <script src="flat-controls.js"></script>
+<script src="stock-editor-flow.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
 
@@ -1744,6 +1745,11 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
         <div class="fg"><label for="m-cost">成本价 (USD)</label><input type="number" id="m-cost" placeholder="150.00" step="any"></div>
         <div class="fg"><label for="m-sprice">当前价 (USD)</label><input type="number" id="m-sprice" placeholder="自动刷新" step="any"></div>
       </div>
+      <section class="stock-funding-panel"><h3>数量变动与资金联动</h3>
+      <div class="fg"><label for="m-stock-action">这次操作</label><select id="m-stock-action"><option value="trade">买卖股票，自动增减闲置现金</option><option value="opening">登记已经持有的股票，不重复扣现金</option><option value="correction">资料更正，不结算现金</option></select></div>
+      <div id="m-stock-settlement" hidden><div class="fg"><label for="m-stock-cash">资金来源 / 卖出回款账户</label><select id="m-stock-cash"></select></div>
+      <div class="fg-row c2"><div class="fg"><label for="m-stock-execution">本次实际成交价（USD）</label><input id="m-stock-execution" type="number" min="0" step="any"></div><div class="fg"><label for="m-stock-fee">本次手续费（USD）</label><input id="m-stock-fee" type="number" min="0" step="0.01" value="0"></div></div>
+      <div class="fg-row c2"><div class="fg"><label for="m-stock-date">成交日期</label><input id="m-stock-date" type="date"></div><div class="fg"><label for="m-stock-fx">本次成交日 USD/CNY（选填）</label><input id="m-stock-fx" type="number" min="0" step="any"></div><div class="fg"><label for="m-stock-reason">备注（选填）</label><input id="m-stock-reason"></div></div></div><p id="m-stock-flow-preview" class="privacy-note" aria-live="polite"></p></section>
       <div class="fg"><label for="m-stoploss">止损价 USD（可选，用于盈亏面板预警）</label>
         <input type="number" id="m-stoploss" placeholder="如 82.50" step="0.01"></div>
     </div>
@@ -1793,7 +1799,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
 <div class="overlay" id="modal-ledger" role="dialog" aria-modal="true" aria-labelledby="ledger-title">
  <div class="modal"><div class="movement-header"><h2 id="ledger-title">资金工作台</h2><button type="button" class="btn btn-icon" aria-label="关闭资金工作台" onclick="LedgerUI.close()">×</button></div>
  <div id="ledger-form" class="ledger-form-grid"></div><div id="ledger-preview" aria-live="polite"></div><p id="ledger-error" role="alert"></p>
- <div class="movement-actions"><button type="button" class="btn btn-ghost" onclick="LedgerUI.close()">取消</button><button type="button" class="btn btn-primary" onclick="LedgerUI.commit()">核对并保存</button></div></div>
+ <div class="movement-actions"><button type="button" class="btn btn-ghost" onclick="LedgerUI.close()">取消</button><button type="button" class="btn btn-primary" id="ledger-submit" onclick="LedgerUI.commit()">保存这次操作</button></div></div>
 </div>
 <button type="button" id="assistant-backdrop" aria-label="收起 AI 账本助手" hidden onclick="LedgerAssistant.close()"></button>
 <aside id="ledger-assistant" role="complementary" aria-labelledby="assistant-title" hidden>
@@ -4972,7 +4978,7 @@ function renderOverviewHoldings(){
     if(p.type==='term_deposit'){
       const days=tdDaysLeft(p);
       if(days!==null&&days>=0&&days<=7)text(cells[0],days===0?'今日到期':days+' 天后到期','ov-holding-estimate');
-      else if(days!==null&&days<0)text(cells[0],'已到期，请核对余额','ov-holding-estimate');
+      else if(days!==null&&days<0)text(cells[0],'已到期，点击「到期处理」分配本息','ov-holding-estimate');
     }
     if(row.manual)text(cells[0],'替代该账户已登记的美元现金余额','ov-holding-sub');
     if(v.estimated)text(cells[0],p.type==='in_transit'?'在途暂估 · 非可用现金':p.tdNeedsReview?'待核对定存合同':'使用最近有效价格估值','ov-holding-estimate');
@@ -4987,6 +4993,7 @@ function renderOverviewHoldings(){
     for(const [action,label,icon,handler] of p.type==='in_transit'?[['receive','处理在途资金','↗',()=>LedgerUI.open('receive',p.id)]]:row.manual?[['account','账户详情','↗',view]]:[['edit',v.complete?'编辑资产':'补齐资料','✎',()=>editProduct(p.id)],['delete','删除资产','×',()=>deleteProduct(p.id)]]){
       const button=document.createElement('button');button.type='button';button.className='btn btn-ghost btn-sm'+(action==='delete'?' danger':'');button.dataset.holdingAction=action;button.setAttribute('aria-label',label);button.title=label;button.textContent=icon;button.addEventListener('click',handler);actions.append(button);
     }
+    if(p.type==='term_deposit'){const maturity=document.createElement('button');maturity.type='button';maturity.className='btn btn-ghost btn-sm';maturity.textContent='到期处理';maturity.addEventListener('click',()=>LedgerUI.open('maturity',p.id));actions.prepend(maturity);}
     cells[5].append(actions);body.append(tr);
   }
   if(!selected.length){const row=document.createElement('tr'),cell=document.createElement('td');cell.colSpan=6;cell.className='ov-holdings-empty';cell.textContent=all.length?'没有符合当前筛选的资产，试试重置筛选。':'尚无资产，点击顶部「添加资产」开始记录。';row.append(cell);body.append(row);}
@@ -6520,7 +6527,7 @@ function showModal(id){
   const overlay=document.getElementById(id);
   overlay.classList.add('open');
   requestAnimationFrame(()=>{
-    if(id==='modal'){const field=assetEditorFocusId(!!document.getElementById('m-editid').value,document.getElementById('m-type').value);document.getElementById(field)?.focus({preventScroll:true});}
+    if(id==='modal'){syncStockFunding(true);const field=assetEditorFocusId(!!document.getElementById('m-editid').value,document.getElementById('m-type').value);document.getElementById(field)?.focus({preventScroll:true});}
     else overlay.querySelector('input:not([type=hidden]),select,button')?.focus();
   });
 }
@@ -6757,7 +6764,7 @@ function saveProduct(){
   } else if(type==='stock_us'){
     const ticker=document.getElementById('m-ticker').value.trim().toUpperCase();
     const shares=parseFloat(document.getElementById('m-shares').value);
-    const cost=parseFloat(document.getElementById('m-cost').value);
+    const rawCost=parseFloat(document.getElementById('m-cost').value),cost=Number.isNaN(rawCost)&&document.getElementById('m-stock-action').value==='trade'?0:rawCost;
     const price=parseFloat(document.getElementById('m-sprice').value)||0;
     if(!ticker||isNaN(shares)||isNaN(cost)){status.innerHTML='<div class="alert alert-warn">请填写股票代码、持股数和成本价</div>';return;}
     const slRaw=parseFloat(document.getElementById('m-stoploss').value);
@@ -6799,6 +6806,9 @@ function saveProduct(){
   const original=editId?D.products.find(x=>x.id===parseInt(editId)):null;
   p=original?{...original,...p,createdAt:original.createdAt||p.createdAt}:p;
   if(type==='gold')p=sanitizeGoldProduct(p);
+  if(type==='stock_us'){
+    try{if(saveStockFunding(original,p))return;}catch(error){status.textContent=error.message;return;}
+  }
   stageMovement('p:'+p.id,p);
 }
 
@@ -6847,10 +6857,12 @@ function editProduct(id){
     document.getElementById('m-date').value=p.updatedAt||today();
   }
   syncAssetEditorSections();
+  if(typeof syncStockFunding==='function')syncStockFunding(true);
 }
 
 function deleteProduct(id){
   const p=D.products.find(x=>x.id===id);if(!p)return;
+  if(p.type==='term_deposit'&&WealthMath.depositTerms(p).end&&WealthMath.depositTerms(p).end<=today()){LedgerUI.open('maturity',p.id);return;}
   if(p.type==='in_transit'){LedgerUI.open('receive',p.id);return;}
   stageMovement('p:'+id,null);
 }

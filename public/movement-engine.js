@@ -2,7 +2,7 @@
 (function(root){
   'use strict';
   const M=root.WealthMath,clone=v=>v==null?v:JSON.parse(JSON.stringify(v));
-  const KINDS={stock_trade:'股票成交（现金已联动）',transfer_pending:'汇款已扣款 / 在途',transfer_processing:'汇款处理中',transfer_received:'汇款已到账',transfer_refund:'汇款已退款',correction_resolution:'更正核对完成',reconciliation:'账户对账',deposit:'外部入金',expense:'生活消费 / 支出',withdrawal:'对外转出 / 赠与',transfer:'自己账户间转账 / 换汇',interest:'利息 / 分红到账',valuation:'手动更新行情',trade:'买卖 / 存取定期（需核对配套余额）',correction:'数据更正',opening:'登记已有资产',metadata:'资料更新'};
+  const KINDS={deposit_maturity:'定存到期与资金分配',stock_trade:'股票成交（现金已联动）',transfer_pending:'汇款已扣款 / 在途',transfer_processing:'汇款处理中',transfer_received:'汇款已到账',transfer_refund:'汇款已退款',correction_resolution:'更正核对完成',reconciliation:'账户对账',deposit:'外部入金',expense:'生活消费 / 支出',withdrawal:'对外转出 / 赠与',transfer:'自己账户间转账 / 换汇',interest:'利息 / 分红到账',valuation:'手动更新行情',trade:'买卖 / 存取定期（需核对配套余额）',correction:'数据更正',opening:'登记已有资产',metadata:'资料更新'};
   function read(data,ref){if(ref.startsWith('p:'))return data.products.find(p=>String(p.id)===ref.slice(2))||null;if(ref.startsWith('m:'))return data.usAccountMeta?.[ref.slice(2)]||null;if(ref.startsWith('e:'))return (data.movementLog||[]).find(e=>e.id===ref.slice(2))||null;if(ref.startsWith('s:'))return data[ref.slice(2)]||null;if(ref.startsWith('r:'))return data.reconciliations?.[ref.slice(2)]||null;throw Error('账户引用无效');}
   function info(ref,value){
     if(ref.startsWith('m:'))return{cash:M.number(value?.idleUsd)!==null,account:ref.slice(6),region:'us',currency:'USD',amount:M.number(value?.idleUsd)};

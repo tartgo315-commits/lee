@@ -30,6 +30,45 @@
     }
     after.shares=quantity;if(!(n(before?.currentPrice)>0))after.currentPrice=price;after.updatedAt=o.date;event.changes.push({ref:'p:'+id,before,after});return event;
   }
+  function matureDeposit(data,o){
+    const event=base({...o,reason:o.reason||'定存到期分配'},'deposit_maturity');
+    const old=clone(data.products.find(p=>String(p.id)===String(o.depositId)&&p.type==='term_deposit'));if(!old)throw Error('这笔定存已处理或不存在');
+    const terms=M.depositTerms(old),value=M.depositValue(old,o.date),currency=old.tdCur||old.currency||'AUD';
+    if(!terms.end||M.dayIndex(terms.end)===null)throw Error('请先补充原定存的到期日');
+    if(o.date<terms.end)throw Error('尚未到期，请在实际到期结算后保存');
+    const supplied=o.proceeds!==''&&o.proceeds!==undefined&&o.proceeds!==null;
+    if(!supplied&&!value.complete)throw Error('原合同无法估算本息，请填写银行实际结算本息');
+    const proceeds=supplied?money(o.proceeds):value.value,renew=money(o.renewAmount||0),fee=money(o.fee||0);
+    if(!(proceeds>0)||renew>proceeds)throw Error('结算本息须大于零，续存不能超过本息');
+    const moving=o.sendAmount===''||o.sendAmount===undefined?M.sum([proceeds,-renew]):money(o.sendAmount);
+    if(M.sum([renew,moving])>proceeds||fee>moving||moving>0&&fee===moving)throw Error('续存与转出合计不能超过本息，手续费须小于转出总额');
+    if(!moving&&fee)throw Error('没有转出资金时不能填写汇款手续费');
+    if(!['pending','arrived'].includes(o.transferState||'pending'))throw Error('请选择到账状态');
+    let id=Math.max(Number(data.nextId)||1,...data.products.map(p=>(Number(p.id)||0)+1));
+    const nextId=()=>id++,account=old.account||'未分类';
+    const existing=W.cashAccounts(data).find(a=>a.region===old.region&&a.account===account&&a.currency===currency);
+    const remainder=M.sum([proceeds,-renew,-moving]);
+    const source=existing||{ref:'p:'+nextId(),region:old.region,account,currency,amount:0};
+    const sourceBefore=existing?clone(W.read(data,source.ref)):null,sourceAfter=sourceBefore?clone(sourceBefore):{id:Number(source.ref.slice(2)),type:'cash',region:old.region,account,name:'到期结算现金',currency,amount:0,createdAt:o.date};
+    if(source.ref.startsWith('m:'))sourceAfter.idleUsd=M.sum([source.amount,remainder]);else sourceAfter.amount=M.sum([source.amount,remainder]);
+    event.chainId=String(o.chainId||'').trim()||'定存到期 '+o.date+' · '+(old.name||'定存')+' · '+event.id.slice(0,6);event.changes=[{ref:'p:'+old.id,before:old,after:null},{ref:source.ref,before:sourceBefore,after:sourceAfter}];
+    if(renew>0){
+      const rate=n(o.renewRate),end=o.renewEnd,method=o.renewMethod||'simple';
+      if(rate===null||rate<0||M.dayIndex(end)===null||end<=o.date)throw Error('请填写新定存年利率与晚于结算日的到期日');
+      const renewed={id:nextId(),type:'term_deposit',region:old.region,account,name:String(o.renewName||'续存定存').trim(),principal:renew,rate,currency,tdCur:currency,tdStart:o.date,tdEnd:end,tdContractStart:o.date,tdContractEnd:end,tdBasisPrincipal:renew,tdBasisStart:o.date,tdOrigPrincipal:renew,tdMethod:method,tdDayCount:o.renewBasis||'ACT/365F',tdTimeZone:M.depositZone(old),tdRoundInterest:true,tdPaidInterest:0,tdPaidInterestDate:'',tdCalcVersion:3,tdNeedsReview:false,createdAt:o.date};
+      const check=M.depositValue(renewed,o.date);if(!check.complete)throw Error(check.reason);
+      event.changes.push({ref:'p:'+renewed.id,before:null,after:renewed});
+    }
+    if(moving>0){
+      const target=cash(data,o.targetRef);if(target.ref===source.ref)throw Error('转出部分请选择另一个账户');
+      const net=M.sum([moving,-fee]),arrived=o.transferState==='arrived';
+      if(arrived){const received=target.currency===currency?net:(n(o.received)>0?money(o.received):0);if(!(received>0))throw Error('跨币种已到账时，请填写实际到账金额');event.changes.push(cashChange(data,target,received));event.receipt={currency:target.currency,amount:received,sourceAmount:net,sourceCurrency:currency};}
+      else{const transit={id:nextId(),type:'in_transit',region:old.region,account,name:'在途 → '+target.account,currency,amount:net,createdAt:o.date,transfer:{status:'pending',sourceRef:source.ref,targetRef:target.ref,total:moving,fee,sourceCurrency:currency,targetCurrency:target.currency,startDate:o.date,chainId:event.chainId,channel:event.channel,sourceAccount:account,targetAccount:target.account}};event.transferId=transit.id;event.changes.push({ref:'p:'+transit.id,before:null,after:transit});}
+    }
+    event.feeAmount=fee;event.feeCurrency=currency;event.maturity={depositId:old.id,principal:terms.principal,proceeds,estimated:!supplied,renewAmount:renew,sendAmount:moving,cashRemainder:remainder,currency,targetRef:moving?o.targetRef:null,transferState:moving?(o.transferState||'pending'):null};
+    return event;
+  }
+
   function startTransfer(data,o){
     const event=base(o,'transfer_pending'),source=cash(data,o.sourceRef),target=cash(data,o.targetRef),total=money(o.amount),fee=money(o.fee||0);
     if(source.ref===target.ref||!(total>fee))throw Error('请选择不同的转入账户，扣款总额须大于手续费');
@@ -70,5 +109,5 @@
   function accountStatus(data,asOf){return accounts(data).map(a=>{const checked=data.reconciliations?.[a.key],days=checked?M.dayIndex(asOf)-M.dayIndex(checked.date):null;return{...a,checked,status:!checked?'未核对':checked.signature!==a.signature?'有新变动':days>30?'超过30天':'已核对'};});}
   function batches(data){const map=new Map();for(const event of data.movementLog||[]){if(event.reversedAt||!event.chainId)continue;if(!map.has(event.chainId))map.set(event.chainId,{id:event.chainId,events:[],fees:{}});const group=map.get(event.chainId);group.events.push(event);if(event.feeAmount)group.fees[event.feeCurrency]=M.sum([group.fees[event.feeCurrency]||0,event.feeAmount]);}return [...map.values()].map(g=>({...g,events:g.events.sort((a,b)=>a.date.localeCompare(b.date)||a.timestamp.localeCompare(b.timestamp))}));}
   function fingerprint(data){const text=JSON.stringify({accounts:accounts(data).map(a=>[a.key,a.signature]),transit:data.products.filter(p=>p.type==='in_transit'),flows:data.cashFlows||[],snapshots:data.navHistory||[],log:data.movementLog||[],tracking:data.performanceTracking||null,goal:data.goal,plan:data.goalPlan,settings:data.settings,checks:data.reconciliations});let a=2166136261,b=5381;for(let i=0;i<text.length;i++){a=Math.imul(a^text.charCodeAt(i),16777619);b=Math.imul(b,33)^text.charCodeAt(i);}return(a>>>0).toString(16)+'-'+(b>>>0).toString(16)+'-'+text.length;}
-  root.LedgerWorkflows={stockTrade,startTransfer,processTransfer,settleTransfer,resolveCorrection,reconcile,accountStatus,batches,fingerprint};
+  root.LedgerWorkflows={stockTrade,matureDeposit,startTransfer,processTransfer,settleTransfer,resolveCorrection,reconcile,accountStatus,batches,fingerprint};
 })(typeof globalThis!=='undefined'?globalThis:this);
