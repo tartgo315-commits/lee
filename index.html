@@ -7055,7 +7055,6 @@ function refreshValuationNotice(){
   const ambiguous=D.products.filter(p=>p.region==='us'&&p.type==='cash'&&p.currency==='CNY'&&looksLikeUsdBrokerCash(p)).length;
   if(ambiguous)warnings.push(ambiguous+' 条现金的名称可能指美元，但登记为人民币；本次严格按已填币种计算，请核对。');
   const transitCount=D.products.filter(p=>p.type==='in_transit').length;if(transitCount)warnings.push(transitCount+' 笔汇款在途，按汇出净额暂估，未计入可用现金。');
-  if(state.estimated.some(r=>D.products.some(p=>p.id===r.id&&!['term_deposit','in_transit'].includes(p.type))))warnings.push('部分资产使用最后有效价格估值，请核对报价时间。');
   el.hidden=!warnings.length;el.textContent=warnings.join(' ');syncNavigationNotices();
   const label=document.querySelector('.term-nav-hero .ov-hero-label');if(label)label.textContent=state.complete?'资产总净值':'已知资产估值（不完整）';
 }

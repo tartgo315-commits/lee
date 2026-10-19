@@ -33,3 +33,11 @@
 @media(min-width:1200px){
  .terminal-dashboard>.term-zone-intel{height:var(--intel-fit-height,0px)!important;min-height:0!important;max-height:none!important;overflow:hidden!important;contain:size;box-sizing:border-box;align-self:start}
 }
+
+/* One compact status line per source; no duplicate heading or full-width alert boxes. */
+.navigation-notices{flex:1 1 260px!important;min-width:0;gap:6px 16px;padding:3px 16px!important;align-items:center}
+.navigation-notices .nav-notice{flex:0 1 auto;padding:2px 0;border:0;border-radius:0;background:transparent}
+.nav-notice>[data-flat-heading],.nav-notice>summary{display:none!important}
+.nav-notice-popup .alert{font-size:12px!important;line-height:1.45!important}
+@media(min-width:769px){.navigation-row>.sidebar{flex:0 0 auto}}
+@media(max-width:768px){.navigation-notices{padding:3px 12px!important;gap:4px 12px}.navigation-notices .nav-notice{flex:0 1 auto}}
