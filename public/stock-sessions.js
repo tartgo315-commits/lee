@@ -31,5 +31,6 @@
     const state={REGULAR:'regular',PRE:'pre',PREPRE:'pre',PREOPEN:'pre',POST:'post',POSTPOST:'post',OVERNIGHT:'overnight',EXTENDED:'overnight'}[snapshot.marketState];
     const kind=state&&snapshot[state]?state:keys.find(k=>snapshot[k]);return kind?{...snapshot[kind],kind,label:labels[kind]+'参考',estimated:true,fetchedAt:snapshot.fetchedAt}:null;
   }
-  root.StockSessions={keys,labels,session,nightWindow,point,merge,fromQuote,fromChart,select};
+  function preferExtendedCache(cached,now=Date.now()){const selection=cached?.selection;if(cached?.source!=='cache'||!selection||selection.kind==='regular')return false;const s=session(now);return !(s.kind==='regular'&&['Mon','Tue','Wed','Thu','Fri'].includes(s.day));}
+  root.StockSessions={preferExtendedCache,keys,labels,session,nightWindow,point,merge,fromQuote,fromChart,select};
 })(typeof globalThis!=='undefined'?globalThis:this);

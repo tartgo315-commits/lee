@@ -1137,7 +1137,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
       <div class="terminal-dashboard">
         <section class="term-zone term-zone-head" id="ov-dash">
           <div class="term-nav-hero">
-            <div class="ov-hero-label">资产总净值</div>
+            <div class="ov-hero-label">资产总净值</div><span id="quote-recomputed-at" class="quote-recomputed-at" hidden></span>
             <div class="ov-hero-nav" id="ov-cny">¥ —</div>
             <div class="ov-hero-delta">
               <span class="ov-nav-lbl" id="ov-nav-lbl">—</span>
@@ -2252,11 +2252,13 @@ function mergeStockQuotes(prices){
   return Math.round(out*1e4)/1e4;
 }
 /** 拉取跨域文本：Firebase / 同源 /proxy → 远程 WO_REMOTE_PROXY_ORIGIN/_proxy → 本机 /_proxy（不再使用公共 CORS 代理，避免 Vercel 下浏览器报错）。 */
+let quoteAuthRequired=false;
 async function fetchProxiedText(targetUrl){
   const qs='?url='+encodeURIComponent(targetUrl);
   async function tryOne(full){
     try{
       const r=await fetch(full,{cache:'no-store',mode:'cors'});
+      if(r.status===401&&new URL(full,location.origin).origin===location.origin)quoteAuthRequired=true;
       if(!r.ok)return'';
       const t=await r.text();
       if(t&&t.length&&!/^Proxy error:/i.test(t))return t;
@@ -2359,6 +2361,7 @@ async function requestTwelveDataPrices(tickers){
     const job=(async()=>{
       try{
         const r=await fetch(location.origin+'/api/stock-price?symbol='+encodeURIComponent(missing.join(',')),{cache:'no-store'});
+        if(r.status===401){quoteAuthRequired=true;return new Map();}
         let data;
         try{data=await r.json();}catch(e){const limit=classifyTwelveDataLimit(null,r.status);if(limit)markTdRateLimited(limit);return new Map();}
         const limited=classifyTwelveDataLimit(data,r.status);
@@ -2526,7 +2529,7 @@ async function fetchStockPriceWithFallback(ticker){
   if(__stockTdRateLimited)return fetchStockPriceYahooOrCacheOnly(sym);
   const [tdResult,yResult]=await Promise.allSettled([fetchTwelveDataStockPriceDetailed(sym),fetchStockPriceYahooOrCacheOnly(sym)]),td=tdResult.status==='fulfilled'?tdResult.value:null,y=yResult.status==='fulfilled'?yResult.value:null;
   if(td?.rateLimited)markTdRateLimited(td);
-  if(y?.price>0&&y.source==='yahoo')return y;
+  if(y?.price>0&&(y.source==='yahoo'||StockSessions.preferExtendedCache(y)))return y;
   if(td?.price>0){const result={price:td.price,source:'twelve',timestamp:td.timestamp||Date.now()};writeStockPriceCache(sym,td.price,result);return result;}
   return y?.price>0?y:null;
 }
@@ -2701,12 +2704,12 @@ function patchUsStockLiveRow(sym,price,opts){
     timestamp=opts.timestamp||Date.now();
   }
   const T=String(sym||'').trim().toUpperCase();
-  if(!T||!(price>0))return;
+  if(!T||!(price>0))return false;
   const matching=D.products.filter(x=>x.type==='stock_us'&&String(x.ticker||'').trim().toUpperCase()===T),p=matching[0];
-  if(!p)return;
+  if(!p)return false;
   const prev=parseFloat(p.currentPrice)||0;
   const snapshot=yahooQuoteMetaBySym.get(T)?.snapshot,cachedSelection=source==='cache'?getCachedStockPrice(T)?.selection:null,selected=cachedSelection&&Math.abs(cachedSelection.price-price)<0.0001?cachedSelection:StockSessions.select(snapshot),sessionMatches=!!selected&&Math.abs(selected.price-price)<0.0001;
-  if(!commitLiveQuotePrice(prev,price,force||source==='cache'||source==='yahoo'&&sessionMatches))return;
+  if(!commitLiveQuotePrice(prev,price,force||source==='cache'||source==='yahoo'&&sessionMatches))return false;
   p.currentPrice=price;
   p.updatedAt=today();
   p.quoteReference=source==='cache'?!!getCachedStockPrice(T)?.estimated:source==='yahoo'&&sessionMatches&&!!selected.estimated;
@@ -2715,6 +2718,7 @@ function patchUsStockLiveRow(sym,price,opts){
   const metadata={source,timestamp,estimated:p.quoteReference,quoteAt:sessionMatches?selected.at:null,session:sessionMatches?selected.kind:null,sessions:sessionMatches?snapshot:null,selection:sessionMatches?selected:null};
   stockPriceSourceBySym.set(T,metadata);
   if(source!=='cache')writeStockPriceCache(T,price,metadata);
+  refreshOVTotals();
   patchOverviewStockRow(T,price);
   scheduleOverviewLiveRefresh();
   debouncedFinnhubSave();
@@ -2750,6 +2754,7 @@ function patchUsStockLiveRow(sym,price,opts){
   syncFhmktBadgeForTicker(T);
   scheduleUsLiveAggregates();
   scheduleRenderUsStockPanelFromLiveQuote();
+  return true;
 }
 function connectFinnhubWs(){
   /* FINNHUB_TOKEN 仅服务端 /api/finnhub-quote；浏览器无 token，不连 wss://ws.finnhub.io */
@@ -2864,7 +2869,7 @@ async function runFinnhubQuotePoll(){
   for(const sym of syms){
     let price=tdMap.get(sym)||null,source=price?'twelve':null,timestamp=readFreshTdQuote(sym)?.timestamp||Date.now();
     const fallback=await fetchStockPriceYahooOrCacheOnly(sym);
-    if(fallback?.price>0&&(fallback.source==='yahoo'||!(price>0))){price=fallback.price;source=fallback.source;timestamp=fallback.timestamp||Date.now();}
+    if(fallback?.price>0&&(fallback.source==='yahoo'||StockSessions.preferExtendedCache(fallback)||!(price>0))){price=fallback.price;source=fallback.source;timestamp=fallback.timestamp||Date.now();}
     if(price>0&&source==='twelve')writeStockPriceCache(sym,price,{source,timestamp});
     if(!(price>0))continue;
     updated++;
@@ -5670,26 +5675,10 @@ async function refreshGold(){
 
 // ══ REFRESH STOCKS ══
 async function refreshStocks(){
-  const stocks=D.products.filter(p=>p.type==='stock_us'&&!isZeroStock(p)&&p.ticker);
-  if(!stocks.length){alert('没有美股持仓');return;}
-  const el=document.getElementById('us-refresh-status');
-  el.innerHTML='<div class="alert alert-info">🔄 正在全量校准美股（常规、盘前、盘后；夜盘 / 24h无成交时间时报参考价）...</div>';
-  let ok=0,fail=[];
-  for(const s of stocks){
-    try{
-      const result=await fetchStockPriceWithFallback(s.ticker);
-      if(result?.price>0){
-        patchUsStockLiveRow(s.ticker,result.price,{force:true,source:result.source,timestamp:result.timestamp});
-        ok++;
-      }else fail.push(s.ticker);
-    }catch(e){fail.push(s.ticker);}
-  }
-  save();renderRegion('us');renderSidebar();
-  scheduleOverviewLiveRefresh();
-  el.innerHTML=fail.length
-    ?`<div class="alert alert-warn">✅ 更新 ${ok} 个 ⚠️ 失败: ${fail.join(', ')}（多源综合：Yahoo Chart / Yahoo Quote / Stooq；失败多为网络或代码无效）</div>`
-    :`<div class="alert alert-ok">✅ 已更新 ${ok} 只股票（Yahoo 延长时段为主；盘中常规交易时段另有 Finnhub 逐笔）</div>`;
-  setTimeout(()=>el.innerHTML='',8000);
+  const stocks=[...new Map(D.products.filter(p=>p.type==='stock_us'&&!isZeroStock(p)&&p.ticker).map(p=>[String(p.ticker).trim().toUpperCase(),p])).values()];
+  if(!stocks.length){showToast({message:'没有当前美股持仓',type:'info'});return;}
+  const before=totalCNY(),el=document.getElementById('us-refresh-status');quoteAuthRequired=false;if(el)el.textContent='正在刷新美股并重算总资产…';
+  const results=await Promise.all(stocks.map(refreshOneStockQuote));save();renderRegion('us');renderSidebar();showQuoteRefreshResult(results,before);if(el)el.textContent='';
 }
 
 // ══ REFRESH FUNDS ══
@@ -5767,6 +5756,30 @@ function redrawAllAfterFullQuoteRefresh(){
 }
 
 /** 仅更新行情；快照与资讯由各自入口执行。 */
+async function refreshOneStockQuote(stock){
+  const before=Number(stock.currentPrice),startedAt=Date.now();try{
+    const result=await fetchStockPriceWithFallback(stock.ticker);
+    if(result?.price>0){const applied=patchUsStockLiveRow(stock.ticker,result.price,{force:true,source:result.source,timestamp:result.timestamp})===true;return{source:result.source==='cache'||result.source==='twelve'&&result.timestamp<startedAt?'cache':result.source,applied,changed:applied&&Math.abs(before-Number(stock.currentPrice))>0.000001};}
+  }catch(e){}return{source:null,applied:false,changed:false};
+}
+function quoteRefreshReport(rows,before,after){
+  const fresh=rows.filter(r=>r.applied&&r.source!=='cache').length,cached=rows.filter(r=>r.applied&&r.source==='cache').length,failed=rows.length-fresh-cached,changed=rows.filter(r=>r.applied&&r.changed).length,delta=WealthMath.sum([after,-before]);
+  return{fresh,cached,failed,changed,delta,roundedUnchanged:Math.round(before)===Math.round(after),warning:cached>0||failed>0};
+}
+function quoteRefreshMessage(report){
+  const delta=report.delta===0?'总资产不变':'总资产 '+(report.delta>0?'+':'')+fc(report.delta,'CNY',2)+(report.roundedUnchanged?'（整元显示未变）':'');
+  const stocks=report.fresh+report.cached+report.failed;let status='已重算 · '+delta;
+  if(stocks){status+=' · 美股新取报价 '+report.fresh+'，价格变动 '+report.changed;if(report.cached)status+='，缓存 '+report.cached;if(report.failed)status+='，失败 '+report.failed;if(!report.fresh)status+=' · 未取得美股新报价';}
+  if(quoteAuthRequired)status+=' · 行情登录已失效，请刷新页面后重新登录';return status;
+}
+function showQuoteRefreshResult(rows,before){
+  refreshOVTotals();const report=quoteRefreshReport(rows,before,totalCNY()),message=quoteRefreshMessage(report),strip=document.getElementById('global-refresh-status'),time=new Intl.DateTimeFormat('zh-CN',{hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date());
+  if(strip){strip.textContent=message;strip.className='global-refresh-strip quote-refresh-summary'+(report.warning||quoteAuthRequired?' quote-refresh-warn':'');}
+  const stamp=document.getElementById('quote-recomputed-at');if(stamp){stamp.hidden=false;stamp.textContent='已重算 '+time;stamp.title=message;}
+  showToast({message:report.delta!==0?'总资产已重算 '+(report.delta>0?'+':'')+fc(report.delta,'CNY',2):!report.fresh&&rows.length?'未取得美股新报价，已保留原估值':'已重算，总资产不变',type:report.warning||quoteAuthRequired?'warn':'success',duration:5000});
+  return report;
+}
+
 async function refreshAllQuotes(){
   const strip=document.getElementById('global-refresh-status');
   const btn=document.getElementById('refresh-all-btn');
@@ -5782,6 +5795,8 @@ async function refreshAllQuotes(){
   busy(true);
   quoteRefreshBusy=true;
   __woSyncToastId=showToast({message:'正在刷新行情…',type:'loading',duration:0});
+  const beforeTotal=totalCNY(),stockResults=[];quoteAuthRequired=false;
+  if(strip)strip.className='global-refresh-strip';
   const lines=[];
   const show=msg=>{if(strip) strip.innerHTML='<div class="alert alert-info" style="margin:0">'+msg+'</div>';};
 
@@ -5824,22 +5839,11 @@ async function refreshAllQuotes(){
       }catch(e){lines.push('黄金失败');}
     }
 
-    const stocks=D.products.filter(p=>p.type==='stock_us'&&!isZeroStock(p)&&p.ticker);
+    const stocks=[...new Map(D.products.filter(p=>p.type==='stock_us'&&!isZeroStock(p)&&p.ticker).map(p=>[String(p.ticker).trim().toUpperCase(),p])).values()];
     if(stocks.length){
-      show('🔄 正在并行刷新美股…');
-      const okSt=await Promise.all(stocks.map(async s=>{
-        try{
-          const result=await fetchStockPriceWithFallback(s.ticker);
-          if(result?.price>0){
-            patchUsStockLiveRow(s.ticker,result.price,{force:true,source:result.source,timestamp:result.timestamp});
-            return 1;
-          }
-        }catch(e){}
-        return 0;
-      }));
-      lines.push('美股'+okSt.reduce((a,b)=>a+b,0)+'/'+stocks.length);
-      save();
-      redrawAllAfterFullQuoteRefresh();
+      show('正在刷新美股并重算总资产…');
+      const results=await Promise.all(stocks.map(refreshOneStockQuote));
+      stockResults.push(...results);save();redrawAllAfterFullQuoteRefresh();
     }
 
     const funds=D.products.filter(p=>p.type==='fund_cn'&&p.fundCode&&String(p.fundCode).trim()&&(p.fundCurrency||'CNY')==='CNY');
@@ -5866,12 +5870,7 @@ async function refreshAllQuotes(){
 
     refreshCurrentView();
 
-    const summary=lines.length?lines.join(' · '):'完成';
-    const n=D.products.length;
-    const note='中/澳条目在「汇率」成功后即已用新 USD、AUD 价重算人民币市值（无需单独接口）；定存按本金与利率应计；澳洲定存周复利已滚存。基金为天天基金 JSONP，失败多为网络阻断或代码错误。';
-    if(strip) strip.innerHTML='<div class="alert alert-ok" style="margin:0">✅ 全部完成（'+n+' 条资产）：'+summary+'</div><div class="alert alert-info" style="margin:8px 0 0;font-size:12px;line-height:1.5">'+note+'</div>';
-    setTimeout(()=>{if(strip) strip.innerHTML='';},12000);
-    showToast({message:'行情刷新完成',type:'success',duration:2600});
+    showQuoteRefreshResult(stockResults,beforeTotal);
   }catch(e){
     if(strip) strip.innerHTML='<div class="alert alert-warn" style="margin:0">⚠️ 刷新中断：'+(e.message||e)+'</div>';
     showToast({message:'同步中断：'+(e.message||String(e)),type:'warn',duration:5200});
@@ -5954,15 +5953,12 @@ function startFxAutoRefresh(){
 }
 
 function refreshOVTotals(){
-  if(document.getElementById('page-overview')?.classList.contains('active')){
-    scheduleOverviewLiveRefresh();
-    return;
-  }
   const cny=totalCNY();
   const e1=document.getElementById('ov-cny');if(e1)e1.textContent=fc(cny,'CNY');
   const e2=document.getElementById('ov-usd');if(e2)e2.textContent=fc(fromCNY(cny,'USD'),'USD');
   const e3=document.getElementById('ov-aud');if(e3)e3.textContent=fc(fromCNY(cny,'AUD'),'AUD');
   try{updateGoalBar();}catch(e){}
+  if(document.getElementById('page-overview')?.classList.contains('active'))scheduleOverviewLiveRefresh();
 }
 
 // ══ NAV HISTORY ══
