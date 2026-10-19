@@ -2427,7 +2427,7 @@ function syncNavigationNotices(){
   const warnings=valuation?.textContent||'';
   const valuationLabel=warnings.includes('账本读取失败')?'账本读取失败':warnings.includes('估值不完整')?'估值不完整':warnings.includes('名称可能指美元')?'现金币种待核对':'估值提示';
   const quoteText=quote?.textContent||'';
-  const quoteLabel=quoteText.startsWith('显示缓存价格')?quoteText:quoteText.includes('今日额度已用尽')?'行情额度用尽 · 已用备用数据':quoteText.includes('每分钟')?'行情暂时限流 · 已用备用数据':quoteText.includes('请求暂时受限')?'行情暂时受限 · 已用备用数据':'行情使用备用数据源';
+  const quoteLabel=quoteText.startsWith('当前持仓 ')?quoteText:quoteText.includes('今日额度已用尽')?'行情额度用尽 · 已用备用数据':quoteText.includes('每分钟')?'行情暂时限流 · 已用备用数据':quoteText.includes('请求暂时受限')?'行情暂时受限 · 已用备用数据':'行情使用备用数据源';
   for(const [key,source,visible,label] of [['valuation',valuation,valuation&&!valuation.hidden&&!!warnings,valuationLabel],['quote',quote,quote&&quote.style.display!=='none'&&!!quoteText,quoteLabel]]){
     const wrapper=document.getElementById('nav-'+key+'-notice'),summary=document.getElementById('nav-'+key+'-summary');if(!wrapper||!summary)continue;
     wrapper.hidden=!visible;if(!visible)wrapper.open=false;summary.textContent=label;summary.title=source?.textContent||'';
@@ -2443,7 +2443,8 @@ function updateStockQuoteFallbackBanner(){
   syncTdRateLimitedFromStorage();
   const el=document.getElementById('stock-quote-fallback-banner');
   if(!el)return;
-  const entries=[...stockPriceSourceBySym.values()];
+  const activeSymbols=new Set(D.products.filter(p=>p.type==='stock_us'&&!isZeroStock(p)&&p.ticker).map(p=>String(p.ticker).trim().toUpperCase()));
+  const entries=[...stockPriceSourceBySym.entries()].filter(([symbol])=>activeSymbols.has(symbol)).map(([,meta])=>meta);
   const cacheEntries=entries.filter(m=>m.source==='cache');
   const yahooUsed=entries.some(m=>m.source==='yahoo');
   if(__stockTdRateLimited&&(yahooUsed||cacheEntries.length)){
@@ -2461,7 +2462,7 @@ function updateStockQuoteFallbackBanner(){
     const oldest=Math.min(...cacheEntries.map(m=>m.timestamp||0));
     el.style.display='block';
     el.className='alert alert-info';
-    el.textContent='显示缓存价格（'+formatStockCacheAge(oldest)+'）';
+    el.textContent='当前持仓 '+cacheEntries.length+'/'+activeSymbols.size+' 只使用缓存（最早获取：'+formatStockCacheAge(oldest)+'）';
     return;
   }
   if(yahooUsed&&!__stockTdRateLimited){
@@ -2474,7 +2475,7 @@ function updateStockQuoteFallbackBanner(){
   }finally{syncNavigationNotices();}
 }
 function hydrateStocksFromCacheOnLoad(){
-  const stocks=D.products.filter(p=>p.type==='stock_us'&&p.ticker);
+  const stocks=D.products.filter(p=>p.type==='stock_us'&&!isZeroStock(p)&&p.ticker);
   if(!stocks.length)return;
   let any=false;
   for(const p of stocks){
