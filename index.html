@@ -2452,8 +2452,7 @@ function formatStockCacheAge(ts){
 function syncNavigationNotices(){
   const valuation=document.getElementById('valuation-notice'),quote=document.getElementById('stock-quote-fallback-banner');
   const warnings=valuation?.textContent||'';
-  const reviews=warnings.match(/(\d+) 笔旧版定存/);
-  const valuationLabel=warnings.includes('账本读取失败')?'账本读取失败':warnings.includes('估值不完整')?'估值不完整':reviews?reviews[1]+' 笔定存待核对':warnings.includes('名称可能指美元')?'现金币种待核对':'估值提示';
+  const valuationLabel=warnings.includes('账本读取失败')?'账本读取失败':warnings.includes('估值不完整')?'估值不完整':warnings.includes('名称可能指美元')?'现金币种待核对':'估值提示';
   const quoteText=quote?.textContent||'';
   const quoteLabel=quoteText.startsWith('显示缓存价格')?quoteText:quoteText.includes('今日额度已用尽')?'行情额度用尽 · 已用备用数据':quoteText.includes('每分钟')?'行情暂时限流 · 已用备用数据':quoteText.includes('请求暂时受限')?'行情暂时受限 · 已用备用数据':'行情使用备用数据源';
   for(const [key,source,visible,label] of [['valuation',valuation,valuation&&!valuation.hidden&&!!warnings,valuationLabel],['quote',quote,quote&&quote.style.display!=='none'&&!!quoteText,quoteLabel]]){
@@ -4981,7 +4980,7 @@ function renderOverviewHoldings(){
       else if(days!==null&&days<0)text(cells[0],'已到期，点击「到期处理」分配本息','ov-holding-estimate');
     }
     if(row.manual)text(cells[0],'替代该账户已登记的美元现金余额','ov-holding-sub');
-    if(v.estimated)text(cells[0],p.type==='in_transit'?'在途暂估 · 非可用现金':p.tdNeedsReview?'待核对定存合同':'使用最近有效价格估值','ov-holding-estimate');
+    if(v.estimated)text(cells[0],p.type==='in_transit'?'在途暂估 · 非可用现金':p.tdNeedsReview?'按已填合同参数估算':'使用最近有效价格估值','ov-holding-estimate');
     cells[2].className=cells[3].className=cells[4].className='num';cells[5].className='ov-holding-actions';
     if(v.complete){text(cells[2],fc(v.amount,v.currency,2),'ov-holding-money');text(cells[3],fc(v.cny,'CNY',0),'ov-holding-money');}
     else{text(cells[2],'估值不完整','ov-holding-estimate');text(cells[2],v.reason,'ov-holding-sub');text(cells[3],'—');}
@@ -7053,8 +7052,6 @@ function refreshValuationNotice(){
   const warnings=[];
   if(calculationStorageReadFailed)warnings.push('本机账本读取失败，自动保存已暂停。请先导入可用备份，避免覆盖原始记录。');
   if(!state.complete)warnings.push('估值不完整：'+state.missing.length+' 条资产缺少有效价格、合同参数或汇率。总览仅为已知部分，暂不能记录完整快照或计算收益。');
-  const reviews=D.products.filter(p=>p.type==='term_deposit'&&p.tdNeedsReview).length;
-  if(reviews)warnings.push(reviews+' 笔旧版定存需核对合同计息方式、原始本金与起息日；当前按保留参数估算。');
   const ambiguous=D.products.filter(p=>p.region==='us'&&p.type==='cash'&&p.currency==='CNY'&&looksLikeUsdBrokerCash(p)).length;
   if(ambiguous)warnings.push(ambiguous+' 条现金的名称可能指美元，但登记为人民币；本次严格按已填币种计算，请核对。');
   const transitCount=D.products.filter(p=>p.type==='in_transit').length;if(transitCount)warnings.push(transitCount+' 笔汇款在途，按汇出净额暂估，未计入可用现金。');
