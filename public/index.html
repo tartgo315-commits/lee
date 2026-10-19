@@ -15,6 +15,7 @@
 <script src="ledger-assistant-context.js"></script>
 <script src="ledger-assistant-ui.js"></script>
 <script src="portfolio-intelligence.js"></script>
+<script src="flat-controls.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
 
@@ -1035,6 +1036,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
 </style>
 <link rel="stylesheet" href="ledger-workflows.css">
 <link rel="stylesheet" href="ledger-assistant.css">
+<link rel="stylesheet" href="flat-controls.css">
 </head>
 <body>
 <div id="pin-overlay" class="pin-overlay" style="display:none" aria-modal="true" role="dialog" aria-labelledby="pin-overlay-title">
@@ -2445,7 +2447,7 @@ function syncNavigationNotices(){
   const valuation=document.getElementById('valuation-notice'),quote=document.getElementById('stock-quote-fallback-banner');
   const warnings=valuation?.textContent||'';
   const reviews=warnings.match(/(\d+) 笔旧版定存/);
-  const valuationLabel=warnings.includes('账本读取失败')?'账本读取失败 · 请查看':warnings.includes('估值不完整')?'估值不完整 · 请查看':reviews?reviews[1]+' 笔定存待核对':warnings.includes('名称可能指美元')?'现金币种待核对':'估值提示 · 请查看';
+  const valuationLabel=warnings.includes('账本读取失败')?'账本读取失败':warnings.includes('估值不完整')?'估值不完整':reviews?reviews[1]+' 笔定存待核对':warnings.includes('名称可能指美元')?'现金币种待核对':'估值提示';
   const quoteText=quote?.textContent||'';
   const quoteLabel=quoteText.startsWith('显示缓存价格')?quoteText:quoteText.includes('今日额度已用尽')?'行情额度用尽 · 已用备用数据':quoteText.includes('每分钟')?'行情暂时限流 · 已用备用数据':quoteText.includes('请求暂时受限')?'行情暂时受限 · 已用备用数据':'行情使用备用数据源';
   for(const [key,source,visible,label] of [['valuation',valuation,valuation&&!valuation.hidden&&!!warnings,valuationLabel],['quote',quote,quote&&quote.style.display!=='none'&&!!quoteText,quoteLabel]]){
@@ -3873,10 +3875,9 @@ function buildRiskEvidenceContext(){
 let riskExpanded=false;
 function renderOverviewRisk(){
   const root=document.getElementById('ov-insights');if(!root)return;const report=currentRiskReport();root.replaceChildren();
-  const shown=riskExpanded?report.items:report.items.slice(0,3);
+  const shown=report.items;
   for(const item of shown){const card=document.createElement('div');card.className='portfolio-risk '+item.level;const title=document.createElement('strong'),text=document.createElement('p'),action=document.createElement('p');title.textContent=item.title;text.textContent=item.evidence;action.className='risk-action';action.textContent=item.action;card.append(title,text,action);root.append(card);}
   if(!shown.length){const line=document.createElement('p');line.className='privacy-note';line.textContent='添加有效资产后显示持仓检查；没有触发已检查规则，不代表没有风险。';root.append(line);}
-  if(report.items.length>3){const button=document.createElement('button');button.type='button';button.className='btn btn-ghost btn-sm';button.textContent=riskExpanded?'收起提示':'其余 '+(report.items.length-3)+' 项检查';button.setAttribute('aria-expanded',String(riskExpanded));button.addEventListener('click',()=>{riskExpanded=!riskExpanded;renderOverviewRisk();});root.append(button);}
 }
 function openRiskAnalysis(){openAiModal();const tab=document.querySelector('.ov-copilot-tab[onclick*="wealth"]');if(tab)setCopilotTab('wealth',tab);runAiAdvisor();}
 function runAiAdvisor(){
@@ -4739,16 +4740,16 @@ function renderMajorEventsWatch(){
   else combined.sort((a,b)=>a.date.localeCompare(b.date)||(a.kind==='event'&&b.kind==='news'?-1:a.kind==='news'&&b.kind==='event'?1:0));
 
   const allCombined=combined;
-  combined=selectOverviewEvents(allCombined,ovEventsExpanded,localTodayISO(),ovEventsFilter);
+  combined=selectOverviewEvents(allCombined,true,localTodayISO(),ovEventsFilter);
   const toggle=document.getElementById('ov-events-toggle'),card=document.getElementById('ov-events-card');
   card?.classList.toggle('events-expanded',ovEventsExpanded);
   card?.classList.toggle('events-compact',!ovEventsExpanded);
-  if(toggle){toggle.hidden=!ovEventsExpanded&&allCombined.length===combined.length;toggle.textContent=ovEventsExpanded?'收起':'展开全部（'+allCombined.length+'）';toggle.setAttribute('aria-expanded',String(ovEventsExpanded));}
-  if(rangeEl&&!ovEventsExpanded)rangeEl.textContent=(ovEventsFilter==='news'?'近7天相关资讯':'到期事项与关联日程优先')+' · 显示 '+combined.length+' / '+allCombined.length+' 项';
+  if(toggle)toggle.hidden=true;
+  if(rangeEl)rangeEl.textContent=(ovEventsFilter==='news'?'近7天相关资讯':'到期事项与关联日程优先')+' · 显示 '+combined.length+' / '+allCombined.length+' 项';
   if(!combined.length){
     const emptyMsg=ovEventsFilter==='news'
       ?'暂无持仓相关资讯。可到「资讯」页点击「刷新资讯」。'
-      :(allCombined.length?'近期暂无待发生事件，可展开查看已发生事项':'该筛选下暂无事件');
+      :(allCombined.length?'近期暂无相关事件':'该筛选下暂无事件');
     listEl.innerHTML=`<div class="ov-events-empty">${emptyMsg}</div>`;
     renderEventsAiMsgs();
     return;
@@ -4897,7 +4898,7 @@ function renderOverviewHoldings(){
         <div><label for="ov-filter-region">地区</label><select id="ov-filter-region"></select></div>
         <div><label for="ov-filter-account">账户</label><select id="ov-filter-account"></select></div>
         <div><label for="ov-filter-type">资产类型</label><select id="ov-filter-type"></select></div>
-        <button type="button" class="btn btn-ghost btn-sm" id="ov-filter-reset">显示全部</button><label><input type="checkbox" id="ov-show-details" onchange="document.getElementById('ov-regions').classList.toggle('show-holding-details',this.checked)"> 展开持仓明细</label>
+        <button type="button" class="btn btn-ghost btn-sm" id="ov-filter-reset">显示全部</button><label class="flat-details-removed"><input type="checkbox" checked id="ov-show-details" onchange="document.getElementById('ov-regions').classList.toggle('show-holding-details',this.checked)"> 展开持仓明细</label>
       </div></details>
       <div class="ov-holdings-scroll" role="region" aria-label="持仓表格，可横向与纵向滚动" tabindex="0">
         <table id="ov-holdings-table" class="ov-holdings-table"><caption class="sr-only">全部持仓按地区、账户分组，账户内按人民币估值排序</caption>
@@ -5341,16 +5342,7 @@ function buildProductRow(p,region,primaryCur,accountTotalCNY){
 }
 
 function attachToggleEvents(){
-  document.querySelectorAll('.account-header[data-key]').forEach(h=>{
-    h.onclick=()=>{
-      const k=h.dataset.key;
-      const pw=document.getElementById('pw-'+k);
-      const chev=document.getElementById('chev-'+k);
-      if(!pw)return;
-      const open=pw.classList.toggle('open');
-      if(chev)chev.classList.toggle('open',open);
-    };
-  });
+  document.querySelectorAll('.account-header[data-key]').forEach(h=>{h.onclick=null;h.removeAttribute('aria-expanded');});
 }
 
 // ══ REFRESH GOLD（新浪 Au9999 JSONP → 代理文本 → 东方财富 118.AU9999）══

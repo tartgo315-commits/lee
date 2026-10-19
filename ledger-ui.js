@@ -48,7 +48,7 @@
       if(event.trade)card.append(node('p',event.trade.ticker+' · '+(event.trade.side==='buy'?'买入':'卖出')+' '+event.trade.quantity+' 股 @ '+fc(event.trade.price,'USD',4)+' · 费用 '+fc(event.trade.fee,'USD',2)));
       if(event.resolution)card.append(node('p',event.resolution.method==='baseline'?'保留原收益区间，核实后的期初估值：'+fc(event.resolution.openingAfter,'CNY',2):'已补齐关联外部入出金，余额未重复改变'));
       if(!event.reversedAt){card.append(button('撤销',()=>undoMovement(event.id)));if(event.reviewRequired&&['correction','opening'].includes(event.kind))card.append(button('核对更正',()=>open('correction',event.id)));if(event.kind==='trade'&&!event.reviewedAt)card.append(button('已核对配套余额',()=>verifyMovementTrade(event.id)));}
-      const details=node('details'),full=node('pre',JSON.stringify(event,null,2));details.append(node('summary','完整变动资料'),full);card.append(details);root.append(card);
+      card.append(node('p','记录编号：'+event.id,'privacy-note'));root.append(card);
     }if(!all.length)root.append(node('p','尚无记录。使用股票交易、转账或资金变动入口开始记录。','privacy-note'));
   }
   function renderWorkspace(){
