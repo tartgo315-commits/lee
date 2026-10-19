@@ -44,3 +44,21 @@
 @media(min-width:1200px) and (max-width:1499px){.terminal-dashboard{grid-template-areas:'head head' 'portfolio portfolio' 'intel intel'}.terminal-dashboard>.term-zone-intel{height:auto!important;max-height:none!important}.ov-region-columns{gap:7px}}
 @media(min-width:769px) and (max-width:1199px){.ov-region-columns{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:768px){.ov-region-columns{grid-template-columns:minmax(0,1fr)}.ov-region-sort{align-items:flex-start}.ov-region-panel .ov-holding-action-buttons .btn{min-height:32px}.ov-region-panel tr[data-holding-key]{padding:9px 8px}}
+
+/* Readable personal ledger typography, with the established column geometry. */
+.ov-region-panel .ov-holding-name{font-size:18px;line-height:1.35}
+.ov-region-panel .ov-holding-money{font-size:18px;line-height:1.35}
+.ov-region-panel .ov-holding-account{font-size:14px;line-height:1.35}
+.ov-region-panel td:nth-child(4) .ov-holding-money{font-size:15px}
+.ov-region-panel td:nth-child(5) .ov-holding-money{font-size:16px}
+.ov-region-panel .ov-holding-sub,.ov-region-panel .ov-holding-estimate,.ov-region-panel tr[data-holding-key]>td:nth-child(5):not(.ov-no-profit)::before{font-size:13px;line-height:1.35}
+.ov-region-panel .ov-group-heading h3,.ov-region-panel .ov-region-heading .ov-group-total strong{font-size:19px}
+.ov-region-panel .ov-account-heading h4,.ov-region-panel .ov-account-heading .ov-group-total strong{font-size:16px}
+.ov-region-panel .ov-group-total span{font-size:13px}
+.ov-region-panel .ov-holding-action-buttons .btn:not([data-holding-action]){font-size:13px}
+.term-portfolio-hd .card-title{font-size:16px}
+.term-portfolio-hd>.btn,#ledger-home-status .btn,.ov-holding-filters label,.ov-holding-filters .flat-option,.ov-holding-filters>.btn,.ov-region-sort .btn{font-size:13px}
+.ov-region-sort,.ov-holdings-status,.ov-holdings-note{font-size:13px}
+.term-intel-events .ov-event-row .ov-event-title{font-size:15px;line-height:1.4}
+.ov-event-relevance,.event-source,.term-intel-events .ov-events-sub{font-size:13px}
+@media(max-width:1499px){.ov-region-panel .ov-holding-name,.ov-region-panel .ov-holding-money{font-size:17px}.ov-region-panel td:nth-child(4) .ov-holding-money{font-size:14px}.ov-region-panel td:nth-child(5) .ov-holding-money{font-size:15px}.ov-region-panel .ov-group-heading h3,.ov-region-panel .ov-region-heading .ov-group-total strong{font-size:18px}.ov-region-panel .ov-account-heading h4,.ov-region-panel .ov-account-heading .ov-group-total strong{font-size:15px}}
