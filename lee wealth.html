@@ -1130,7 +1130,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
   </div>
   <div id="global-refresh-status" class="global-refresh-strip" aria-live="polite"></div>
 
-  <div class="main">
+  <div class="main"><div id="cloud-sync-banner" class="card" style="padding:10px 14px;margin-bottom:12px;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap"><span id="cloud-sync-status" role="status" aria-live="polite">正在检查线上账本…</span><button type="button" class="btn btn-ghost btn-sm" onclick="showPage('settings')">同步设置</button></div>
     <div id="proxy-miss-banner" class="alert alert-warn" role="alert" style="display:none;margin-bottom:var(--s-5);padding:var(--s-4) var(--gutter-x);border-radius:var(--r);line-height:1.55;font-size:var(--text-sm)"></div>
     <div id="http-data-migrate-banner" class="alert alert-info" role="status" style="display:none;margin-bottom:var(--s-5);padding:var(--s-4) var(--gutter-x);border-radius:var(--r);line-height:1.55;font-size:var(--text-sm)"></div>
 
@@ -1487,8 +1487,9 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
     <!-- SETTINGS -->
     <div class="page" id="page-settings">
       <div class="alert alert-info">账户参数、数据备份与访问安全。</div>
+      <div class="card" style="margin-bottom:14px"><h3>线上同步</h3><p id="cloud-sync-settings-status" role="status">正在检查线上账本…</p><p class="privacy-note">每次修改先保存在本机，再同步到线上；切回页面时读取更新。两端同时修改时暂停覆盖。行情刷新不单独触发账本上传。切换账本前会留下本机恢复备份；离线时请保留当前浏览器数据。</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn btn-primary" id="cloud-sync-local" hidden onclick="CloudSyncUI.choose('local')">用本机账本开启同步</button><button type="button" class="btn btn-ghost" id="cloud-sync-cloud" hidden onclick="CloudSyncUI.choose('cloud')">读取线上这份（先备份本机）</button><button type="button" class="btn btn-ghost" onclick="CloudSyncUI.refresh()">检查同步</button><button type="button" class="btn btn-ghost" onclick="CloudSyncUI.recovery()">导出同步恢复备份</button></div></div>
       <div class="card"><div class="fg"><label for="accounting-zone">记账时区（用于今日日期与新快照）</label><select id="accounting-zone"><option value="Asia/Shanghai">北京时间</option><option value="Australia/Sydney">悉尼时间</option><option value="America/New_York">纽约时间</option><option value="UTC">UTC</option></select></div><button type="button" class="btn btn-primary" onclick="saveAccountingZone()">保存记账时区</button><p class="privacy-note">已有历史日期不改写。定存按各自合同所在时区与自然日计息，不计入一天内的小数时长。升级前账本会留存在本机备份中。</p></div>
-      <p class="privacy-note">账本保存在当前浏览器的本地存储中，不会自动跨设备同步。清除网站数据会丢失本机账本；导出的 JSON 含完整资产资料，请妥善保管。</p>
+      <p class="privacy-note">账本支持线上同步，本机保留离线副本。首次请在已有完整数据的电脑开启同步；其他设备使用同一站点密码登录后读取。持有站点密码的人都能访问这份账本，请妥善保管密码。导出的JSON含完整资产资料。</p>
 
       <div class="card" style="margin-bottom:14px">
         <div class="card-title" style="font-size:16px"><i class="ti ti-adjustments"></i> 账户与备份</div>
@@ -2025,6 +2026,7 @@ function load(){
 function save(){
   if(calculationStorageReadFailed){calculationMessage('账本读取失败，已暂停自动保存；请先导入有效备份');return;}
   localStorage.setItem(SK,JSON.stringify(D));
+  if(typeof CloudSyncUI!=='undefined')CloudSyncUI.changed();
   clearTimeout(__woSaveToastT);
   __woSaveToastT=setTimeout(function(){
     __woSaveToastT=null;
@@ -6637,7 +6639,7 @@ function cancelMovement(){document.getElementById('modal-movement').classList.re
 function persistMovementLedger(next){
   if(calculationStorageReadFailed)throw Error('账本读取失败，请先导入有效备份');
   if(!localStorage.getItem(SK+'_before_movement_v1'))localStorage.setItem(SK+'_before_movement_v1',JSON.stringify(D));
-  localStorage.setItem(SK,JSON.stringify(next));D=next;
+  localStorage.setItem(SK,JSON.stringify(next));D=next;if(typeof CloudSyncUI!=='undefined')CloudSyncUI.changed();
 }
 function refreshAfterMovement(){renderOverview();renderSidebar();const active=document.querySelector('.page.active')?.id;if(['page-cn','page-us','page-au'].includes(active))renderRegion(active.slice(5));if(active==='page-history')renderCalculationPanel(false);}
 function commitMovement(){
@@ -6870,7 +6872,7 @@ function importData(input){
   }catch(err){showToast({message:'导入失败：'+err.message,type:'warn',duration:5000});}};
   r.readAsText(f);input.value='';
 }
-function clearAll(){if(!confirm('确定清空所有数据？'))return;calculationStorageReadFailed=false;D=WealthMath.migrate(blank());save();renderOverview();renderSidebar();maybeShowHttpDataTip();showToast({message:'已清空本地账本',type:'info',duration:2800});}
+function clearAll(){if(!confirm(typeof CloudSyncUI!=='undefined'&&CloudSyncUI.isConnected()?'确定清空账本？此操作会同步到其他设备，请先导出备份。':'确定清空所有数据？'))return;calculationStorageReadFailed=false;D=WealthMath.migrate(blank());save();renderOverview();renderSidebar();maybeShowHttpDataTip();showToast({message:'已清空本地账本',type:'info',duration:2800});}
 
 // ══ THEME：默认高奢暗黑仪表盘 ══
 function toggleNight(){
@@ -7289,5 +7291,7 @@ function clearPin(){
     <div id="cmdk-list" role="listbox" aria-label="跳转项"></div>
   </div>
 </div>
+<script src="cloud-sync.js"></script>
+<script src="cloud-sync-ui.js"></script>
 </body>
 </html>

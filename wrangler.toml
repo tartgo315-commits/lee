@@ -1,3 +1,8 @@
 name = "lee-wealth"
 compatibility_date = "2024-06-01"
 pages_build_output_dir = "public"
+
+[[d1_databases]]
+binding = "LEDGER_DB"
+database_name = "lee-wealth-ledger"
+database_id = "3aadef19-d234-4611-b374-7ca25afa0bd1"
