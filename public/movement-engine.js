@@ -38,7 +38,8 @@
     if(cash&&before&&!(left.amount>=0))throw Error('原余额无效，请先核对资料');
     if(ref.startsWith('m:')&&(!before||M.number(before.idleUsd)===null||!next||M.number(next.idleUsd)===null)&&!['correction','opening'].includes(o.kind))throw Error('启用或停用手填闲置余额会替代现金项目，请选择数据更正并核对收益起点');
     const delta=cash&&sameIdentity?M.sum([next?right.amount:0,-(before?left.amount:0)]):null;
-    const changed=financialKeys.filter(k=>JSON.stringify(before?.[k]??null)!==JSON.stringify(next?.[k]??null));
+    const financialValue=(row,key)=>key==='costDate'?(row?.[key]||null):(row?.[key]??null);
+    const changed=financialKeys.filter(k=>JSON.stringify(financialValue(before,k))!==JSON.stringify(financialValue(next,k)));
     if(o.kind==='metadata'&&changed.length)throw Error('金额、持仓或计息参数改变时，不能选择资料更新');
     if(o.kind==='valuation'&&(!before||!next||changed.some(k=>!priceKeys.includes(k))))throw Error('行情更新只能修改价格，不能同时修改数量、成本或账户');
     if(o.kind==='opening'&&before)throw Error('登记已有资产仅用于新增资产');

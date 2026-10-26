@@ -1,11 +1,14 @@
 (function(){
  'use strict';
  const states=new WeakMap();let serial=0;
+ const mobile=()=>window.matchMedia('(max-width:1000px)').matches;
  const selectValue=Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value');
  const selectIndex=Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'selectedIndex');
  function refresh(select){
   const state=states.get(select);if(!state||!select.isConnected)return;
-  const {group}=state;group.hidden=select.hidden||select.style.display==='none';
+  const {group}=state,native=mobile();group.hidden=native||select.hidden||select.style.display==='none';
+  select.classList.toggle('flat-native-select',!native);select.tabIndex=native?0:-1;if(native)select.removeAttribute('aria-hidden');else select.setAttribute('aria-hidden','true');
+  const selectedText=Array.from(select.selectedOptions).map(o=>o.textContent).join('、');state.caption.textContent=selectedText;state.caption.hidden=!native||select.hidden||select.style.display==='none'||selectedText.length<32;
   const options=Array.from(select.options),disabled=select.matches(':disabled');
   const signature=JSON.stringify(options.map(o=>[o.value,o.textContent,o.disabled,o.hidden,o.selected,o.parentElement?.disabled]));
   if(state.signature!==signature||state.disabled!==disabled){
@@ -22,9 +25,10 @@
  function enhance(select){
   if(states.has(select)){refresh(select);return;}
   const group=document.createElement('div');group.className='flat-options';group.setAttribute('role',select.multiple?'group':'radiogroup');
-  const label=select.labels?.[0];if(label){if(!label.id)label.id='flat-label-'+(++serial);group.setAttribute('aria-labelledby',label.id);label.addEventListener('click',e=>{e.preventDefault();group.querySelector('[tabindex="0"]')?.focus();});}else group.setAttribute('aria-label',select.getAttribute('aria-label')||'选项');
-  select.classList.add('flat-native-select');select.tabIndex=-1;select.setAttribute('aria-hidden','true');select.after(group);states.set(select,{group});
-  select.focus=options=>group.querySelector('[tabindex="0"]')?.focus(options);
+  const label=select.labels?.[0];if(label){if(!label.id)label.id='flat-label-'+(++serial);group.setAttribute('aria-labelledby',label.id);label.addEventListener('click',e=>{if(mobile())return;e.preventDefault();group.querySelector('[tabindex="0"]')?.focus();});}else group.setAttribute('aria-label',select.getAttribute('aria-label')||'选项');
+  const caption=document.createElement('p');caption.className='mobile-select-caption';caption.setAttribute('aria-hidden','true');caption.hidden=true;
+  select.classList.add('flat-native-select');select.tabIndex=-1;select.setAttribute('aria-hidden','true');select.after(group,caption);states.set(select,{group,caption});
+  const nativeFocus=select.focus.bind(select);select.focus=options=>mobile()?nativeFocus(options):group.querySelector('[tabindex="0"]')?.focus(options);
   for(const [key,descriptor] of [['value',selectValue],['selectedIndex',selectIndex]])Object.defineProperty(select,key,{configurable:true,get(){return descriptor.get.call(this);},set(value){descriptor.set.call(this,value);refresh(this);}});
   select.addEventListener('change',()=>refresh(select));
   group.addEventListener('keydown',event=>{if(select.multiple||!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'].includes(event.key))return;const buttons=Array.from(group.children).filter(b=>!b.disabled),index=buttons.indexOf(document.activeElement);if(index<0)return;event.preventDefault();const next=event.key==='Home'?0:event.key==='End'?buttons.length-1:(index+(['ArrowRight','ArrowDown'].includes(event.key)?1:-1)+buttons.length)%buttons.length;buttons[next].click();group.querySelector('[aria-checked="true"]')?.focus();});
@@ -36,6 +40,6 @@
   details.replaceWith(section);
  }
  function scan(root){if(root.nodeType!==1&&root!==document)return;if(root.matches?.('details')){flatten(root);return;}root.querySelectorAll('details').forEach(flatten);if(root.matches?.('select'))enhance(root);root.querySelectorAll('select').forEach(enhance);}
- function init(){scan(document);new MutationObserver(records=>{for(const record of records){if(record.type==='childList'){for(const n of record.addedNodes)scan(n);}const target=record.target.nodeType===1?record.target:record.target.parentElement;const select=target?.closest('select');if(select)refresh(select);if(target?.tagName==='FIELDSET')target.querySelectorAll('select').forEach(refresh);}}).observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['disabled','hidden','selected','label','value','style']});}
+ function init(){scan(document);const media=window.matchMedia('(max-width:1000px)'),resize=()=>document.querySelectorAll('select').forEach(refresh);if(media.addEventListener)media.addEventListener('change',resize);else media.addListener(resize);new MutationObserver(records=>{for(const record of records){if(record.type==='childList'){for(const n of record.addedNodes)scan(n);}const target=record.target.nodeType===1?record.target:record.target.parentElement;const select=target?.closest('select');if(select)refresh(select);if(target?.tagName==='FIELDSET')target.querySelectorAll('select').forEach(refresh);}}).observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['disabled','hidden','selected','label','value','style']});}
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
