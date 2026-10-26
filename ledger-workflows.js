@@ -37,7 +37,7 @@
     if(!terms.end||M.dayIndex(terms.end)===null)throw Error('请先补充原定存的到期日');
     if(o.date<terms.end)throw Error('尚未到期，请在实际到期结算后保存');
     const supplied=o.proceeds!==''&&o.proceeds!==undefined&&o.proceeds!==null;
-    if(!supplied&&!value.complete)throw Error('原合同无法估算本息，请填写银行实际结算本息');
+    if(!supplied&&(!value.complete||old.tdNeedsReview))throw Error('原合同未核实，请填写银行实际结算本息');
     const proceeds=supplied?money(o.proceeds):value.value,renew=money(o.renewAmount||0),fee=money(o.fee||0);
     if(!(proceeds>0)||renew>proceeds)throw Error('结算本息须大于零，续存不能超过本息');
     const moving=o.sendAmount===''||o.sendAmount===undefined?M.sum([proceeds,-renew]):money(o.sendAmount);
@@ -46,7 +46,10 @@
     if(!['pending','arrived'].includes(o.transferState||'pending'))throw Error('请选择到账状态');
     let id=Math.max(Number(data.nextId)||1,...data.products.map(p=>(Number(p.id)||0)+1));
     const nextId=()=>id++,account=old.account||'未分类';
-    const existing=W.cashAccounts(data).find(a=>a.region===old.region&&a.account===account&&a.currency===currency);
+    const candidates=W.cashAccounts(data).filter(a=>a.region===old.region&&a.account===account&&a.currency===currency);
+    if(!o.settlementRef&&candidates.length>1)throw Error('同一银行有多个现金账户，请明确选择到期款接收账户');
+    const existing=o.settlementRef?candidates.find(a=>a.ref===o.settlementRef):candidates[0];
+    if(o.settlementRef&&!existing)throw Error('到期款接收账户须与原定存同银行、地区和币种');
     const remainder=M.sum([proceeds,-renew,-moving]);
     const source=existing||{ref:'p:'+nextId(),region:old.region,account,currency,amount:0};
     const sourceBefore=existing?clone(W.read(data,source.ref)):null,sourceAfter=sourceBefore?clone(sourceBefore):{id:Number(source.ref.slice(2)),type:'cash',region:old.region,account,name:'到期结算现金',currency,amount:0,createdAt:o.date};
@@ -65,7 +68,7 @@
       if(arrived){const received=target.currency===currency?net:(n(o.received)>0?money(o.received):0);if(!(received>0))throw Error('跨币种已到账时，请填写实际到账金额');event.changes.push(cashChange(data,target,received));event.receipt={currency:target.currency,amount:received,sourceAmount:net,sourceCurrency:currency};}
       else{const transit={id:nextId(),type:'in_transit',region:old.region,account,name:'在途 → '+target.account,currency,amount:net,createdAt:o.date,transfer:{status:'pending',sourceRef:source.ref,targetRef:target.ref,total:moving,fee,sourceCurrency:currency,targetCurrency:target.currency,startDate:o.date,chainId:event.chainId,channel:event.channel,sourceAccount:account,targetAccount:target.account}};event.transferId=transit.id;event.changes.push({ref:'p:'+transit.id,before:null,after:transit});}
     }
-    event.feeAmount=fee;event.feeCurrency=currency;event.maturity={depositId:old.id,principal:terms.principal,proceeds,estimated:!supplied,renewAmount:renew,sendAmount:moving,cashRemainder:remainder,currency,targetRef:moving?o.targetRef:null,transferState:moving?(o.transferState||'pending'):null};
+    event.feeAmount=fee;event.feeCurrency=currency;event.maturity={depositId:old.id,principal:terms.principal,proceeds,estimated:!supplied,contractEstimate:value.complete?value.value:null,estimateNeedsReview:!!old.tdNeedsReview,settlementDifference:supplied&&value.complete?M.sum([proceeds,-value.value]):null,settlementRef:source.ref,renewAmount:renew,sendAmount:moving,cashRemainder:remainder,currency,targetRef:moving?o.targetRef:null,transferState:moving?(o.transferState||'pending'):null};
     return event;
   }
 

@@ -54,12 +54,12 @@
   function depositValue(p,asOf){
     if(asOf===undefined){try{asOf=dateInZone(new Date(),depositZone(p));}catch(e){return{complete:false,value:null,reason:'合同日期时区无效'};}}
     const terms=depositTerms(p),a=dayIndex(terms.start),requested=dayIndex(asOf),end=terms.end?dayIndex(terms.end):null,rate=number(p.rate);
-    if(a===null||requested===null||terms.principal===null||terms.principal<0||rate===null||rate<0||(terms.end&&end===null)||(end!==null&&end<a)||!['simple','weekly','monthly','annual'].includes(terms.method)||!['ACT/365F','ACT/360','ACT/ACT'].includes(terms.basis))return{complete:false,value:null,reason:'定存合同参数不完整'};
+    if(a===null||requested===null||terms.principal===null||terms.principal<0||rate===null||rate<0||(terms.end&&end===null)||(end!==null&&end<a)||!['simple','weekly','fourweekly','monthly','semiannual','annual'].includes(terms.method)||!['ACT/365F','ACT/360','ACT/ACT'].includes(terms.basis))return{complete:false,value:null,reason:'定存合同参数不完整'};
     const stop=Math.max(a,Math.min(requested,end??requested));
     let value=terms.principal,cursor=a,period=1;
     if(terms.method!=='simple'){
       while(period<=6000){
-        const next=terms.method==='weekly'?a+7*period:dayIndex(addMonths(terms.start,period*(terms.method==='annual'?12:1)));
+        const next=['weekly','fourweekly'].includes(terms.method)?a+(terms.method==='weekly'?7:28)*period:dayIndex(addMonths(terms.start,period*({annual:12,semiannual:6}[terms.method]||1)));
         if(next>stop)break;
         const interest=value*rate/100*yearFraction(iso(cursor),iso(next),terms.basis);
         value=terms.roundInterest?sum([value,round(interest)]):value+interest;cursor=next;period++;

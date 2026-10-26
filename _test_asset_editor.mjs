@@ -3,6 +3,8 @@ const html=fs.readFileSync('index.html','utf8'),elements=new Map();
 function get(id){if(!elements.has(id))elements.set(id,{value:'',open:false,scrollTop:0,textContent:''});return elements.get(id);}
 const ctx=vm.createContext({Intl,Date,document:{getElementById:get},D:{products:[]},today:()=> '2026-10-18',onType(){},updateFundModalTip(){},openModal(region){get('m-tdzone').value={cn:'Asia/Shanghai',us:'America/New_York',au:'Australia/Sydney'}[region];get('m-tdround').value='cents';}});
 vm.runInContext(fs.readFileSync('calculation-engine.js','utf8'),ctx);
+vm.runInContext(fs.readFileSync('savings-interest.js','utf8'),ctx);
+vm.runInContext(fs.readFileSync('savings-editor.js','utf8'),ctx);
 vm.runInContext(html.slice(html.indexOf('function assetEditorFocusId('),html.indexOf('function openModal(region,account){')),ctx);
 vm.runInContext(html.slice(html.indexOf('function editProduct(id){'),html.indexOf('function deleteProduct(id){')),ctx);
 let passed=0;function test(name,fn){fn();passed++;console.log('PASS '+name);}

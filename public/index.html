@@ -9,6 +9,8 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
 <script src="calculation-engine.js"></script>
+<script src="savings-interest.js"></script>
+<script src="savings-editor.js"></script>
 <script src="stock-sessions.js"></script>
 <script src="movement-engine.js"></script>
 <script src="ledger-workflows.js"></script>
@@ -1708,7 +1710,13 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
         </div>
         <div class="fg"><label for="m-date">更新日期</label><input type="date" id="m-date"></div>
       </div>
-      <div id="m-us-cash-tip" class="alert alert-info" style="display:none;margin-top:var(--s-3)">🇺🇸 与 Tiger「预估现金额」对应：可用现金、闲置资金应计利息等可各建一条「现金/活期」，货币选 <strong>USD</strong>，产品名称写「可用现金」「闲置资金应计利息」等便于区分。<br><strong>股票持仓</strong>（如 CRCL、VOO）请把产品类型改为「<strong>美股（Tiger）</strong>」，即可填写<strong>代码、股数、成本价</strong>。</div>
+      <details class="asset-editor-help"><summary>NetBank Saver 利率（可选，不自动增加余额）</summary>
+ <label><input id="m-savings-enabled" type="checkbox">登记本账户 NetBank Saver 利率</label>
+ <div class="fg"><label for="m-savings-rates">基础年利率历史（每行：生效日 百分数，例如 2026-10-09 2.30）</label><textarea id="m-savings-rates" rows="3"></textarea></div>
+ <div class="fg-row c2"><div class="fg"><label for="m-savings-bonus">个人固定优惠年利率（%，无优惠留空）</label><input id="m-savings-bonus" type="number" min="0" step="any"></div><div class="fg"><label for="m-savings-from">优惠生效日（按银行通知）</label><input id="m-savings-from" type="date"></div></div>
+ <div class="fg-row c2"><div class="fg"><label for="m-savings-expiry">银行显示的优惠到期日</label><input id="m-savings-expiry" type="date"></div><div class="fg"><label for="m-savings-boundary">到期当天是否仍享优惠（须核对）</label><select id="m-savings-boundary"><option value="exclusive">到期当日仅基础利率</option><option value="inclusive">到期当日仍享优惠</option></select></div></div>
+ <p class="privacy-note">按悉尼日终余额每日计息、次月1日付息。缺少历史余额不倒推整月；未入账利息不并入总资产。基础利率变动按生效日分段，个人优惠不套用新客广告利率。</p></details>
+ <div id="m-us-cash-tip" class="alert alert-info" style="display:none;margin-top:var(--s-3)">🇺🇸 与 Tiger「预估现金额」对应：可用现金、闲置资金应计利息等可各建一条「现金/活期」，货币选 <strong>USD</strong>，产品名称写「可用现金」「闲置资金应计利息」等便于区分。<br><strong>股票持仓</strong>（如 CRCL、VOO）请把产品类型改为「<strong>美股（Tiger）</strong>」，即可填写<strong>代码、股数、成本价</strong>。</div>
     </div>
 
     <!-- Fund CN -->
@@ -1782,7 +1790,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
       </div>
     </div>
 
-<section class="asset-editor-section" id="td-contract-fields" hidden><h3>合同计息</h3><div class="fg-row c2"><div class="fg"><label for="m-tdmethod">合同计息方式</label><select id="m-tdmethod"><option value="simple">单利，不自动复投</option><option value="weekly">每周复投</option><option value="monthly">每月复投</option><option value="annual">每年复投</option></select></div><div class="fg"><label for="m-tdbasis">合同计息日数规则</label><select id="m-tdbasis"><option value="ACT/365F">实际天数 / 固定 365</option><option value="ACT/360">实际天数 / 固定 360</option><option value="ACT/ACT">实际天数 / 当年天数</option></select></div></div><p class="privacy-note">请按实际合同选择计息方式。每周付息不等于每周复利；仅在利息实际复投时选择复投。</p><details class="asset-editor-disclosure" id="td-payout-details"><summary>已付息记录（利息已转入现金时填写）</summary><div class="fg-row c2"><div class="fg"><label for="m-tdpaid">已转入其他余额的累计利息</label><input id="m-tdpaid" type="number" min="0" step="0.01" placeholder="未转出填 0"></div><div class="fg"><label for="m-tdpaiddate">上述累计已付息的截至日期</label><input id="m-tdpaiddate" type="date"></div></div><p class="privacy-note">已转入现金余额的利息会从定存估值中扣除，避免重复计入资产。</p></details><details class="asset-editor-disclosure" id="td-advanced"><summary>高级合同参数：日期时区与付息精度</summary><div class="fg-row c2"><div class="fg"><label for="m-tdzone">合同日期时区</label><select id="m-tdzone"><option value="Asia/Shanghai">北京时间</option><option value="Australia/Sydney">悉尼时间</option><option value="America/New_York">纽约时间</option><option value="UTC">UTC</option></select></div><div class="fg"><label for="m-tdround">复投付息精度</label><select id="m-tdround"><option value="cents">每次付息四舍五入到分</option><option value="end">内部保留精度，最终到分</option></select></div></div></details></section><section class="asset-editor-section"><details class="asset-editor-disclosure" id="asset-cost-details"><summary>历史成本与汇率（可选）</summary>    <div class="fg-row c2"><div class="fg"><label for="m-cost-date">投入/买入日期（可选）</label><input id="m-cost-date" type="date"></div><div class="fg"><label for="m-cost-fx">投入时汇率（每 1 计价货币折 CNY）</label><input id="m-cost-fx" type="number" min="0" step="any" placeholder="外币资产请填实际历史汇率"></div></div>
+<section class="asset-editor-section" id="td-contract-fields" hidden><h3>合同计息</h3><div class="fg-row c2"><div class="fg"><label for="m-tdmethod">合同计息方式</label><select id="m-tdmethod"><option value="simple">单利，不自动复投</option><option value="weekly">每周复投（7天，非CBA四周）</option><option value="fourweekly">每4周复投（28天）</option><option value="semiannual">每6个月复投</option><option value="monthly">每月复投</option><option value="annual">每年复投</option></select></div><div class="fg"><label for="m-tdbasis">合同计息日数规则</label><select id="m-tdbasis"><option value="ACT/365F">实际天数 / 固定 365</option><option value="ACT/360">实际天数 / 固定 360</option><option value="ACT/ACT">实际天数 / 当年天数</option></select></div></div><p class="privacy-note">请按实际合同选择计息方式。每日计息不等于每日复利；CBA 普通定存用实际天数 / 固定365。四周付息是28天，不能选7天。仅在利息实际加入定存本金时选择相应复投；不能仅凭银行实收差额修改合同。</p><details class="asset-editor-disclosure" id="td-payout-details"><summary>已付息记录（利息已转入现金时填写）</summary><div class="fg-row c2"><div class="fg"><label for="m-tdpaid">已转入其他余额的累计利息</label><input id="m-tdpaid" type="number" min="0" step="0.01" placeholder="未转出填 0"></div><div class="fg"><label for="m-tdpaiddate">上述累计已付息的截至日期</label><input id="m-tdpaiddate" type="date"></div></div><p class="privacy-note">已转入现金余额的利息会从定存估值中扣除，避免重复计入资产。</p></details><details class="asset-editor-disclosure" id="td-advanced"><summary>高级合同参数：日期时区与付息精度</summary><div class="fg-row c2"><div class="fg"><label for="m-tdzone">合同日期时区</label><select id="m-tdzone"><option value="Asia/Shanghai">北京时间</option><option value="Australia/Sydney">悉尼时间</option><option value="America/New_York">纽约时间</option><option value="UTC">UTC</option></select></div><div class="fg"><label for="m-tdround">复投付息精度</label><select id="m-tdround"><option value="cents">每次付息四舍五入到分</option><option value="end">内部保留精度，最终到分</option></select></div></div></details></section><section class="asset-editor-section"><details class="asset-editor-disclosure" id="asset-cost-details"><summary>历史成本与汇率（可选）</summary>    <div class="fg-row c2"><div class="fg"><label for="m-cost-date">投入/买入日期（可选）</label><input id="m-cost-date" type="date"></div><div class="fg"><label for="m-cost-fx">投入时汇率（每 1 计价货币折 CNY）</label><input id="m-cost-fx" type="number" min="0" step="any" placeholder="外币资产请填实际历史汇率"></div></div>
     <p class="privacy-note">历史汇率仅用于拆分当前持仓账面盈亏，不改变市值；人民币资产按 1 计算。缺少历史汇率时不估造汇率收益。</p>
 </details>    <div class="fg"><label for="m-note">备注（可选）</label><input type="text" id="m-note" placeholder="月结 / 工资卡..."></div>
 </section><input type="hidden" id="m-editid"></div>
@@ -5320,7 +5328,7 @@ function buildProductRow(p,region,primaryCur,accountTotalCNY){
     nameCell=`<div>
       <div class="pr-name">${p.name||'定期存款'}</div>
       <div class="pr-sub">定存利率 ${p.rate||0}% p.a. · ${cur} 计息本金 ${fmt(WealthMath.depositTerms(p).principal,2)}${p.tdOrigPrincipal!=null?' · 开户本金 '+fmt(p.tdOrigPrincipal,2):''}</div>
-      <div class="pr-sub" style="margin-top:4px;color:var(--text3)">计息方式 ${({simple:'单利',weekly:'每周复投',monthly:'每月复投',annual:'每年复投'})[WealthMath.depositTerms(p).method]} · 应计未付利息 +${fc(acc,cur,2)}</div>
+      <div class="pr-sub" style="margin-top:4px;color:var(--text3)">计息方式 ${({simple:'单利',weekly:'每周复投',fourweekly:'每4周复投',semiannual:'每6个月复投',monthly:'每月复投',annual:'每年复投'})[WealthMath.depositTerms(p).method]} · 应计未付利息 +${fc(acc,cur,2)}</div>
       <div style="margin-top:5px">
         <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--text3);font-family:var(--mono);margin-bottom:2px"><span>进度</span><span>${prog.toFixed(0)}%${daysLeft!==null?' · '+daysLeft+'天后到期':''}</span></div>
         <div class="td-bar"><div class="td-fill" style="width:${prog}%"></div></div>
@@ -5331,7 +5339,7 @@ function buildProductRow(p,region,primaryCur,accountTotalCNY){
     pnlCell=`<div class="pr-pnl pos">+${fc(acc,cur,2)}<br><span style="font-size:9px">应计</span></div>`;
   } else {
     const cashHint=region==='us'&&p.type==='cash'&&(p.currency||'CNY')==='USD'?'美元现金 · 闲置/可用与应计利息可分机录入':'';
-    nameCell=`<div><div class="pr-name">${p.name||'—'}</div><div class="pr-sub">${[cashHint,p.note,p.updatedAt?'更新 '+p.updatedAt:''].filter(Boolean).join(' · ')}</div></div>`;
+    nameCell=`<div><div class="pr-name">${p.name||'—'}</div><div class="pr-sub">${[cashHint,escOvHtml(SavingsEditor.text(p)),p.note,p.updatedAt?'更新 '+p.updatedAt:''].filter(Boolean).join(' · ')}</div></div>`;
     amtCell=`<div class="pr-amt primary">${fc(p.amount,p.currency||'CNY',2)}</div>`;
     pnlCell=`<div class="pr-pnl neu">—</div>`;
   }
@@ -6422,7 +6430,7 @@ function openModal(region,account){
   resetAssetEditorSections();
   closeMobileSidebar();
   document.getElementById('m-title').textContent='添加资产';
-  document.getElementById('m-editid').value='';
+  document.getElementById('m-editid').value='';SavingsEditor.load(null);
   document.getElementById('m-status').innerHTML='';
   ['m-account','m-name','m-note','m-ticker','m-fcode','m-cost-fx','m-cost-date'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   ['m-amount','m-shares','m-cost','m-sprice','m-stoploss','m-fshares','m-fcost','m-fprice','m-principal','m-rate','m-grams','m-gcost','m-gprice'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
@@ -6721,7 +6729,7 @@ function saveProduct(){
     const date=document.getElementById('m-date').value;
     if(isNaN(amount)){status.innerHTML='<div class="alert alert-warn">请填写金额</div>';return;}
     // Currency is explicit: never infer it from account names or notes.
-    p={...p,amount,currency,updatedAt:date};
+    p={...p,amount,currency,updatedAt:date};try{p.savingsInterest=type==='cash'?SavingsEditor.read():null;if(p.savingsInterest&&(region!=='au'||currency!=='AUD'))throw Error('NetBank Saver 请选择澳洲 AUD 现金账户');}catch(error){status.textContent=error.message;return;}
   }
 
   const original=editId?D.products.find(x=>x.id===parseInt(editId)):null;
@@ -6773,7 +6781,7 @@ function editProduct(id){
     document.getElementById('m-tdend').value=terms.end||'';
     document.getElementById('m-tdcur').value=p.tdCur||p.currency||'AUD';
   } else {
-    document.getElementById('m-amount').value=p.amount??'';
+    SavingsEditor.load(p);document.getElementById('m-amount').value=p.amount??'';
     document.getElementById('m-currency').value=p.currency||'CNY';
     document.getElementById('m-date').value=p.updatedAt||today();
   }
