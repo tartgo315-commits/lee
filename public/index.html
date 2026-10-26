@@ -3502,20 +3502,26 @@ function updateTdExpiryChip(){
   const chip=document.getElementById('td-expiry-chip');
   const rate=document.getElementById('fc-td-expiry');
   if(!chip||!rate)return;
-  const n=D.products.filter(p=>p.type==='term_deposit'&&(p.tdContractEnd||p.tdEnd))
-    .map(p=>tdDaysLeft(p))
-    .filter(dl=>dl!=null&&dl>=0&&dl<=90).length;
+  const deposits=D.products.filter(p=>p.type==='term_deposit'&&(p.tdContractEnd||p.tdEnd))
+    .map(p=>({date:p.tdContractEnd||p.tdEnd,days:tdDaysLeft(p)}))
+    .filter(p=>p.days!=null).sort((a,b)=>a.days-b.days);
+  const overdue=deposits.filter(p=>p.days<0),week=deposits.filter(p=>p.days>=0&&p.days<=7),month=deposits.filter(p=>p.days>=0&&p.days<=30),next=deposits.find(p=>p.days>=0);
+  const label=chip.querySelector('.fx-chip-pair');
   chip.style.display='flex';
-  if(n>0){
-    rate.textContent=n+'笔到期';
+  chip.style.removeProperty('border-color');
+  chip.style.removeProperty('color');
+  rate.style.removeProperty('color');
+  if(label)label.textContent=overdue.length?'到期待处理':week.length?'即将到期':month.length?'到期提醒':'最近到期';
+  chip.title=deposits.length?deposits.map(p=>p.date+' · '+(p.days<0?'已过到期日 '+(-p.days)+' 天':p.days===0?'今日到期':p.days+' 天后')).join('\n'):'暂无已登记到期日的定存';
+  if(overdue.length||week.length){
+    rate.textContent=overdue.length?overdue.length+'笔已过到期日':week[0].days===0?'今日到期 '+week.filter(p=>p.days===0).length+'笔':week.length+'笔7天内到期 · 最近'+week[0].days+'天';
     chip.style.borderColor='rgba(239,68,68,.4)';
     chip.style.color='#b91c1c';
     rate.style.color='#b91c1c';
+  }else if(month.length){
+    rate.textContent=month.length+'笔30天内到期 · 最近'+next.days+'天';
   }else{
-    rate.textContent='90天无到期';
-    chip.style.removeProperty('border-color');
-    chip.style.removeProperty('color');
-    rate.style.removeProperty('color');
+    rate.textContent=next?next.date+' · '+next.days+'天后':'暂无到期定存';
   }
 }
 function renderSidebar(){
