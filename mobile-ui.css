@@ -99,3 +99,19 @@
  #cmdk-root{padding-top:max(8px,env(safe-area-inset-top));height:var(--mobile-visual-height,100dvh)}#cmdk-panel{max-height:calc(var(--mobile-visual-height,100dvh) - 20px)}
 }
 @media(min-width:1001px){.mobile-modal-scroll{display:contents}}
+/* Asset actions occupy the card corner instead of an extra row. */
+.mobile-asset-more{display:none!important}
+@media(max-width:1000px){
+ .mobile-actions-compact>button:not(.mobile-asset-more){display:none!important}
+ .mobile-actions-compact>.mobile-asset-more{display:inline-flex!important;align-items:center;justify-content:center;flex:none;width:40px!important;min-width:40px!important;height:44px!important;padding:0!important;font-size:25px!important;line-height:1}
+ .product-row:has(.mobile-actions-compact),.ov-region-panel tr[data-holding-key]:has(.mobile-actions-compact){position:relative}
+ .product-row:has(.mobile-actions-compact)>div:first-child,.ov-region-panel tr[data-holding-key]:has(.mobile-actions-compact)>td:first-child{padding-right:44px}
+ .product-row .pr-acts.mobile-actions-compact,.ov-region-panel tr[data-holding-key]:has(.mobile-actions-compact)>td:nth-child(6){position:absolute;top:6px;right:8px;width:40px;padding:0;display:block;grid-row:auto;grid-column:auto}
+ .ov-region-panel .ov-holding-action-buttons.mobile-actions-compact{width:40px;display:block}
+ #mobile-asset-actions{z-index:650;align-items:flex-end;background:rgba(0,0,0,.65)}
+ #mobile-asset-actions>.modal{height:auto;max-height:calc(var(--mobile-visual-height,100dvh) - 16px);border-radius:18px 18px 0 0;padding:16px 16px max(20px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:8px;background:#10141b}
+ #mobile-asset-actions h2{overflow-wrap:anywhere;font-size:17px;min-width:0}
+ #mobile-asset-actions .danger{color:var(--dn-soft)}
+ body:has(#mobile-asset-actions.open){overflow:hidden}
+ body.light #mobile-asset-actions>.modal{background:#fff}
+}

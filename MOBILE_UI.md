@@ -31,3 +31,5 @@ Mobile applies up to 1000 CSS pixels, including landscape phones. Native selects
 - Existing unit checks: movements 27, ledger assistant 18, ledger UI 10, asset editor 6, navigation 9, cloud sync 17 (87 total).
 
 These are desktop-browser viewport simulations, not a physical iPhone/WebKit certification. Native iOS file saving, file selection and keyboard behavior still benefit from a real-device check. UI tests use fictional data and do not submit real financial transactions.
+
+Mobile holding cards now use a single corner ellipsis menu for existing actions. Overview term-deposit maturity and manual-account actions remain available in that menu. Desktop keeps its original inline controls. Verified at 390px and 1280px, including original edit form launch and maturity menu visibility.
