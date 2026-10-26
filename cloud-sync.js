@@ -1,12 +1,13 @@
 /* One private site ledger, optimistic revision checks, no silent conflict merging. */
 (function(root){
   'use strict';
-  function signature(data){const copy=JSON.parse(JSON.stringify(data));delete copy.fx;delete copy.backupStatus;for(const p of copy.products||[]){for(const key of ['currentPrice','fundPrice','goldPrice','goldUpdated','lastValidPrice','quoteReference'])delete p[key];if(['stock_us','fund_cn','gold'].includes(p.type))delete p.updatedAt;}return JSON.stringify(copy);}
+  function signature(data){const copy=JSON.parse(JSON.stringify(data));for(const key of ['fx','fxMeta','btcQuote','newsCache','aiDailyBrief','backupStatus'])delete copy[key];for(const p of copy.products||[]){for(const key of ['currentPrice','fundPrice','goldPrice','goldUpdated','lastValidPrice','quoteReference','quoteSessions','quoteSelection','marketState'])delete p[key];if(['stock_us','fund_cn','gold'].includes(p.type))delete p.updatedAt;}return JSON.stringify(copy);}
   const empty=d=>!(d.products?.length||d.navHistory?.length||d.movementLog?.length||d.cashFlows?.length||Number(d.goal?.amount)>0||d.performanceTracking||Object.keys(d.usAccountMeta||{}).length);
   function create(a){
     let meta=a.readMeta()||null,busy=false,paused=false,state='checking',timer,remote=null,started=false;
+    if(meta&&meta.signatureVersion!==2){try{meta={...meta,signature:signature(JSON.parse(meta.signature)),signatureVersion:2};a.writeMeta(meta);}catch{meta=null;}}
     const status=(kind,message)=>{state=kind;a.onState({kind,message,revision:meta?.revision||0});};
-    const mark=(revision,data)=>{meta={revision,signature:signature(data)};a.writeMeta(meta);};
+    const mark=(revision,data)=>{meta={revision,signature:signature(data),signatureVersion:2};a.writeMeta(meta);};
     async function request(method,body){const response=await a.fetch('/api/ledger-sync'+(method==='GET'&&meta?'?since='+meta.revision:''),{method,credentials:'same-origin',cache:'no-store',headers:{'X-Wealth-Sync':'1',...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{})});let value;try{value=await response.json();}catch{throw Error('线上同步接口暂不可用，本机账本已保留');}if(!response.ok){const e=Error(value.error||'线上同步失败');e.status=response.status;throw e;}return value;}
     async function fullRemote(){const saved=meta;meta=null;try{return await request('GET');}finally{meta=saved;}}
     function conflict(value){remote=value;paused=true;status('conflict','两端账本不同，已暂停自动覆盖，请在设置中选择保留哪一份。');}
@@ -18,7 +19,7 @@
     }catch(error){status(error.status===401?'login':'offline',error.message);}finally{busy=false;}}
     async function flush(){if(!started||busy||paused||!meta){if(started&&!paused&&!meta)void pull();return;}if(signature(a.get())===meta.signature)return;busy=true;try{const snapshot=JSON.parse(JSON.stringify(a.get())),value=await request('PUT',{baseRevision:meta.revision,ledger:snapshot});mark(value.revision,snapshot);status('synced','已同步 · 版本 '+value.revision);if(signature(a.get())!==meta.signature)notify();}
     catch(error){if(error.status===409){try{conflict(await fullRemote());}catch(e){status('offline',e.message);}}else status(error.status===401?'login':'offline',error.message);}finally{busy=false;}}
-    function notify(){if(!started)return;if(paused)return;clearTimeout(timer);status(meta?'pending':state,meta?'本机已保存，等待上传…':'等待线上账本检查');timer=setTimeout(()=>void flush(),1000);}
+    function notify(){if(!started||paused)return;clearTimeout(timer);if(meta&&signature(a.get())===meta.signature){status('synced','已同步 · 版本 '+meta.revision);return;}status(meta?'pending':state,meta?'本机已保存，等待上传…':'等待线上账本检查');timer=setTimeout(()=>void flush(),1000);}
     async function resolve(choice){if(busy)return;busy=true;try{const latest=await fullRemote();if(choice==='cloud'){if(!latest.ledger)throw Error('线上没有可读取的账本');paused=false;await adopt(latest);return;}
       if(empty(a.get())&&!latest.revision)throw Error('本机没有账本，请先在有数据的电脑开启同步');
       a.backup({local:a.get(),cloud:latest.ledger,at:new Date().toISOString()});const snapshot=JSON.parse(JSON.stringify(a.get())),value=await request('PUT',{baseRevision:latest.revision,ledger:snapshot});mark(value.revision,snapshot);paused=false;remote=null;status('synced','已同步 · 版本 '+value.revision);
