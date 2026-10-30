@@ -10,3 +10,5 @@
 @media(min-width:701px){.ti-scroll table{min-width:760px}}#ti-summary-toggle{margin:12px 0}
 
 .ti-modal{background:var(--bg-page,#10141b)!important}.ti-confirm-actions{position:sticky;bottom:0;background:var(--bg-page,#10141b);padding:12px 0 0;border-top:1px solid var(--border);z-index:3}.ti-confirm-actions #ti-save{position:static;display:block;box-shadow:none;margin:10px 0 4px}.ti-confirm-actions p{margin:0}
+
+.ti-cash{padding:14px;margin:14px 0;border:1px solid var(--border);border-radius:10px}.ti-cash h3{font-size:15px}.ti-cash #ti-cash-diff{font-size:16px;color:var(--text-1);font-weight:600}.ti-cash>label{font-size:13px;margin-right:12px}.ti-cash>button{margin-top:8px}.ti-cash input:not([type=checkbox]){max-width:240px}

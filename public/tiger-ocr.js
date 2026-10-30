@@ -1,7 +1,7 @@
 /* Device-only OCR. No screenshot, text, or account data is sent to a server. */
 (function(root){
  'use strict';
- const ASSETS='/vendor/tesseract',empty=()=>({currency:'UNKNOWN',totalAssets:null,securitiesValue:null,cash:null,dailyPnl:null,holdingPnl:null});
+ const ASSETS='/vendor/tesseract',empty=()=>({currency:'UNKNOWN',totalAssets:null,securitiesValue:null,cash:null,availableCash:null,dailyPnl:null,holdingPnl:null});
  function words(tsv,scale=1,offset={x:0,y:0}){return String(tsv||'').split('\n').slice(1).map(l=>l.split('\t')).filter(c=>c[0]==='5'&&c.length>=12&&c[11].trim()).map(c=>({text:c.slice(11).join('\t').trim(),x:Number(c[6])/scale+offset.x,y:Number(c[7])/scale+offset.y,w:Number(c[8])/scale,h:Number(c[9])/scale,confidence:Number(c[10])}));}
  const center=w=>w.y+w.h/2;
  function numeric(raw){const s=String(raw||'').trim().replace(/[，]/g,',').replace(/[−–]/g,'-');if(!/^[+-]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?$/.test(s))return null;const n=Number(s.replace(/,/g,''));return Number.isFinite(n)?n:null;}
@@ -34,7 +34,7 @@
   const lines=grouped.map(l=>({y:l.y,text:l.words.sort((a,b)=>a.x-b.x).map(w=>w.text).join(''),words:l.words}));
   const aud=lines.find(l=>/AUD/i.test(l.text)&&/\d/.test(l.text)&&l.y>table.header.y);
   if(aud){out.currency='AUD';const m=aud.text.match(/AUD\s*([\d,]+\.\d{2})/i);if(m)out.totalAssets=numeric(m[1]);}
-  for(const [key,label]of [['securitiesValue',/证券总价值|證券總值/],['cash',/预估现[金全]额|預估現金/],['dailyPnl',/今日盈亏/],['holdingPnl',/持仓盈亏/]]){const line=lines.find(l=>label.test(l.text)&&l.y>table.header.y);if(line){const m=line.text.match(/(?<![\d,.])[+-]?(?:\d{1,3}(?:,\d{3})+|\d+)\.\d{2}$/);if(m&&(!['dailyPnl','holdingPnl'].includes(key)||/^[+-]/.test(m[0])))out[key]=numeric(m[0]);}}
+  for(const [key,label]of [['securitiesValue',/证券总价值|證券總值/],['cash',/预估现[金全]额|預估現金/],['availableCash',/可用现金|可用現金/],['dailyPnl',/今日盈亏/],['holdingPnl',/持仓盈亏/]]){const line=lines.find(l=>label.test(l.text)&&l.y>table.header.y);if(line){const m=line.text.match(/(?<![\d,.])[+-]?(?:\d{1,3}(?:,\d{3})+|\d+)\.\d{2}$/);if(m&&(!['dailyPnl','holdingPnl'].includes(key)||/^[+-]/.test(m[0])))out[key]=numeric(m[0]);}}
   return out;
  }
  let script;
