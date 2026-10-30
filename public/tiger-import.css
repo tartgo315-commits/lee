@@ -8,3 +8,5 @@
 .ti-modal button:disabled{opacity:.45;cursor:not-allowed}
 
 @media(min-width:701px){.ti-scroll table{min-width:760px}}#ti-summary-toggle{margin:12px 0}
+
+.ti-modal{background:var(--bg-page,#10141b)!important}.ti-confirm-actions{position:sticky;bottom:0;background:var(--bg-page,#10141b);padding:12px 0 0;border-top:1px solid var(--border);z-index:3}.ti-confirm-actions #ti-save{position:static;display:block;box-shadow:none;margin:10px 0 4px}.ti-confirm-actions p{margin:0}

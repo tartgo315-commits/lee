@@ -45,7 +45,7 @@
   }
   const summary=draft.summary||{};
   // AUD summary is optional reference, never part of the position-change confirmation.
-  
+
   const held=data.products.filter(p=>p.type==='stock_us'&&p.region==='us'&&p.account===account&&!seen.has(String(p.ticker||'').trim().toUpperCase()));
   if(held.length)warnings.push('未出现在本次截图中的 '+held.map(p=>p.ticker).join('、')+' 将保留');
   const aud=usd*rate,reported=number(summary.securitiesValue);
