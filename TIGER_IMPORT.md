@@ -2,9 +2,13 @@
 
 入口：澳洲、美国页面顶部的「Tiger 截图导入」。选择目标 Tiger 账户与截图日期，上传不超过 6 MB 的 PNG/JPEG/WebP。
 
-截图通过受站点密码保护的 `/api/tiger-import` 交给 OpenAI Responses 视觉模型。服务使用 `store:false`；本站不把截图写入账本或文件存储。上传前可遮盖姓名和账号。服务只识别持仓表，不使用左侧自选行情列表。
+免费在线版：手机或电脑打开原网站即可从相册选择截图。Tesseract.js 在当前浏览器内处理图像；识别过程不调用 OpenAI，不需要 API 额度，不向服务器发送图片或识别文字。组件与中英文语言数据从本站加载，不依赖第三方 CDN。只有用户确认保存后，校对后的数字沿用现有账本云同步。
 
-后台沿用 `OPENAI_API_KEY`、`SITE_PASSWORD`、`SITE_AUTH_SECRET`。可选 `TIGER_VISION_MODEL`，否则沿用 `OPENAI_MODEL`，默认 `gpt-5-mini`。密钥仅在后台配置。接口没有写账本能力。
+当前自动识别适配带表头、代码、USD 币种和完整列顺序的 Tiger 电脑端持仓表。手机可以上传这样的截图；Tiger 手机 App 的其他布局不保证自动解析，提供「手动填写持仓」及补充行入口。手机校对界面改为每只股票一块，确认按钮停靠窗口底部。首次使用需要下载约 9 MB 的当次所需组件和语言数据，识别速度取决于手机性能；支持 WebAssembly 的现代 Safari/Chrome 可使用。
+
+识别先用 USD 行与表头定位表格，再检查分隔线和列顺序，分别读取股票代码、数量、股价、成本、市值，避免自选行情串入持仓。没有可靠布局时返回空草稿让用户补填，不按已知持仓或市值推算缺失数字。AUD 汇总独立识别，缺失值保留为空。
+
+旧 `/api/tiger-import` POST 返回 410 并提示刷新，不再调用付费服务。其他 AI 账本功能及其设置不受影响。
 
 识别结果必须人工校对：代码、数量、USD 当前价和摊薄成本、原图 USD 市值、逐行币种；账户总资产、证券总值、预估现金与盈亏以 AUD 展示，支持修改。空值、非数值、无效代码、重复持仓与非 USD 股票会阻止保存。市值不一致、未显示持仓与汇总不匹配会提示核对。
 
@@ -18,4 +22,6 @@ USD 原始价格与成本直接保存，AUD 折算使用主页的 USD/CNY ÷ AUD
 
 持仓数量或成本变化以 correction 记录，需在原账本收益流程核对起点；价格变化以 valuation 记录。导入不是成交，不结算现金，不生成外部入出金。已有变动记录撤销功能可撤销相关持仓校正；完整备份也保留整次导入前状态。
 
-验证：`node _test_tiger_import.mjs`；现有 `_test_cloud_sync.mjs`、`_test_movements.mjs`、`_test_ledger_workflows.mjs`、`_test_gate.mjs`、`_test_ledger_assistant.mjs`。测试使用虚构数据。
+验证：`node _test_tiger_ocr.mjs`、`node _test_tiger_import.mjs`；现有 `_test_cloud_sync.mjs`、`_test_movements.mjs`、`_test_ledger_workflows.mjs`。提交的测试使用虚构数据。真实参考截图只用于本机识别校验，不进入仓库。
+
+依赖版本与许可证见 `public/vendor/tesseract/NOTICE.md`。Tesseract.js 7.0.0、对应 core、eng/chi_sim 1.0.0 best_int 语言包固定随站点发布。
