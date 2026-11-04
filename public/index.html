@@ -5723,8 +5723,8 @@ async function refreshGold(){
 // ══ REFRESH STOCKS ══
 async function refreshStocks(){
   const stocks=[...new Map(D.products.filter(p=>p.type==='stock_us'&&!isZeroStock(p)&&p.ticker).map(p=>[WealthMath.stockIdentity(p).ticker,p])).values()];
-  if(!stocks.length){showToast({message:'没有当前美股持仓',type:'info'});return;}
-  const before=totalCNY(),el=document.getElementById('us-refresh-status');quoteAuthRequired=false;if(el)el.textContent='正在刷新美股并重算总资产…';
+  if(!stocks.length){showToast({message:'没有当前股票持仓',type:'info'});return;}
+  const before=totalCNY(),el=document.getElementById('us-refresh-status');quoteAuthRequired=false;if(el)el.textContent='正在刷新股票并重算总资产…';
   const results=await Promise.all(stocks.map(refreshOneStockQuote));save();renderRegion('us');renderSidebar();showQuoteRefreshResult(results,before);if(el)el.textContent='';
 }
 
@@ -5819,14 +5819,14 @@ function quoteRefreshReport(rows,before,after){
 function quoteRefreshMessage(report){
   const delta=report.delta===0?'总资产不变':'总资产 '+(report.delta>0?'+':'')+fc(report.delta,'CNY',2)+(report.roundedUnchanged?'（整元显示未变）':'');
   const stocks=report.fresh+report.cached+report.failed;let status='已重算 · '+delta;
-  if(stocks){status+=' · 美股新取报价 '+report.fresh+'，价格变动 '+report.changed;if(report.cached)status+='，缓存 '+report.cached;if(report.failed)status+='，失败 '+report.failed;if(!report.fresh)status+=' · 未取得美股新报价';}
+  if(stocks){status+=' · 股票新取报价 '+report.fresh+'，价格变动 '+report.changed;if(report.cached)status+='，缓存 '+report.cached;if(report.failed)status+='，失败 '+report.failed;if(!report.fresh)status+=' · 未取得股票新报价';}
   if(quoteAuthRequired)status+=' · 行情登录已失效，请刷新页面后重新登录';return status;
 }
 function showQuoteRefreshResult(rows,before){
   refreshOVTotals();const report=quoteRefreshReport(rows,before,totalCNY()),message=quoteRefreshMessage(report),strip=document.getElementById('global-refresh-status'),time=new Intl.DateTimeFormat('zh-CN',{hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date());
   if(strip){strip.textContent=message;strip.className='global-refresh-strip quote-refresh-summary'+(report.warning||quoteAuthRequired?' quote-refresh-warn':'');}
   const stamp=document.getElementById('quote-recomputed-at');if(stamp){stamp.hidden=false;stamp.textContent='已重算 '+time;stamp.title=message;}
-  showToast({message:report.delta!==0?'总资产已重算 '+(report.delta>0?'+':'')+fc(report.delta,'CNY',2):!report.fresh&&rows.length?'未取得美股新报价，已保留原估值':'已重算，总资产不变',type:report.warning||quoteAuthRequired?'warn':'success',duration:5000});
+  showToast({message:report.delta!==0?'总资产已重算 '+(report.delta>0?'+':'')+fc(report.delta,'CNY',2):!report.fresh&&rows.length?'未取得股票新报价，已保留原估值':'已重算，总资产不变',type:report.warning||quoteAuthRequired?'warn':'success',duration:5000});
   return report;
 }
 
@@ -5846,7 +5846,7 @@ async function refreshAllQuotes(){
     const golds=D.products.filter(p=>p.type==='gold');
     if(golds.length)add('黄金',async()=>{const price=await quoteWithin(fetchGoldPrice(),16000);if(!(price>0))return false;golds.forEach(g=>{g.goldPrice=price;g.goldUpdated=today();});updateGoldChip();save();return true;});
     const stocks=[...new Map(D.products.filter(p=>p.type==='stock_us'&&!isZeroStock(p)&&p.ticker).map(p=>[WealthMath.stockIdentity(p).ticker,p])).values()];
-    if(stocks.length)add('美股',async()=>{const rows=await Promise.all(stocks.map(refreshOneStockQuote));stockResults.push(...rows);save();redrawAllAfterFullQuoteRefresh();return rows.every(r=>r.applied&&r.source!=='cache');});
+    if(stocks.length)add('股票',async()=>{const rows=await Promise.all(stocks.map(refreshOneStockQuote));stockResults.push(...rows);save();redrawAllAfterFullQuoteRefresh();return rows.every(r=>r.applied&&r.source!=='cache');});
     const funds=D.products.filter(p=>p.type==='fund_cn'&&p.fundCode&&String(p.fundCode).trim()&&(p.fundCurrency||'CNY')==='CNY');
     if(funds.length)add('基金',async()=>{const rows=await Promise.all(funds.map(async f=>{const res=await quoteWithin(fetchFundPrice(f.fundCode,{prev:f.fundPrice||0,force:true}),12000);if(!(res?.price>0))return false;f.fundPrice=res.price;f.name=f.name||res.name;f.updatedAt=res.date||today();return true;}));save();return rows.every(Boolean);});
     progress();await Promise.all(jobs.map(work=>work()));
