@@ -3583,8 +3583,8 @@ function updateGoalBar(){
   remEl.textContent=remaining>0?'还差 '+fc(remaining,'CNY',0):'🎉 已达成';
   const achieved=Math.min(cny,target);
   const gap=Math.max(0,target-cny);
-  const goalFill=document.body.classList.contains('light')?'#24775d':'rgba(5,150,105,.85)';
-  const goalTrack=document.body.classList.contains('light')?'#c8d8d0':'rgba(255,255,255,.08)';
+  const goalFill=document.body.classList.contains('light')?'#245ecc':'#82adff';
+  const goalTrack=document.body.classList.contains('light')?'#e1e6ee':'#1b1e23';
   if(ctxG){
     if(gap>0.01){
       ovGoalChart=upsertOvDonutChart(ovGoalChart,ctxG,['已达','差额'],[achieved,gap],[goalFill,goalTrack],[goalFill,goalTrack],target);
@@ -5946,7 +5946,6 @@ function renderPieLegend(el,parts,cny){
   el.innerHTML=parts.map(p=>`<div class="ov-pie-leg-row"><span class="ov-pie-leg-dot" style="background:${p.bg}"></span><span class="ov-pie-leg-name">${escOvHtml(p.l)}</span><span class="ov-pie-leg-val">${(p.d/cny*100).toFixed(1)}% · ${fc(p.d,'CNY',0)}</span></div>`).join('');
 }
 function applyDayChartPalette(parts){
-  if(!document.body.classList.contains('light'))return;
   const colors={'中国':'#7299cf','美国':'#559caa','澳洲':'#9286b4','未标地区':'#828b9b','现金 / 活期':'#828b9b','在途 / 暂估':'#9286b4','定期 / 锁定':'#7299cf','投资类':'#559caa'};
   for(const part of parts){if(colors[part.l])part.bg=part.bd=colors[part.l];}
 }

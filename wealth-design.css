@@ -269,3 +269,6 @@ body :is(button.btn-danger,button.batch-del,button.danger,button[aria-label="删
 body .term-nav-goal :is(.goal-ring,.goal-donut){color:var(--control-link)}
 body .finance-capital-line{color:var(--text-2)}
 body .ov-region-heading .three-currency small{color:var(--text-3)}
+
+body .nav-quote-status{color:var(--text-3)}
+body .term-intel-events .ov-event-date .tz-line.cn{color:var(--control-link)}
