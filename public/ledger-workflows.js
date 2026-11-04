@@ -6,7 +6,7 @@
   function cash(data,ref){const account=W.cashAccounts(data).find(a=>a.ref===ref);if(!account||!(account.amount>=0))throw Error('请选择有效的实际现金账户');return account;}
   function cashChange(data,account,delta){const before=clone(W.read(data,account.ref)),after=clone(before),amount=M.sum([account.amount,delta]);if(amount<0)throw Error('现金余额不足，不能透支');if(account.ref.startsWith('m:'))after.idleUsd=amount;else after.amount=amount;return{ref:account.ref,before,after};}
   function stockTrade(data,o){
-    const event=base(o,'stock_trade'),account=cash(data,o.cashRef);
+    const event=base(o,'stock_trade'),account=cash(data,o.cashRef);if(o.brokerAccount&&o.brokerAccount!==account.account)throw Error('股票只能结算同一券商现金；银行资金请先转入券商账户');
     const qty=n(o.quantity),price=n(o.price),fee=money(o.fee||0);if(!(qty>0)||qty!==Number(qty.toFixed(10))||!(price>0)||!['buy','sell'].includes(o.side))throw Error('请填写成交数量（最多十位小数）、成交价与买卖方向');
     const gross=M.multiply(qty,price);if(gross<=0)throw Error('成交金额不足一分，请核对数量与价格');
     const before=o.productId?clone(data.products.find(p=>String(p.id)===String(o.productId))):null;

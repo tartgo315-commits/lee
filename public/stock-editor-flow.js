@@ -3,14 +3,14 @@ function syncStockFunding(reset=false){
  const field=id=>document.getElementById(id),edit=field('m-editid').value,old=D.products.find(p=>String(p.id)===edit),action=field('m-stock-action'),select=field('m-stock-cash');if(!action||!select)return;
  if(reset){action.dataset.ledgerSignature=LedgerWorkflows.fingerprint(D);field('m-stock-fx').value='';action.value='trade';field('m-stock-execution').value='';field('m-stock-fee').value='0';field('m-stock-date').value=today();field('m-stock-reason').value='';}
  const opening=action.querySelector('option[value="opening"]');opening.disabled=!!old;
- const identity=stockEditorIdentity(),currency=identity.currency,account=field('m-account').value.trim(),cash=WealthMovements.cashAccounts(D).filter(a=>a.region===field('m-region').value&&a.currency===currency&&(!account||a.account===account));
+ const identity=stockEditorIdentity(),currency=identity.currency,account=field('m-account').value.trim(),cash=WealthMovements.cashAccounts(D).filter(a=>a.region===field('m-region').value&&a.currency===currency&&!!account&&a.account===account);
  const signature=JSON.stringify(cash.map(a=>[a.ref,a.account,a.amount]));
  if(select.dataset.accounts!==signature){const previous=select.value;select.replaceChildren();for(const a of cash){const option=document.createElement('option');option.value=a.ref;option.textContent=a.account+' · '+a.name+' · '+fc(a.amount,currency,2);select.append(option);}if(cash.some(a=>a.ref===previous))select.value=previous;select.dataset.accounts=signature;}
  const qty=Number(field('m-shares').value),delta=Number((qty-Number(old?.shares||0)).toFixed(10)),trading=action.value==='trade'&&Number.isFinite(delta)&&delta!==0;
  field('m-stock-settlement').hidden=!trading;
  const preview=field('m-stock-flow-preview');
  if(!trading){preview.textContent=action.value==='opening'?'登记已有持仓，不重复扣现金。以后增减持股数量时可自动联动现金。':action.value==='correction'?'只更正已有资料，不结算现金；这次更正会留在记录中。':'数量未变化，保存资料更新即可。';return;}
- try{const cashRow=cash.find(a=>a.ref===select.value);if(!cashRow)throw Error('该券商尚无对应币种的现金项目，请先登记当前闲置现金余额。');const price=WealthMath.number(field('m-stock-execution').value);if(!(price>0))throw Error((delta>0?'买入 ':'卖出 ')+Math.abs(delta)+' 股：填一次实际成交价，即可计算现金与平均成本。');
+ try{const cashRow=cash.find(a=>a.ref===select.value);if(!cashRow)throw Error('该券商尚无对应币种的现金。请先添加券商现金记录，再用转账入口记录银行转入；买入只扣券商现金。');const price=WealthMath.number(field('m-stock-execution').value);if(!(price>0))throw Error((delta>0?'买入 ':'卖出 ')+Math.abs(delta)+' 股：填一次实际成交价，即可计算现金与平均成本。');
   const event=WealthMath.number(field('m-stock-fee').value);if(event===null||event<0)throw Error('手续费须为非负数');const gross=WealthMath.multiply(Math.abs(delta),price),amount=delta>0?WealthMath.sum([gross,event]):WealthMath.sum([gross,-event]);
   preview.textContent=(delta>0?'买入 ':'卖出 ')+Math.abs(delta)+' 股 · '+(delta>0?'自动扣除':'自动增加')+' '+fc(amount,currency,2)+'（已含手续费） · '+cashRow.account+' 闲置现金 '+fc(cashRow.amount,currency,2)+' → '+fc(WealthMath.sum([cashRow.amount,delta>0?-amount:amount]),currency,2)+'。平均成本由系统计算，不用再改。';
  }catch(e){preview.textContent=e.message;}
