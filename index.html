@@ -17,6 +17,7 @@
 <script src="account-picker.js"></script>
 <script src="ledger-ui.js"></script>
 <script src="finance-view.js"></script>
+<script src="holding-details.js"></script>
 <script src="finance-page.js"></script>
 <script src="ledger-assistant-context.js"></script>
 <script src="ledger-assistant-ui.js"></script>
@@ -1050,6 +1051,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
 <link rel="stylesheet" href="mobile-ui.css">
 <link rel="stylesheet" href="tiger-import.css">
 <style>.finance-section,.finance-cash{margin:18px 0 28px}.finance-section-heading{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin:10px 0}.finance-section-heading h2{font-size:18px;margin:0;flex:1}.finance-section-heading strong{font-variant-numeric:tabular-nums}.finance-cash>.finance-section{margin-left:0;border-top:1px solid var(--border);padding-top:12px}</style>
+<link rel="stylesheet" href="finance-compact.css">
 </head>
 <body>
 <div id="pin-overlay" class="pin-overlay" style="display:none" aria-modal="true" role="dialog" aria-labelledby="pin-overlay-title">
@@ -1153,10 +1155,10 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
               <span class="ov-nav-lbl" id="ov-nav-lbl">—</span>
               <span class="ov-nav-baseline" id="ov-nav-baseline"></span>
             </div>
-            <div class="ov-hero-fx" aria-hidden="true">
+            <div class="ov-hero-fx" aria-label="美元和澳元总净值">
               <div class="ov-hero-fx-item"><span class="lbl">USD</span><span class="val" id="ov-usd">$ —</span><span class="sub" id="ov-usd-sub">—</span></div>
               <div class="ov-hero-fx-item"><span class="lbl">AUD</span><span class="val" id="ov-aud">A$ —</span><span class="sub" id="ov-aud-sub">—</span></div>
-              <div class="ov-hero-fx-item"><span class="lbl">BTC</span><span class="val" id="ov-hero-btc">—</span></div>
+
             </div>
           </div>
           <div class="term-nav-chart">
@@ -3360,7 +3362,7 @@ function revealCmdkHolding(region,account,productId){
   const block=header?.closest('.account-block');
   block?.querySelector('.products-wrap')?.classList.add('open');
   block?.querySelector('.acc-chevron')?.classList.add('open');
-  const row=productId!==undefined?Array.from(page.querySelectorAll('.product-row[data-product-id]')).find(el=>el.dataset.productId===String(productId)):null;
+  const row=productId!==undefined?Array.from(page.querySelectorAll('.product-row[data-product-id],.finance-item[data-product-id]')).find(el=>el.dataset.productId===String(productId)):null;
   const target=row||header;if(!target)return;
   requestAnimationFrame(()=>{
     target.setAttribute('tabindex','-1');target.focus({preventScroll:true});target.scrollIntoView({block:'center',behavior:'auto'});
@@ -4980,13 +4982,13 @@ function renderOverviewHoldings(){
       if(row.heading==='region'){tr.id='ov-region-'+row.region;tr.tabIndex=-1;}
       cell.colSpan=6;wrap.className='ov-group-heading';title.textContent=row.label;total.className='ov-group-total';
       text(total,row.count+' 项持仓'+(row.missing?' · '+row.missing+' 项估值不完整':''));
-      const amount=document.createElement('strong');amount.textContent=(row.missing?'已知部分 ':'合计 ')+fc(row.knownCny,'CNY',0);total.append(amount);
+      const amount=document.createElement('div');if(typeof threeCurrencyHtml==='function')amount.innerHTML=(row.missing?'已知部分 ':'')+threeCurrencyHtml(row.knownCny);else amount.textContent=(row.missing?'已知部分 ':'合计 ')+fc(row.knownCny,'CNY',0);total.append(amount);
       wrap.append(title,total);cell.append(wrap);tr.append(cell);regionBody.append(tr);continue;
     }
     const p=row.product,v=row.valuation,tr=document.createElement('tr');tr.dataset.holdingKey=row.key;
     const cells=Array.from({length:6},()=>document.createElement('td'));tr.append(...cells);
     const name=document.createElement('button');name.type='button';name.className='ov-holding-name';name.textContent=p.name||p.ticker||p.fundCode||'未命名资产';name.dataset.holdingAction='view';
-    const view=()=>{if(row.region==='other')editProduct(p.id);else revealCmdkHolding(row.region,row.account,row.manual?undefined:p.id);};name.addEventListener('click',view);cells[0].append(name);
+    const view=()=>{if(typeof openHoldingDetails==='function')openHoldingDetails(row.manual?'m:us::'+row.account:'p:'+p.id);else if(row.region==='other')editProduct(p.id);else revealCmdkHolding(row.region,row.account,row.manual?undefined:p.id);};name.addEventListener('click',view);cells[0].append(name);
     const details=[OVERVIEW_TYPES[row.type]];
     if(p.ticker&&p.ticker!==p.name)details.push(p.ticker);
     if(p.type==='stock_us')details.push(fmt(p.shares,4)+' 股');
@@ -4994,7 +4996,7 @@ function renderOverviewHoldings(){
     if(p.type==='gold')details.push(fmt(p.grams,4)+' 克');
     if(p.type==='term_deposit'){details.push((p.rate??'—')+'%');if(p.tdContractEnd||p.tdEnd)details.push('到期 '+(p.tdContractEnd||p.tdEnd));}
     text(cells[1],details.slice(1).join(' · ')||OVERVIEW_TYPES[row.type],'ov-holding-account');
-    if(p.type==='stock_us'){const average=WealthMath.number(p.costPrice);text(cells[1],average!==null?'平均成本价 '+WealthMath.stockIdentity(p).currency+' '+fmt(average,2)+' / 股':'平均成本价 未填写','ov-holding-average-cost');}
+    if(p.type==='stock_us'){const average=WealthMath.number(p.costPrice);cells[1].firstChild.textContent+=' · 成本 '+(average!==null?fc(average,WealthMath.stockIdentity(p).currency,2):'未填写');}
     if(p.type==='stock_us'){
       if(isStopLossTriggered(p))text(cells[0],'已触发止损提醒','ov-holding-estimate');
       else if(isStopLossNear(p))text(cells[0],'接近已设止损价','ov-holding-estimate');
@@ -5018,7 +5020,7 @@ function renderOverviewHoldings(){
       const button=document.createElement('button');button.type='button';button.className='btn btn-ghost btn-sm'+(action==='delete'?' danger':'');button.dataset.holdingAction=action;button.setAttribute('aria-label',label);button.title=label;button.textContent=icon;button.addEventListener('click',handler);actions.append(button);
     }
     if(p.type==='term_deposit'){const maturity=document.createElement('button');maturity.type='button';maturity.className='btn btn-ghost btn-sm';maturity.textContent='到期处理';maturity.addEventListener('click',()=>LedgerUI.open('maturity',p.id));actions.prepend(maturity);}
-    cells[5].append(actions);if(p.type==='stock_us'){const sessions=document.createElement('td');sessions.className='stock-session-cell';sessions.colSpan=6;sessions.innerHTML=stockSessionHtml(p);tr.append(sessions);}regionBody.append(tr);
+    cells[5].append(actions);regionBody.append(tr);
   }
   if(!selected.length){const empty=document.createElement('p');empty.className='ov-holdings-empty';empty.textContent=all.length?'没有符合当前筛选的资产，试试重置筛选。':'尚无资产，点击顶部「添加资产」开始记录。';body.append(empty);}
   const missing=selected.filter(row=>!row.valuation.complete).length,known=WealthMath.sum(selected.filter(row=>row.valuation.complete).map(row=>row.valuation.cny));
@@ -5276,7 +5278,7 @@ function buildAccountBlocks(ps,region){
       const ka=(a.ticker||a.name||''),kb=(b.ticker||b.name||'');
       return ka.localeCompare(kb);
     }):aps;
-    const rows=sorted.map(p=>buildProductRow(p,region,primaryCur,acny)).join('');
+    const rows=sorted.map(p=>typeof compactHoldingHtml==='function'?compactHoldingHtml({product:p,valuation:WealthMath.productValue(p,valuationContext()),manual:false}):buildProductRow(p,region,primaryCur,acny)).join('');
     return `<div class="account-block">
       <div class="account-header" data-key="${key}">
         <div class="acc-ico ${region}">${icons[region]}</div>
