@@ -66,7 +66,8 @@
       if(target.ref.startsWith('m:'))targetAfter.idleUsd=M.sum([target.amount,received]);else targetAfter.amount=M.sum([target.amount,received]);
       changes.push({ref:target.ref,before:targetBefore,after:targetAfter});
     }
-    return{id:o.id,timestamp:o.timestamp,date:o.date,kind:o.kind,reason:String(o.reason).trim(),channel:String(o.channel||'').trim(),chainId:String(o.chainId||'').trim(),currency,delta,changes,flow,reviewRequired:['correction','opening','trade'].includes(o.kind)&&changed.length>0&&!(o.kind==='opening'&&cash&&delta===0)};
+    // Saving confirms the current values; historical performance attribution is separate.
+    return{id:o.id,timestamp:o.timestamp,date:o.date,kind:o.kind,reason:String(o.reason).trim(),channel:String(o.channel||'').trim(),chainId:String(o.chainId||'').trim(),currency,delta,changes,flow,...(o.confirmed===true?{balanceConfirmedAt:o.timestamp}:{}),reviewRequired:['correction','opening','trade'].includes(o.kind)&&changed.length>0&&!(o.kind==='opening'&&cash&&delta===0)};
   }
   function write(data,ref,value){
     if(ref.startsWith('e:')){const index=(data.movementLog||[]).findIndex(e=>e.id===ref.slice(2));if(index<0)throw Error('原变动记录不存在');data.movementLog[index]=clone(value);return;}

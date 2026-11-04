@@ -1365,6 +1365,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
           <div class="calc-actions"><button type="button" class="btn btn-ghost" onclick="useSnapshotOpening()">填入该日快照</button><button type="button" class="btn btn-primary" onclick="savePerformanceStart()">保存核算起点</button></div>
         </div>
         <div id="performance-summary" role="status"></div>
+        <div id="performance-adjustments" hidden><p class="privacy-note">余额和持仓的修改已经保存。若要计算跨越这些更正的历史收益，需要单独明确它们对期初估值或外部入出金的影响；这不代表当前余额有误，也不要求重复确认资产。</p><button type="button" class="btn btn-ghost btn-sm" onclick="LedgerUI.open('performanceCorrection')">处理历史收益口径</button></div>
         <p id="fx-gain-summary" class="privacy-note"></p>
       </section>
 
@@ -3839,7 +3840,7 @@ async function postAiAdvisor(body){
 function currentIntelligenceRows(){return buildOverviewHoldingRows(D.products,valuationContext(),usManualIdleUsd);}
 function currentRiskReport(){
   const baseline=new Set(D.performanceTracking?.movementBaselineIds||[]);
-  const pending=(D.movementLog||[]).filter(e=>e.reviewRequired&&!e.reversedAt&&!(e.kind==='trade'&&e.reviewedAt)&&!baseline.has(e.id)).length;
+  const pending=(D.movementLog||[]).filter(e=>e.kind==='trade'&&e.reviewRequired&&!e.reversedAt&&!e.reviewedAt&&!baseline.has(e.id)).length;
   const cacheCount=[...stockPriceSourceBySym.entries()].filter(([symbol,meta])=>meta.source==='cache'&&(D.products||[]).some(p=>p.type==='stock_us'&&Number(p.shares)>0&&WealthMath.stockIdentity(p).ticker===symbol)).length;
   return PortfolioIntelligence.riskReport(currentIntelligenceRows(),today(),{pendingChanges:pending,cacheCount});
 }
@@ -6650,8 +6651,8 @@ function movementChangeText(change){
   const before=change.before,after=change.after,left=WealthMovements.info(change.ref,before),right=WealthMovements.info(change.ref,after);
   const label=movementLabel(change.ref,after||before);
   if(left.cash||right.cash)return label+'：'+(before&&left.amount!==null?fc(left.amount,left.currency,2):'未登记')+' → '+(after&&right.amount!==null?fc(right.amount,right.currency,2):'移除')+(before&&after&&left.amount!==null&&right.amount!==null&&left.currency===right.currency?'（'+(right.amount-left.amount>0?'+':'')+fc(WealthMath.sum([right.amount,-left.amount]),right.currency,2)+'）':'');
-  const fields={shares:'股数',costPrice:'成本价',currentPrice:'现价',fundShares:'基金份额',fundCost:'基金成本',fundPrice:'基金净值',grams:'克数',goldCost:'黄金成本',goldPrice:'黄金价格',principal:'本金',rate:'年利率',tdPaidInterest:'已付利息',account:'账户',region:'地区',type:'资产类型',currency:'币种',name:'名称',note:'备注'};
-  return label+'：'+(!before?'新增资产':!after?'删除资产':Object.entries(fields).filter(([k])=>String(before[k]??'')!==String(after[k]??'')).map(([k,label])=>label+' '+String(before[k]??'未填')+' → '+String(after[k]??'未填')).join('；')||'合同 / 资料更新');
+  const fields={shares:'股数',costPrice:'成本价',currentPrice:'现价',fundShares:'基金份额',fundCost:'基金成本',fundPrice:'基金净值',grams:'克数',goldCost:'黄金成本',goldPrice:'黄金价格',principal:'本金',rate:'年利率',tdPaidInterest:'已付利息',account:'账户',region:'地区',type:'资产类型',currency:'币种',tdCur:'定存币种',fundCurrency:'基金币种',costFxToCny:'成本汇率',costDate:'买入日期',tdStart:'起息日',tdEnd:'到期日',tdContractStart:'合同起始日',tdContractEnd:'合同到期日',tdMethod:'计息方式',tdDayCount:'计息规则',tdPaidInterestDate:'利息支付日',name:'名称',note:'备注'};
+  return label+'：'+(!after?'删除资产':(!before?'新增资产；':'')+Object.entries(fields).filter(([k])=>String(before?.[k]??'')!==String(after[k]??'')).map(([k,label])=>label+' '+String(before?.[k]??'未登记')+' → '+String(after[k]??'未填')).join('；')||'合同 / 资料更新');
 }
 function updateMovementPreview(){
   if(!pendingMovement)return;const options=movementOptions(),after=movementAfter();
@@ -6665,7 +6666,7 @@ function updateMovementPreview(){
     const event=WealthMovements.prepare(D,pendingMovement.ref,after,options);
     for(const change of event.changes.slice(1))line(movementChangeText(change));
     if(event.kind==='trade')line('本次只修改当前资产，不会自动结算其他现金或持仓。请记录配套余额，再在变动记录中确认核对。');
-    line(event.flow?'自动登记'+(event.flow.type==='deposit'?'外部入金':'外部出金')+' '+fc(event.flow.amount,event.flow.currency,2)+'；不作为投资盈亏。':event.kind==='transfer'?'内部转账，不增加全账本净投入。实际到账差额及换汇会反映在资产估值中。':event.kind==='interest'?'到账利息 / 分红计入收益，不登记外部入金。':event.reviewRequired?'这项调整需要核对配套余额或收益起点，期间暂停显示收益，避免误算。':'只保存资料 / 行情变化，不登记外部入出金。');
+    line(event.flow?'自动登记'+(event.flow.type==='deposit'?'外部入金':'外部出金')+' '+fc(event.flow.amount,event.flow.currency,2)+'；不作为投资盈亏。':event.kind==='transfer'?'内部转账，不增加全账本净投入。实际到账差额及换汇会反映在资产估值中。':event.kind==='interest'?'到账利息 / 分红计入收益，不登记外部入金。':['correction','opening'].includes(event.kind)?'请核对上方修改前后，点击「确认变动并保存」即完成本次修改确认，历史记录不会再要求重复确认。若涉及历史收益，其计算口径在 NAV 历史 → 收益核算中单独处理。':event.reviewRequired?'请核对配套现金与持仓；当前入口不自动结算其他账户。':'只保存资料 / 行情变化，不登记外部入出金。');
   }catch(error){line(error.message);}
 }
 function cancelMovement(){document.getElementById('modal-movement').classList.remove('open');const focus=pendingMovement?.returnFocus,meta=pendingMovement?.ref.startsWith('m:');pendingMovement=null;if(meta&&document.getElementById('page-us').classList.contains('active'))renderRegion('us');focus?.focus();}
@@ -6680,7 +6681,7 @@ function commitMovement(){
   try{
     if(JSON.stringify(WealthMovements.read(D,pendingMovement.ref))!==JSON.stringify(pendingMovement.before))throw Error('资产已被更新，请取消并重新打开，避免覆盖新资料');
     if(document.getElementById('mv-kind').value==='trade'&&(pendingMovement.before||pendingMovement.after)?.type==='stock_us')throw Error('股票成交请使用上方专用入口，现金与持仓会同时更新；若只是抄错数字，请选择数据更正');
-    const after=movementAfter(),event=WealthMovements.prepare(D,pendingMovement.ref,after,movementOptions());
+    const after=movementAfter(),event=WealthMovements.prepare(D,pendingMovement.ref,after,{...movementOptions(),confirmed:true});
     persistMovementLedger(WealthMovements.apply(D,event));
     const product=after&&pendingMovement.ref.startsWith('p:')?after:null;
     cancelMovement();closeModal('modal');refreshAfterMovement();queueMovementQuote(product);
@@ -7040,6 +7041,7 @@ function renderCalculationPanel(refreshForms=true){
   if(document.activeElement!==opening)opening.value=tracking?.openingCny??'';
   }
   renderHistoryPerformanceSummary(summary,report,tracking);
+  const adjustments=document.getElementById('performance-adjustments');if(adjustments)adjustments.hidden=!tracking?.confirmed||!(D.movementLog||[]).some(e=>!e.reversedAt&&e.reviewRequired&&['correction','opening'].includes(e.kind)&&!(tracking.movementBaselineIds||[]).includes(e.id));
   const split=D.products.map(p=>WealthMath.gainSplit(p,valuationContext()));
   const valid=split.filter(x=>x.complete),missing=split.length-valid.length;
   document.getElementById('fx-gain-summary').textContent='当前持仓账面盈亏（不含已卖出、分红与手续费）：资产价格/利息变动 '+fc(WealthMath.sum(valid.map(x=>x.asset)),'CNY',2)+'；汇率影响 '+fc(WealthMath.sum(valid.map(x=>x.fx)),'CNY',2)+(missing?'。仅覆盖资料完整部分，'+missing+' 条资产缺少成本、投入汇率或估值。':'。');

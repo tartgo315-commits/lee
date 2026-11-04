@@ -61,7 +61,7 @@
     const pct=v=>known>0?Math.round(v/known*100):0,items=[];
     const add=(id,level,title,evidence,action)=>items.push({id,level,title,evidence,action});
     if(missing)add('missing','high','先补齐估值',missing+' 项资产缺少有效价格、汇率或合同参数；以下比例仅对应已知部分。','补齐资料后再判断配置和收益。');
-    if(extras.pendingChanges)add('ledger','high','有变动待核对',extras.pendingChanges+' 条资料更正或持仓调整尚未完成核算确认。','先核对配套现金、持仓和收益起点。');
+    if(extras.pendingChanges)add('ledger','high','手动持仓调整缺少配套结算确认',extras.pendingChanges+' 条手动持仓调整没有通过联动成交入口记录结算。','检查是否已记录对应的现金变动，避免漏记或重复扣款。');
     if(stops)add('stop','high','已触及你设置的止损线',stops+' 项持仓现价不高于已设置的止损价。','核对报价时间及自己的交易计划；系统不会执行交易。');
     if(overdue)add('overdue','high','定存到期后尚未更新',overdue+' 笔定存合同日期已过，账本仍列作定存。','核实本息到账或续存情况，避免现金和定存重复登记。');
     if(due7)add('due7','high','未来 7 天有定存到期',due7+' 笔定存即将到期。','确认到账账户、续存安排及是否需要转入券商。');

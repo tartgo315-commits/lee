@@ -164,7 +164,7 @@
     if(!complete||number(currentCny)===null)return{available:false,reason:'当前估值不完整，暂停计算收益'};
     if(asOf<tracking.startDate)return{available:false,reason:'核算起点晚于估值日'};
     if(!Array.isArray(flows)||flows.some(f=>!f||dayIndex(f.date)===null))return{available:false,reason:'流水日期无效，请核对导入记录'};
-    if(tracking.needsReview||!Array.isArray(movements)||movements.some(event=>!event||event.reviewRequired&&!event.reversedAt&&!(event.kind==='trade'&&event.reviewedAt)&&!(tracking.movementBaselineIds||[]).includes(event.id)))return{available:false,reason:'有资产更正、初始登记或持仓调整需要核对；可撤销相关变动，或在确认当前余额后以当前资产重新开始核算'};
+    if(tracking.needsReview||!Array.isArray(movements)||movements.some(event=>!event||event.reviewRequired&&!event.reversedAt&&!(event.kind==='trade'&&event.reviewedAt)&&!(tracking.movementBaselineIds||[]).includes(event.id)))return{available:false,reason:'历史收益口径尚未补齐：资产更正的期初估值或入出金归属、手动持仓调整的配套结算可能影响区间收益。当前余额与持仓不受影响，请在收益核算中单独处理'};
     const selected=flows.filter(f=>f.date>=tracking.startDate&&f.date<=asOf&&!(tracking.includedFlowIds||[]).includes(f.id));
     if(selected.some(f=>dayIndex(f.date)===null||!(number(f.amount)>0)||!['deposit','withdrawal'].includes(f.type)||!(fxRate(f.currency,{[f.currency]:f.fxToCny})>0)))return{available:false,reason:'区间内流水缺少有效金额或历史汇率'};
     const deposits=sum(selected.filter(f=>f.type==='deposit').map(f=>multiply(f.amount,fxRate(f.currency,{[f.currency]:f.fxToCny}))));
