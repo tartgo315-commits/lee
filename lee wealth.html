@@ -5104,12 +5104,12 @@ function renderNavMiniChart(days,opts){
     return;
   }
   if(ovChart){try{ovChart.destroy();}catch(e){}ovChart=null;}
-  const line=isDark?'#10b981':'#24775d';
+  const line=isDark?'#82adff':'#245ecc';
   const g=ctx.getContext('2d').createLinearGradient(0,0,0,200);
-  g.addColorStop(0,isDark?'rgba(16,185,129,.18)':'rgba(36,119,93,.14)');
-  g.addColorStop(1,isDark?'rgba(16,185,129,0)':'rgba(36,119,93,0)');
+  g.addColorStop(0,isDark?'rgba(130,173,255,.14)':'rgba(36,94,204,.10)');
+  g.addColorStop(1,isDark?'rgba(130,173,255,0)':'rgba(36,94,204,0)');
   const grid=isDark?'rgba(255,255,255,.06)':'rgba(28,25,23,.08)';
-  const tick=isDark?'#6B7280':'#78716c';
+  const tick=isDark?'#989faa':'#5b6575';
   ovChart=new Chart(ctx,{type:'line',data:{labels:lbls,datasets:[{data:vals,borderColor:line,backgroundColor:g,borderWidth:2,fill:true,tension:0.4,pointRadius,pointHoverRadius:4,pointBackgroundColor:line}]},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fc(c.raw,'CNY')}}},scales:{x:{grid:{color:grid},ticks:{maxTicksLimit:6,font:{family:'ui-monospace,monospace',size:10},color:tick}},y:{grid:{color:grid},ticks:{callback:v=>fc(v,'CNY',0),font:{family:'ui-monospace,monospace',size:10},color:tick}}}}});
   __ovChartDays=days;
   __ovChartDark=isDark;
@@ -5947,7 +5947,7 @@ function renderPieLegend(el,parts,cny){
 }
 function applyDayChartPalette(parts){
   if(!document.body.classList.contains('light'))return;
-  const colors={'中国':'#527ba8','美国':'#aa8030','澳洲':'#8763ad','未标地区':'#708295','现金 / 活期':'#708295','在途 / 暂估':'#8763ad','定期 / 锁定':'#527ba8','投资类':'#aa8030'};
+  const colors={'中国':'#7299cf','美国':'#559caa','澳洲':'#9286b4','未标地区':'#828b9b','现金 / 活期':'#828b9b','在途 / 暂估':'#9286b4','定期 / 锁定':'#7299cf','投资类':'#559caa'};
   for(const part of parts){if(colors[part.l])part.bg=part.bd=colors[part.l];}
 }
 function upsertOvDonutChart(ref,canvas,labels,data,bgColors,bdColors,cny){

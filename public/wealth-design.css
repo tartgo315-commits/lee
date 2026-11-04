@@ -1,32 +1,32 @@
 /* LEE Wealth — quiet surfaces, clear actions, dense financial information.
    References and design decisions: DESIGN.md. No accounting logic lives here. */
 :root{
- --bg-page:#000;--bg-card:#000;--bg-muted:#0a0a0a;--bg-hover:#171717;
- --border:#292929;--border-light:#202020;--border-hover:#666;--border-accent:#4c8d79;
- --text-1:#f5f5f5;--text-2:#d4d4d4;--text-3:#aaa;--text-4:#999;
- --accent:#9fe3cb;--accent-blue:#9cbcf3;--up:#74d3aa;--up-soft:#74d3aa;--up-bg:#12352b;
- --dn:#f28a92;--dn-soft:#f28a92;--dn-bg:#352329;--warn:#e5b978;--warn-bg:#332c22;
+ --bg-page:#000;--bg-card:#050505;--bg-muted:#0a0a0a;--bg-hover:#171717;
+ --border:#272a30;--border-light:#1b1e23;--border-hover:#505660;--border-accent:#4c8d79;
+ --text-1:#eceef2;--text-2:#b9bec8;--text-3:#989faa;--text-4:#989faa;
+ --accent:#82adff;--accent-blue:#9cbcf3;--up:#66d3a1;--up-soft:#66d3a1;--up-bg:#10271d;
+ --dn:#ff8d96;--dn-soft:#ff8d96;--dn-bg:#30171d;--warn:#e9be78;--warn-bg:#2c2315;
  --purple:#b8a7e5;--purple-bg:#2b2638;
- --card-surface:#000;--card-border:#292929;--card-hover-border:#666;
+ --card-surface:#000;--card-border:#272a30;--card-hover-border:#505660;
  --font:'Inter','Microsoft YaHei','PingFang SC',system-ui,sans-serif;
  --mono:var(--font);--radius-sm:7px;--radius-md:9px;--radius-lg:14px;
- --control-bg:#121212;--control-hover:#222;--control-border:#666;--control-text:#f5f5f5;
- --control-primary:#9fe3cb;--control-primary-hover:#c2f1df;--control-on-primary:#112b23;
- --control-selected:#173b31;--control-selected-border:#82bfa9;--control-link:#b6cffa;
- --control-danger-bg:#321f2b;--control-danger-text:#f5a5b0;--control-danger-border:#ac6b7b;
- --control-focus:#b9d7ff;
+ --control-bg:#121212;--control-hover:#222;--control-border:#606875;--control-text:#eceef2;
+ --control-primary:#82adff;--control-primary-hover:#a5c4ff;--control-on-primary:#081528;
+ --control-selected:#142139;--control-selected-border:#628bca;--control-link:#9dbdff;
+ --control-danger-bg:#15171c;--control-danger-text:#aab0ba;--control-danger-border:#424750;
+ --control-focus:#aac8ff;
 }
 body.light{
- --bg-page:#f1f5f8;--bg-card:#fff;--bg-muted:#eaf0f5;--bg-hover:#e2eaf2;
+ --bg-page:#f5f6f8;--bg-card:#fff;--bg-muted:#f0f2f5;--bg-hover:#e8edf4;
  --border:#d3dee8;--border-light:#e3eaf0;--border-hover:#8aa0b6;--border-accent:#7cae98;
- --text-1:#172b41;--text-2:#344e68;--text-3:#526780;--text-4:#586c83;
- --accent:#206c54;--accent-blue:#3663a8;--up:#167248;--up-soft:#167248;--up-bg:#e5f3eb;
+ --text-1:#20252e;--text-2:#434d5d;--text-3:#5b6575;--text-4:#5b6575;
+ --accent:#245ecc;--accent-blue:#3663a8;--up:#167248;--up-soft:#167248;--up-bg:#e5f3eb;
  --dn:#b4374f;--dn-soft:#b4374f;--dn-bg:#fcecf0;--warn:#925619;--warn-bg:#fff3df;
  --purple:#6d4f9d;--purple-bg:#f0eaf7;--card-surface:#fff;--card-border:#d3dee8;--card-hover-border:#9db1c4;
- --control-bg:#f5f8fa;--control-hover:#e2eaf2;--control-border:#7c8fa5;--control-text:#23354b;
- --control-primary:#206c54;--control-primary-hover:#18583f;--control-on-primary:#fff;
- --control-selected:#e4f1eb;--control-selected-border:#518474;--control-link:#335f9c;
- --control-danger-bg:#fff1f3;--control-danger-text:#a52e44;--control-danger-border:#b76b7c;
+ --control-bg:#f5f8fa;--control-hover:#e8edf4;--control-border:#858e9c;--control-text:#303a49;
+ --control-primary:#245ecc;--control-primary-hover:#194da9;--control-on-primary:#fff;
+ --control-selected:#eaf0fc;--control-selected-border:#6c8fc7;--control-link:#245ecc;
+ --control-danger-bg:#f5f6f8;--control-danger-text:#5b6575;--control-danger-border:#a0a9b7;
  --control-focus:#396ba4;
  --bg:var(--bg-page);--bg2:var(--bg-card);--bg3:var(--bg-muted);--bg4:var(--bg-hover);
  --surface:var(--bg-card);--surface-muted:var(--bg-muted);--surface-header:var(--bg-card);
@@ -37,8 +37,8 @@ body.light{
  color-scheme:light;
 }
 #theme-btn{display:inline-flex;min-width:78px;gap:6px;font-size:12px}
-body.light .term-nav-hero{background:#e9f5ef!important;border-color:#a9cdbb!important}
-body.light .term-nav-hero #ov-cny{color:#164e3a}
+body.light .term-nav-hero{background:#fff!important;border-color:#cfd6e0!important}
+body.light .term-nav-hero #ov-cny{color:#20252e}
 body.light :is(.term-zone-portfolio,.term-zone-intel,.term-nav-chart,.term-nav-goal,.term-alloc-card,.account-block){box-shadow:0 1px 3px #172b4108}
 body.light .modal,body.light .holding-details-modal{box-shadow:0 20px 70px #172b4126}
 body.light :is(.modal.modal-ai,.modal-ai .ov-copilot-wealth,.modal-ai .ai-pb-panel){background:var(--bg-card)!important;color:var(--text-1)}
@@ -50,7 +50,7 @@ body :is(button,[role="button"]):where(:not(.finance-item):not(.ov-holding-name)
  font-weight:500;cursor:pointer;transition:background-color .15s,border-color .15s,transform .1s;
 }
 body :is(button,[role="button"]):where(:not(.finance-item):not(.ov-holding-name)):where(:enabled:hover){
- background:var(--control-hover)!important;border-color:#7e8797!important;
+ background:var(--control-hover)!important;border-color:var(--border-hover)!important;
 }
 body button.btn-primary,body .term-portfolio-hd>button[onclick="LedgerUI.open('trade')"]{
  background:var(--control-primary)!important;color:var(--control-on-primary)!important;border-color:var(--control-primary)!important;font-weight:650;
@@ -257,6 +257,15 @@ body summary{padding:8px 10px;border:1px solid var(--control-border);border-radi
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 /* Night surfaces use black; borders and interaction states provide separation. */
 body:not(.light) :is(.topbar,.navigation-row,.term-nav-hero,.modal,.holding-details-modal){background:#000!important}
-body:not(.light) .term-nav-hero{border-color:#315c49!important}
+body:not(.light) .term-nav-hero{border-color:var(--border-hover)!important}
 body:not(.light) :is(.ov-holdings-table thead th,.ov-region-heading th,.finance-account-title,.ov-account-heading th){background:#0a0a0a!important}
 body:not(.light) :is(.card,.account-block,.ov-region-panel,.term-zone-portfolio,.term-zone-intel,.term-nav-chart,.term-nav-goal,.term-alloc-card){box-shadow:none!important}
+
+/* Color roles: blue = action/selection, green/red = financial result, amber = attention. */
+body .nav-notice-info{color:var(--text-3)}
+body :is(#ov-region-cn,#ov-region-us,#ov-region-au) th{border-left:0!important}
+body button.nav-btn.active{border-color:var(--control-selected-border)!important;background:var(--control-selected)!important;color:var(--control-link)!important}
+body :is(button.btn-danger,button.batch-del,button.danger,button[aria-label="删除资产"]):where(:enabled:hover,:focus-visible){color:var(--dn-soft)!important;border-color:var(--dn-soft)!important;background:var(--dn-bg)!important}
+body .term-nav-goal :is(.goal-ring,.goal-donut){color:var(--control-link)}
+body .finance-capital-line{color:var(--text-2)}
+body .ov-region-heading .three-currency small{color:var(--text-3)}
