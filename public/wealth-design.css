@@ -210,4 +210,30 @@ body summary{padding:8px 10px;border:1px solid var(--control-border);border-radi
  .ov-region-sort{gap:12px;margin:12px 0}
  .finance-section-heading>.three-currency{flex-basis:100%}
 }
+/* Keep the ledger controls in one toolbar, using wrapping rather than squeezing text. */
+@media(min-width:1001px){
+ .main{padding-top:12px}
+ .terminal-dashboard{gap:12px}
+ .term-zone-head>:is(.term-nav-hero,.term-nav-chart,.term-nav-goal,.term-alloc-card){min-height:176px;padding:14px 16px}
+ #page-overview .term-nav-hero .ov-hero-fx{margin-top:9px}
+ .term-nav-chart-foot{margin-top:6px}
+ .term-zone-portfolio{padding:13px!important}
+ .term-portfolio-hd{display:flex;flex-wrap:wrap;gap:6px 10px;margin-bottom:8px}
+ .term-portfolio-hd .card-title{margin-right:0;flex:none}
+ #ov-filter-toolbar{flex:1 1 540px;min-width:0}
+ #ov-filter-toolbar .ov-holding-filter-tools{padding:0;border:0;margin:0}
+ #ov-filter-toolbar .ov-holding-filters{display:flex!important;flex-wrap:wrap;align-items:center!important;gap:6px!important}
+ #ov-filter-toolbar .ov-holding-filters>div{display:flex;align-items:center;flex:0 1 auto;gap:4px;max-width:100%;width:auto}
+ #ov-filter-toolbar .ov-holding-filters label{margin:0;font-size:11px}
+ #ov-filter-toolbar select{height:32px;min-height:32px;font-size:12px;padding:4px 8px}
+ #ov-filter-region{width:104px}#ov-filter-account{width:138px}#ov-filter-type{width:108px}
+ #ov-filter-toolbar .ov-holding-filters>.btn{height:32px;min-height:32px;font-size:11px;padding:0 9px}
+ .ov-region-sort{margin:4px 0 8px}
+ .ov-region-columns{gap:12px}
+ .ov-region-panel .ov-holdings-table .ov-region-heading th{padding:10px 12px}
+ #page-overview .ov-region-heading .ov-group-heading{gap:5px}
+ .ov-region-panel .ov-holdings-table .ov-account-heading th{padding:8px 12px 6px}
+ .ov-region-panel tr[data-holding-key]{padding-top:8px;padding-bottom:8px}
+}
+@media(max-width:1000px){#ov-filter-toolbar{grid-column:1/-1;min-width:0}#ov-filter-toolbar .ov-holding-filter-tools{border:0;padding:0;margin:4px 0}}
 @media(prefers-reduced-motion:reduce){body button,body [role=button]{transition:none}}

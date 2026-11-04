@@ -1221,6 +1221,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
         <section class="term-zone term-zone-portfolio">
           <div class="term-portfolio-hd">
             <div class="card-title"><i class="ti ti-briefcase"></i> 资产持仓</div>
+            <div id="ov-filter-toolbar" aria-label="持仓筛选"></div>
             <span class="ov-holdings-note">全部分类 · 按账户分组</span><button type="button" class="btn btn-ghost btn-sm" onclick="LedgerUI.open('trade')">买卖股票</button><button type="button" class="btn btn-ghost btn-sm" onclick="LedgerUI.open('transfer')">转账</button><button type="button" class="btn btn-ghost btn-sm" onclick="openCashMovement()">现金变动</button><button type="button" class="btn btn-ghost btn-sm" onclick="LedgerUI.showWorkspace()">资金工作台</button><button type="button" class="btn btn-ghost btn-sm" id="home-stock-library" hidden onclick="openStockLibrary('history')">未持仓股票</button><div id="ledger-home-status" class="ledger-controls" aria-label="资金处理状态"></div>
           </div>
           <div id="gold-price-warn" style="display:none;margin-bottom:8px;padding:8px 12px;border-radius:8px;background:var(--warn-bg);border:1px solid rgba(217,119,6,.25);color:var(--warn);font-size:13px;">
@@ -4937,6 +4938,7 @@ function renderOverviewHoldings(){
       <div id="ov-holdings-table" class="ov-holdings-scroll" role="region" aria-label="各分类并排持仓"><div id="ov-holdings-body" class="ov-region-columns"></div></div>
       <div id="ov-holdings-status" class="ov-holdings-status" role="status" aria-live="polite"></div>
       <p class="ov-holdings-note">账面盈亏仅对应当前持仓，不包含已卖出资产和分红；通过成交入口记录的买入费用计入成本；整体收益请查看「NAV 历史」。</p>`;
+    document.getElementById('ov-filter-toolbar')?.append(root.querySelector('.ov-holding-filter-tools'));
     for(const [id,field] of [['ov-filter-region','region'],['ov-filter-account','account'],['ov-filter-type','type']]){
       document.getElementById(id).addEventListener('change',e=>{overviewHoldingFilters[field]=e.target.value;if(field==='region')overviewHoldingFilters.account='';renderOverviewHoldings();});
     }
