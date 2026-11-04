@@ -1698,6 +1698,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
       </div>
     </div>
 
+    <p id="m-type-guide" class="privacy-note" aria-live="polite"></p>
     <div class="fg-row c2">
       <div class="fg"><label for="m-account">账户名称（必填）</label><input type="text" id="m-account" aria-required="true" placeholder="支付宝 / 建设银行 / Tiger..."></div>
       <div class="fg"><label for="m-name">产品名称</label><input type="text" id="m-name" placeholder="余额宝 / AAPL / 定期存款..."></div>
@@ -6557,6 +6558,7 @@ function onType(){
   document.getElementById('td-contract-fields').hidden=document.getElementById('m-type').value!=='term_deposit';
   const t=document.getElementById('m-type').value;
   const r=document.getElementById('m-region').value;
+  const guide=document.getElementById('m-type-guide');if(guide)guide.textContent=({cash:'银行存款余额和券商未投资现金都选此项；Tiger 尚未买入 ETF 的款项登记为现金。',stock_us:'已买入的股票和 ETF 选此项；实际买入从券商现金扣款，银行转入券商请先记录转账。',fund_cn:'登记按份额及净值计价的基金或银行理财；证券账户内买入的 ETF 请选择股票 / ETF。',gold:'登记按克持有的积存金；黄金 ETF 请按其实际产品类型登记。',term_deposit:'登记有固定本金、利率和到期日的定期存款。',other:'不属于以上类型的资产，按实际币种和金额登记。'})[t]||'';
   document.getElementById('f-cash').style.display=['cash','other'].includes(t)?'block':'none';
   document.getElementById('f-fund').style.display=t==='fund_cn'?'block':'none';
   document.getElementById('f-gold').style.display=t==='gold'?'block':'none';
