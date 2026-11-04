@@ -74,10 +74,27 @@
   }
 
   function startTransfer(data,o){
-    const event=base(o,'transfer_pending'),source=cash(data,o.sourceRef),target=cash(data,o.targetRef),total=money(o.amount),fee=money(o.fee||0);
-    if(source.ref===target.ref||!(total>fee))throw Error('请选择不同的转入账户，扣款总额须大于手续费');
-    const id=Math.max(Number(data.nextId)||1,...data.products.map(p=>(Number(p.id)||0)+1)),transit={id,type:'in_transit',region:source.region,account:source.account,name:'在途 → '+target.account,currency:source.currency,amount:M.sum([total,-fee]),transfer:{status:'pending',sourceRef:source.ref,targetRef:target.ref,total,fee,sourceCurrency:source.currency,targetCurrency:target.currency,startDate:o.date,chainId:event.chainId,channel:event.channel,sourceAccount:source.account,targetAccount:target.account},createdAt:o.date};
-    event.transferId=id;event.feeAmount=fee;event.feeCurrency=source.currency;event.changes=[cashChange(data,source,-total),{ref:'p:'+id,before:null,after:transit}];return event;
+    const state=o.transferState||'pending';if(!['pending','arrived'].includes(state))throw Error('请选择到账状态');
+    const event=base(o,state==='arrived'?'transfer_received':'transfer_pending'),source=cash(data,o.sourceRef),total=money(o.amount),fee=money(o.fee||0);if(!(total>fee))throw Error('扣款总额须大于手续费');
+    let nextId=Math.max(Number(data.nextId)||1,...data.products.map(p=>(Number(p.id)||0)+1)),target,created=null;
+    if(o.targetNew){
+      const t=o.targetNew,account=String(t.account||'').trim(),currency=t.currency,region=t.region;if(!account||!['cn','us','au'].includes(region)||!['CNY','USD','AUD'].includes(currency))throw Error('请核对转入账户名称、地区和币种');
+      const matches=W.cashAccounts(data).filter(a=>a.region===region&&a.currency===currency&&a.account.toLowerCase()===account.toLowerCase());if(matches.length>1)throw Error('转入账户有多条现金记录，请明确选择现有现金项目');
+      if(matches.length)target=matches[0];else{const id=nextId++;created={id,type:'cash',region,account,name:String(t.name||'现金余额').trim(),currency,amount:0,createdAt:o.date,updatedAt:o.date};target={ref:'p:'+id,region,account,currency,amount:0};}
+    }else target=cash(data,o.targetRef);
+    if(source.ref===target.ref)throw Error('请选择不同的转出与转入账户');
+    const net=M.sum([total,-fee]);event.feeAmount=fee;event.feeCurrency=source.currency;event.changes=[cashChange(data,source,-total)];
+    if(state==='arrived'){
+      const supplied=o.received!==undefined&&o.received!==null&&o.received!=='';
+      if(source.currency!==target.currency&&!supplied)throw Error('跨币种已到账时，请填写实际到账金额');
+      const amount=supplied?money(o.received):net;if(!(amount>0))throw Error('实际到账金额须大于零');if(source.currency===target.currency&&amount!==net)throw Error('同币种到账金额须等于扣款减手续费，请核对手续费');
+      event.changes.push(created?{ref:target.ref,before:null,after:{...created,amount}}:cashChange(data,target,amount));
+      event.receipt={currency:target.currency,amount,sourceAmount:net,sourceCurrency:source.currency};
+    }else{
+      if(created)event.changes.push({ref:target.ref,before:null,after:created});
+      const id=nextId++,transit={id,type:'in_transit',region:source.region,account:source.account,name:'在途 → '+target.account,currency:source.currency,amount:net,transfer:{status:'pending',sourceRef:source.ref,targetRef:target.ref,total,fee,sourceCurrency:source.currency,targetCurrency:target.currency,startDate:o.date,chainId:event.chainId,channel:event.channel,sourceAccount:source.account,targetAccount:target.account},createdAt:o.date};event.transferId=id;event.changes.push({ref:'p:'+id,before:null,after:transit});
+    }
+    event.transfer={sourceRef:source.ref,targetRef:target.ref,sourceAccount:source.account,targetAccount:target.account,state,createdTarget:!!created};return event;
   }
   function transit(data,id){const p=data.products.find(p=>String(p.id)===String(id)&&p.type==='in_transit');if(!p)throw Error('该笔在途资金已处理或不存在');return p;}
   function processTransfer(data,o){const event=base(o,'transfer_processing'),p=transit(data,o.transferId);if(p.transfer.status==='processing')throw Error('该笔已标记处理中');if(o.date<p.transfer.startDate)throw Error('处理日期不能早于扣款日期');event.transferId=p.id;event.chainId=p.transfer.chainId;event.changes=[{ref:'p:'+p.id,before:clone(p),after:{...clone(p),transfer:{...p.transfer,status:'processing'}}}];return event;}

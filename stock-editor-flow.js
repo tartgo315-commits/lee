@@ -10,7 +10,7 @@ function syncStockFunding(reset=false){
  field('m-stock-settlement').hidden=!trading;
  const preview=field('m-stock-flow-preview');
  if(!trading){preview.textContent=action.value==='opening'?'登记已有持仓，不重复扣现金。以后增减持股数量时可自动联动现金。':action.value==='correction'?'只更正已有资料，不结算现金；这次更正会留在记录中。':'数量未变化，保存资料更新即可。';return;}
- try{const cashRow=cash.find(a=>a.ref===select.value);if(!cashRow)throw Error('该券商尚无对应币种的现金。请先添加券商现金记录，再用转账入口记录银行转入；买入只扣券商现金。');const price=WealthMath.number(field('m-stock-execution').value);if(!(price>0))throw Error((delta>0?'买入 ':'卖出 ')+Math.abs(delta)+' 股：填一次实际成交价，即可计算现金与平均成本。');
+ try{const cashRow=cash.find(a=>a.ref===select.value);if(!cashRow)throw Error('该券商尚无对应币种的现金。请先用转账入口记录银行转入；TIGER澳洲 AUD 现金可在转账时自动创建。');const price=WealthMath.number(field('m-stock-execution').value);if(!(price>0))throw Error((delta>0?'买入 ':'卖出 ')+Math.abs(delta)+' 股：填一次实际成交价，即可计算现金与平均成本。');
   const event=WealthMath.number(field('m-stock-fee').value);if(event===null||event<0)throw Error('手续费须为非负数');const gross=WealthMath.multiply(Math.abs(delta),price),amount=delta>0?WealthMath.sum([gross,event]):WealthMath.sum([gross,-event]);
   preview.textContent=(delta>0?'买入 ':'卖出 ')+Math.abs(delta)+' 股 · '+(delta>0?'自动扣除':'自动增加')+' '+fc(amount,currency,2)+'（已含手续费） · '+cashRow.account+' 闲置现金 '+fc(cashRow.amount,currency,2)+' → '+fc(WealthMath.sum([cashRow.amount,delta>0?-amount:amount]),currency,2)+'。平均成本由系统计算，不用再改。';
  }catch(e){preview.textContent=e.message;}
