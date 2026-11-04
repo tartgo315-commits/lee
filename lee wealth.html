@@ -4949,7 +4949,7 @@ function renderOverviewHoldings(){
   const accountOptions=[['','全部账户']],seen=new Set();
   for(const row of all){
     if(overviewHoldingFilters.region&&row.region!==overviewHoldingFilters.region)continue;
-    const key=overviewHoldingAccountKey(row.region,row.account);if(seen.has(key))continue;seen.add(key);accountOptions.push([key,row.account+' · '+HOLDING_SECTIONS[row.region]]);
+    const key=overviewHoldingAccountKey(row.region,row.account);if(seen.has(key))continue;seen.add(key);accountOptions.push([key,FinanceView.accountLabel(row.account,all.filter(r=>overviewHoldingAccountKey(r.region,r.account)===key).map(r=>r.product))+' · '+HOLDING_SECTIONS[row.region]]);
   }
   if(!accountOptions.some(([key])=>key===overviewHoldingFilters.account))overviewHoldingFilters.account='';
   syncOverviewHoldingOptions(document.getElementById('ov-filter-region'),regionOptions,overviewHoldingFilters.region);
@@ -4970,7 +4970,7 @@ function renderOverviewHoldings(){
   const display=[];
   for(const region of groupOverviewHoldingRows(selected)){
     display.push({heading:'region',label:HOLDING_SECTIONS[region.region],...region});
-    for(const account of region.accounts){display.push({heading:'account',label:account.account,...account});display.push(...account.rows);}
+    for(const account of region.accounts){display.push({heading:'account',label:FinanceView.accountLabel(account.account,account.rows.map(r=>r.product)),...account});display.push(...account.rows);}
   }
   let regionBody=null;
   for(const row of display){

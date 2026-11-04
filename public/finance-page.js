@@ -7,7 +7,7 @@ function financeGroupHtml(rows,currency){
  const groups=new Map();for(const row of rows){const key=JSON.stringify([row.product.region,row.account]);if(!groups.has(key))groups.set(key,[]);groups.get(key).push(row);}
  return [...groups.values()].map(list=>{const p=list[0].product,account=list[0].account,cny=WealthMath.sum(list.filter(r=>r.valuation.complete).map(r=>r.valuation.cny));
   const rowsHtml=list.map(compactHoldingHtml).join('');
-  return '<div class="account-block"><div class="finance-account-title">'+escOvHtml(account)+' · '+list.length+' 项</div><div class="products-wrap open">'+rowsHtml+'</div></div>';
+  return '<div class="account-block"><div class="finance-account-title">'+escOvHtml(FinanceView.accountLabel(account,list.map(r=>r.product)))+' · '+list.length+' 项</div><div class="products-wrap open">'+rowsHtml+'</div></div>';
  }).join('');
 }
 function renderFinancePage(){
