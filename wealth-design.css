@@ -1,16 +1,16 @@
 /* LEE Wealth — quiet surfaces, clear actions, dense financial information.
    References and design decisions: DESIGN.md. No accounting logic lives here. */
 :root{
- --bg-page:#080e16;--bg-card:#101a27;--bg-muted:#172435;--bg-hover:#203249;
- --border:#293b50;--border-light:#203044;--border-hover:#617893;--border-accent:#4c8d79;
- --text-1:#eef4fc;--text-2:#c3d0e2;--text-3:#9aaec8;--text-4:#91a4bd;
+ --bg-page:#000;--bg-card:#000;--bg-muted:#0a0a0a;--bg-hover:#171717;
+ --border:#292929;--border-light:#202020;--border-hover:#666;--border-accent:#4c8d79;
+ --text-1:#f5f5f5;--text-2:#d4d4d4;--text-3:#aaa;--text-4:#999;
  --accent:#9fe3cb;--accent-blue:#9cbcf3;--up:#74d3aa;--up-soft:#74d3aa;--up-bg:#12352b;
  --dn:#f28a92;--dn-soft:#f28a92;--dn-bg:#352329;--warn:#e5b978;--warn-bg:#332c22;
  --purple:#b8a7e5;--purple-bg:#2b2638;
- --card-surface:#101a27;--card-border:#293b50;--card-hover-border:#4a6585;
+ --card-surface:#000;--card-border:#292929;--card-hover-border:#666;
  --font:'Inter','Microsoft YaHei','PingFang SC',system-ui,sans-serif;
  --mono:var(--font);--radius-sm:7px;--radius-md:9px;--radius-lg:14px;
- --control-bg:#1d2c40;--control-hover:#293e58;--control-border:#71849d;--control-text:#eef4fc;
+ --control-bg:#121212;--control-hover:#222;--control-border:#666;--control-text:#f5f5f5;
  --control-primary:#9fe3cb;--control-primary-hover:#c2f1df;--control-on-primary:#112b23;
  --control-selected:#173b31;--control-selected-border:#82bfa9;--control-link:#b6cffa;
  --control-danger-bg:#321f2b;--control-danger-text:#f5a5b0;--control-danger-border:#ac6b7b;
@@ -255,3 +255,8 @@ body summary{padding:8px 10px;border:1px solid var(--control-border);border-radi
 }
 @media(max-width:1000px){#ov-filter-toolbar{grid-column:1/-1;min-width:0}#ov-filter-toolbar .ov-holding-filter-tools{border:0;padding:0;margin:4px 0}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+/* Night surfaces use black; borders and interaction states provide separation. */
+body:not(.light) :is(.topbar,.navigation-row,.term-nav-hero,.modal,.holding-details-modal){background:#000!important}
+body:not(.light) .term-nav-hero{border-color:#315c49!important}
+body:not(.light) :is(.ov-holdings-table thead th,.ov-region-heading th,.finance-account-title,.ov-account-heading th){background:#0a0a0a!important}
+body:not(.light) :is(.card,.account-block,.ov-region-panel,.term-zone-portfolio,.term-zone-intel,.term-nav-chart,.term-nav-goal,.term-alloc-card){box-shadow:none!important}
