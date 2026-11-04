@@ -71,7 +71,7 @@
   $('ti-backup').onclick=()=>{try{const key=localStorage.getItem(SK+'_tiger_last_backup'),raw=key&&localStorage.getItem(key);if(!raw)throw Error('暂无截图导入备份');download(JSON.parse(raw),'wealth-before-tiger-'+today()+'.json');}catch(e){$('ti-status').textContent=e.message;}};
   $('ti-drop').ondragover=e=>e.preventDefault();$('ti-drop').ondrop=e=>{e.preventDefault();void upload(e.dataTransfer.files[0]);};
   dialog.addEventListener('keydown',e=>{if(e.key==='Escape'){e.stopPropagation();close();}if(e.key==='Tab'){const items=[...dialog.querySelectorAll('button,input,select,summary,[tabindex="0"]')].filter(x=>!x.disabled&&x.getClientRects().length),first=items[0],last=items.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}});
-  for(const region of ['us']){const button=text('button','Tiger 截图导入');button.className='btn btn-outline btn-sm';button.onclick=open;document.querySelector('#page-'+region+' .ph-actions').prepend(button);}
+  for(const region of ['us']){const button=text('button','美股截图导入');button.className='btn btn-outline btn-sm';button.onclick=open;document.querySelector('#page-'+region+' .ph-actions').prepend(button);}
  }
  window.TigerImportUI={open,close};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup);else setup();
 })();
