@@ -28,14 +28,5 @@
  #page-overview .ov-region-panel tr[data-holding-key]>td:nth-child(5) .ov-holding-sub{font-size:10px}
 }
 
-/* Filled action surfaces distinguish buttons from figures and labels. */
+
 .term-portfolio-hd{gap:8px;row-gap:8px;margin-bottom:10px;flex-wrap:wrap}
-.term-portfolio-hd>.btn,.finance-section-heading>.btn{height:36px;min-height:36px;padding:0 13px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;background:#263447;color:#f1f5f9;border:1px solid #52647b;box-shadow:0 2px 3px #0003}
-.term-portfolio-hd>.btn[onclick="LedgerUI.open('trade')"],.term-portfolio-hd>.btn[onclick="LedgerUI.open('transfer')"]{background:#2463b4;border-color:#649be0;color:#fff}
-.term-portfolio-hd>.btn:hover,.finance-section-heading>.btn:hover{background:#354b66;border-color:#90b5e3;box-shadow:0 3px 7px #0005}
-.term-portfolio-hd>.btn[onclick="LedgerUI.open('trade')"]:hover,.term-portfolio-hd>.btn[onclick="LedgerUI.open('transfer')"]:hover{background:#3077d0;border-color:#a1c8ff}
-.term-portfolio-hd>.btn:active,.finance-section-heading>.btn:active{transform:translateY(1px);box-shadow:inset 0 2px 4px #0004}
-.term-portfolio-hd>.btn:focus-visible,.finance-section-heading>.btn:focus-visible,.ov-holding-filters>.btn:focus-visible,.ov-region-sort>.btn:focus-visible{outline:2px solid #a1c8ff;outline-offset:3px}
-.ov-holding-filters>.btn,.ov-region-sort>.btn,#ledger-home-status .btn{background:#223044;border:1px solid #52647b;color:#e2eaf4;border-radius:6px;cursor:pointer}
-.ov-holding-filters>.btn:hover,.ov-region-sort>.btn:hover,#ledger-home-status .btn:hover{background:#354b66;border-color:#90b5e3}
-@media(max-width:768px){.term-portfolio-hd>.btn,.finance-section-heading>.btn{min-height:40px;height:40px;padding:0 12px}.term-portfolio-hd .card-title{flex-basis:100%}}
