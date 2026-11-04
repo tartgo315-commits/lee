@@ -14,6 +14,7 @@
 <script src="stock-sessions.js"></script>
 <script src="movement-engine.js"></script>
 <script src="ledger-workflows.js"></script>
+<script src="account-picker.js"></script>
 <script src="ledger-ui.js"></script>
 <script src="ledger-assistant-context.js"></script>
 <script src="ledger-assistant-ui.js"></script>
@@ -6552,6 +6553,7 @@ function onRegion(){
 function stockEditorIdentity(){return WealthMath.stockIdentity({ticker:document.getElementById('m-ticker').value,stockMarket:document.getElementById('m-stock-market').value});}
 function syncStockCurrencyLabels(){const c=stockEditorIdentity().currency;for(const [id,label] of [['m-cost','成本价'],['m-sprice','当前价'],['m-stock-execution','本次实际成交价'],['m-stock-fee','本次手续费'],['m-stoploss','止损价（可选）']])document.querySelector('label[for="'+id+'"]').textContent=label+' ('+c+')';document.querySelector('label[for="m-stock-fx"]').textContent='本次成交日 '+c+'/CNY（选填）';}
 function onType(){
+  if(typeof AccountPicker!=='undefined')AccountPicker.sync('m-account');
   document.getElementById('td-contract-fields').hidden=document.getElementById('m-type').value!=='term_deposit';
   const t=document.getElementById('m-type').value;
   const r=document.getElementById('m-region').value;
@@ -6811,6 +6813,7 @@ function editProduct(id){
     document.getElementById('m-date').value=p.updatedAt||today();
   }
   syncAssetEditorSections();
+  if(typeof AccountPicker!=='undefined')AccountPicker.sync('m-account');
   if(typeof syncStockFunding==='function')syncStockFunding(true);
 }
 

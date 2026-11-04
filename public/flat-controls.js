@@ -23,6 +23,7 @@
   }
  }
  function enhance(select){
+  if(select.hasAttribute('data-native-dropdown'))return;
   if(states.has(select)){refresh(select);return;}
   const group=document.createElement('div');group.className='flat-options';group.setAttribute('role',select.multiple?'group':'radiogroup');
   const label=select.labels?.[0];if(label){if(!label.id)label.id='flat-label-'+(++serial);group.setAttribute('aria-labelledby',label.id);label.addEventListener('click',e=>{if(mobile())return;e.preventDefault();group.querySelector('[tabindex="0"]')?.focus();});}else group.setAttribute('aria-label',select.getAttribute('aria-label')||'选项');
