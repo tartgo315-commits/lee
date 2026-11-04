@@ -1095,7 +1095,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
     </button>
     <div class="topbar-right"><button type="button" class="btn btn-outline btn-sm" id="assistant-launcher" data-assistant-launcher aria-controls="ledger-assistant" aria-expanded="false" onclick="LedgerAssistant.open()">AI 账本</button>
       <button type="button" class="btn btn-icon btn-sm" onclick="exportData()" title="导出 JSON"><i class="ti ti-download"></i></button>
-      <button type="button" class="btn btn-icon btn-sm" id="theme-btn" onclick="toggleNight()" title="深色 / 日间主题切换" aria-label="切换深浅色主题">☀️</button>
+      <button type="button" class="btn btn-outline btn-sm" id="theme-btn" onclick="toggleNight()" title="切换日间 / 夜间配色" aria-label="切换日间 / 夜间配色">日间模式</button>
       <button type="button" class="btn btn-outline btn-sm" id="snap-btn" onclick="takeSnapshot()" title="写入今日 NAV 历史快照"><i class="ti ti-camera"></i> 快照</button>
       <button type="button" class="btn btn-outline btn-sm" id="refresh-all-btn" onclick="refreshAllQuotes()" title="更新汇率与行情；不记录快照、不拉取资讯"><i class="ti ti-refresh"></i> 刷新行情</button>
       <button type="button" class="btn btn-icon btn-sm" onclick="showPage('settings')" title="设置"><i class="ti ti-settings"></i></button>
@@ -3607,11 +3607,13 @@ function updateGoalBar(){
   remEl.textContent=remaining>0?'还差 '+fc(remaining,'CNY',0):'🎉 已达成';
   const achieved=Math.min(cny,target);
   const gap=Math.max(0,target-cny);
+  const goalFill=document.body.classList.contains('light')?'#24775d':'rgba(5,150,105,.85)';
+  const goalTrack=document.body.classList.contains('light')?'#c8d8d0':'rgba(255,255,255,.08)';
   if(ctxG){
     if(gap>0.01){
-      ovGoalChart=upsertOvDonutChart(ovGoalChart,ctxG,['已达','差额'],[achieved,gap],['rgba(5,150,105,.85)','rgba(255,255,255,.08)'],['rgba(5,150,105,.45)','rgba(255,255,255,.06)'],target);
+      ovGoalChart=upsertOvDonutChart(ovGoalChart,ctxG,['已达','差额'],[achieved,gap],[goalFill,goalTrack],[goalFill,goalTrack],target);
     }else{
-      ovGoalChart=upsertOvDonutChart(ovGoalChart,ctxG,['已达'],[target],['rgba(5,150,105,.85)'],['rgba(5,150,105,.45)'],target);
+      ovGoalChart=upsertOvDonutChart(ovGoalChart,ctxG,['已达'],[target],[goalFill],[goalFill],target);
     }
   }
   renderGoalForecast(cny,target);
@@ -5124,10 +5126,10 @@ function renderNavMiniChart(days,opts){
     return;
   }
   if(ovChart){try{ovChart.destroy();}catch(e){}ovChart=null;}
-  const line=isDark?'#10b981':'#ca8a04';
+  const line=isDark?'#10b981':'#24775d';
   const g=ctx.getContext('2d').createLinearGradient(0,0,0,200);
-  g.addColorStop(0,isDark?'rgba(16,185,129,.18)':'rgba(202,138,4,.22)');
-  g.addColorStop(1,isDark?'rgba(16,185,129,0)':'rgba(202,138,4,0)');
+  g.addColorStop(0,isDark?'rgba(16,185,129,.18)':'rgba(36,119,93,.14)');
+  g.addColorStop(1,isDark?'rgba(16,185,129,0)':'rgba(36,119,93,0)');
   const grid=isDark?'rgba(255,255,255,.06)':'rgba(28,25,23,.08)';
   const tick=isDark?'#6B7280':'#78716c';
   ovChart=new Chart(ctx,{type:'line',data:{labels:lbls,datasets:[{data:vals,borderColor:line,backgroundColor:g,borderWidth:2,fill:true,tension:0.4,pointRadius,pointHoverRadius:4,pointBackgroundColor:line}]},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fc(c.raw,'CNY')}}},scales:{x:{grid:{color:grid},ticks:{maxTicksLimit:6,font:{family:'ui-monospace,monospace',size:10},color:tick}},y:{grid:{color:grid},ticks:{callback:v=>fc(v,'CNY',0),font:{family:'ui-monospace,monospace',size:10},color:tick}}}}});
@@ -5975,6 +5977,11 @@ function renderPieLegend(el,parts,cny){
   if(!parts.length){el.innerHTML='';return;}
   el.innerHTML=parts.map(p=>`<div class="ov-pie-leg-row"><span class="ov-pie-leg-dot" style="background:${p.bg}"></span><span class="ov-pie-leg-name">${escOvHtml(p.l)}</span><span class="ov-pie-leg-val">${(p.d/cny*100).toFixed(1)}% · ${fc(p.d,'CNY',0)}</span></div>`).join('');
 }
+function applyDayChartPalette(parts){
+  if(!document.body.classList.contains('light'))return;
+  const colors={'中国':'#527ba8','美国':'#aa8030','澳洲':'#8763ad','未标地区':'#708295','现金 / 活期':'#708295','在途 / 暂估':'#8763ad','定期 / 锁定':'#527ba8','投资类':'#aa8030'};
+  for(const part of parts){if(colors[part.l])part.bg=part.bd=colors[part.l];}
+}
 function upsertOvDonutChart(ref,canvas,labels,data,bgColors,bdColors,cny){
   if(!canvas)return ref;
   const chartOpts={
@@ -6083,6 +6090,7 @@ function renderOverviewDashboard(){
   if(rUs>0.01)regParts.push({l:'美国',d:rUs,bg:'rgba(201,162,39,.55)',bd:'rgba(201,162,39,.35)'});
   if(rAu>0.01)regParts.push({l:'澳洲',d:rAu,bg:'rgba(167,139,250,.55)',bd:'rgba(167,139,250,.35)'});
   if(misc>0.01)regParts.push({l:'未标地区',d:misc,bg:'rgba(107,114,128,.45)',bd:'rgba(107,114,128,.25)'});
+  applyDayChartPalette(regParts);
   ovDashChartRegion=upsertOvDonutChart(
     ovDashChartRegion,ctxR,
     regParts.map(x=>x.l),regParts.map(x=>x.d),
@@ -6095,6 +6103,7 @@ function renderOverviewDashboard(){
   if(bd.in_transit>0.01)liqParts.push({l:'在途 / 暂估',d:bd.in_transit,bg:'rgba(167,139,250,.65)',bd:'rgba(167,139,250,.4)'});
   if(lockV>0.01)liqParts.push({l:'定期 / 锁定',d:lockV,bg:'rgba(96,165,250,.55)',bd:'rgba(96,165,250,.35)'});
   if(invV>0.01)liqParts.push({l:'投资类',d:invV,bg:'rgba(201,162,39,.55)',bd:'rgba(201,162,39,.35)'});
+  applyDayChartPalette(liqParts);
   ovDashChartLiq=upsertOvDonutChart(
     ovDashChartLiq,ctxLiq,
     liqParts.map(x=>x.l),liqParts.map(x=>x.d),
@@ -6909,13 +6918,17 @@ function importData(input){
 }
 function clearAll(){if(!confirm(typeof CloudSyncUI!=='undefined'&&CloudSyncUI.isConnected()?'确定清空账本？此操作会同步到其他设备，请先导出备份。':'确定清空所有数据？'))return;calculationStorageReadFailed=false;D=WealthMath.migrate(blank());save();renderOverview();renderSidebar();maybeShowHttpDataTip();showToast({message:'已清空本地账本',type:'info',duration:2800});}
 
-// ══ THEME：默认高奢暗黑仪表盘 ══
+// Day and night presentation preferences are separate from the asset ledger.
+function syncThemeButton(){
+  const light=document.body.classList.contains('light'),btn=document.getElementById('theme-btn');
+  document.documentElement.classList.toggle('dark',!light);
+  document.documentElement.style.colorScheme=light?'light':'dark';
+  if(btn){btn.innerHTML='<i class="ti ti-'+(light?'moon':'sun')+'" aria-hidden="true"></i><span>'+(light?'夜间模式':'日间模式')+'</span>';btn.setAttribute('aria-label',light?'切换到夜间配色':'切换到日间配色');btn.title=light?'当前为日间配色，点击切换夜间':'当前为夜间配色，点击切换日间';}
+}
 function toggleNight(){
   document.body.classList.toggle('light');
   localStorage.setItem('wo_light',document.body.classList.contains('light')?'1':'0');
-  document.documentElement.classList.toggle('dark',!document.body.classList.contains('light'));
-  const btn=document.getElementById('theme-btn');
-  if(btn) btn.textContent=document.body.classList.contains('light')?'🌙':'☀️';
+  syncThemeButton();
   if(document.getElementById('page-overview')?.classList.contains('active'))renderOverviewDashboard();
   try{renderNavMiniChart(ovRange,{force:true});}catch(e){}
   try{renderHistory();}catch(e){}
@@ -6925,19 +6938,9 @@ function toggleSidebarRail(){
   document.body.classList.toggle('sidebar-collapsed');
   localStorage.setItem('wo_sb_rail',document.body.classList.contains('sidebar-collapsed')?'1':'0');
 }
-(function themeMigrateOnce(){
-  const k='wo_theme_v',VER='5dark';
-  if(localStorage.getItem(k)===VER)return;
-  localStorage.removeItem('wo_light');
-  localStorage.removeItem('wo_night');
-  localStorage.setItem(k,VER);
-})();
-if(localStorage.getItem('wo_light')==='1')document.body.classList.add('light');
-document.documentElement.classList.toggle('dark',!document.body.classList.contains('light'));
-(function syncThemeBtn(){
-  const btn=document.getElementById('theme-btn');
-  if(btn) btn.textContent=document.body.classList.contains('light')?'🌙':'☀️';
-})();
+// Default to daylight when no explicit preference is saved. Never reset a saved choice.
+document.body.classList.toggle('light',localStorage.getItem('wo_light')!=='0');
+syncThemeButton();
 if(localStorage.getItem('wo_sb_rail')==='1')document.body.classList.add('sidebar-collapsed');
 
 // ══ BATCH IMPORT ══

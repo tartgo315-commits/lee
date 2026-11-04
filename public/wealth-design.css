@@ -17,15 +17,32 @@
  --control-focus:#b9d7ff;
 }
 body.light{
- --bg-page:#f3f4f6;--bg-card:#fff;--bg-muted:#f0f2f5;--bg-hover:#e9edf2;
- --border:#d9dee6;--border-light:#e8ebf0;--border-hover:#a9b4c2;--text-1:#202630;
- --text-2:#424c5a;--text-3:#637083;--text-4:#737e8e;--card-surface:#fff;--card-border:#d9dee6;
- --control-bg:#f2f4f7;--control-hover:#e3e8ef;--control-border:#b0bac9;--control-text:#2d3746;
- --control-primary:#246b52;--control-primary-hover:#1c5944;--control-on-primary:#fff;
- --control-selected:#e0eee8;--control-selected-border:#46856d;--control-link:#335f9c;
- --control-danger-bg:#fff1f2;--control-danger-text:#a73949;--control-danger-border:#d5a4ac;
- --control-focus:#477cb5;
+ --bg-page:#f1f5f8;--bg-card:#fff;--bg-muted:#eaf0f5;--bg-hover:#e2eaf2;
+ --border:#d3dee8;--border-light:#e3eaf0;--border-hover:#8aa0b6;--border-accent:#7cae98;
+ --text-1:#172b41;--text-2:#344e68;--text-3:#526780;--text-4:#586c83;
+ --accent:#206c54;--accent-blue:#3663a8;--up:#167248;--up-soft:#167248;--up-bg:#e5f3eb;
+ --dn:#b4374f;--dn-soft:#b4374f;--dn-bg:#fcecf0;--warn:#925619;--warn-bg:#fff3df;
+ --purple:#6d4f9d;--purple-bg:#f0eaf7;--card-surface:#fff;--card-border:#d3dee8;--card-hover-border:#9db1c4;
+ --control-bg:#f5f8fa;--control-hover:#e2eaf2;--control-border:#7c8fa5;--control-text:#23354b;
+ --control-primary:#206c54;--control-primary-hover:#18583f;--control-on-primary:#fff;
+ --control-selected:#e4f1eb;--control-selected-border:#518474;--control-link:#335f9c;
+ --control-danger-bg:#fff1f3;--control-danger-text:#a52e44;--control-danger-border:#b76b7c;
+ --control-focus:#396ba4;
+ --bg:var(--bg-page);--bg2:var(--bg-card);--bg3:var(--bg-muted);--bg4:var(--bg-hover);
+ --surface:var(--bg-card);--surface-muted:var(--bg-muted);--surface-header:var(--bg-card);
+ --border2:var(--border);--text:var(--text-1);--text2:var(--text-2);--text3:var(--text-3);--text4:var(--text-4);
+ --green:var(--up);--green-bg:var(--up-bg);--red:var(--dn);--red-bg:var(--dn-bg);
+ --gold:var(--warn);--gold-bg:var(--warn-bg);--teal:var(--accent-blue);--teal-bg:var(--up-bg);
+ --accent2:var(--accent-blue);--accent-soft:var(--purple-bg);--cn:var(--accent-blue);--us:var(--warn);--au:var(--purple);
+ color-scheme:light;
 }
+#theme-btn{display:inline-flex;min-width:78px;gap:6px;font-size:12px}
+body.light .term-nav-hero{background:#e9f5ef!important;border-color:#a9cdbb!important}
+body.light .term-nav-hero #ov-cny{color:#164e3a}
+body.light :is(.term-zone-portfolio,.term-zone-intel,.term-nav-chart,.term-nav-goal,.term-alloc-card,.account-block){box-shadow:0 1px 3px #172b4108}
+body.light .modal,body.light .holding-details-modal{box-shadow:0 20px 70px #172b4126}
+body.light :is(.modal.modal-ai,.modal-ai .ov-copilot-wealth,.modal-ai .ai-pb-panel){background:var(--bg-card)!important;color:var(--text-1)}
+@media(max-width:1000px){#theme-btn{display:none}}
 /* Buttons use a shared treatment, while navigation and detail links have their own roles. */
 body :is(button,[role="button"]):where(:not(.finance-item):not(.ov-holding-name)){
  background:var(--control-bg)!important;color:var(--control-text)!important;

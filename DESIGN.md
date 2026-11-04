@@ -18,5 +18,6 @@ The implementation uses original CSS, not third-party assets or copied source.
 - Consistent font weights, tabular numeric alignment, spacing and corner radii across overview, banking, stocks, history, settings and dialogs.
 - Desktop rows keep compact visible edit/delete controls; mobile preserves the existing 44px action menu.
 - Accounting, quotes, transfers, asset identities and historical data are unchanged.
+- Daylight theme: pale blue-white canvas, white cards, dark navy text and deep green actions. Chart colors, profit/loss, forms and dialogs adapt with the same semantic roles. A visible desktop toggle and the mobile More menu switch themes; the browser remembers the choice. Unset preferences start in daylight, while explicit night preferences remain intact.
 
 `wealth-design.css` replaces the previous `interaction-ui.css` entry point. Existing accounting and layout behavior stays in its original modules.
