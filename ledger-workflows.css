@@ -6,3 +6,14 @@
 .ov-holding-filter-tools label:has(input[type=checkbox]){display:flex;gap:6px;align-items:center;font-size:13px;white-space:nowrap}.ov-holding-filter-tools input[type=checkbox]{width:17px;height:17px}.ledger-card li p{font-size:13px;overflow-wrap:anywhere}.ledger-form-grid .privacy-note{margin:3px 0 10px}
 
 .products-wrap.open{max-height:480px;overflow:auto;overscroll-behavior:contain}#us-stock-panel{max-height:220px;overflow:auto}.account-header{padding-top:12px;padding-bottom:12px}.account-block{margin-bottom:10px}
+.correction-details,.correction-help,.ledger-form-grid .fg:has(#lf-event),.ledger-form-grid .fg:has(#lf-method){grid-column:1/-1;min-width:0}
+.correction-details{padding:12px;margin-bottom:14px;border:1px solid var(--border);border-radius:10px;background:var(--bg-muted)}
+.correction-details h3{font-size:15px;margin:0 0 6px;color:var(--text-1)}
+.correction-details p,.correction-help p{font-size:13px;line-height:1.65;margin:6px 0;overflow-wrap:anywhere}
+.correction-change h4{font-size:14px;margin:12px 0 6px;color:var(--text-1)}
+.correction-change table{width:100%;table-layout:fixed;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+.correction-change th,.correction-change td{padding:8px 5px;text-align:left;vertical-align:top;border-bottom:1px solid var(--border);overflow-wrap:anywhere;white-space:normal}
+.correction-change th{color:var(--text-3);font-weight:500}.correction-change td{color:var(--text-1)}
+.correction-change th:first-child{width:24%}.correction-change td:last-child{font-weight:650}
+.correction-help{border-left:3px solid var(--warn);padding:2px 10px;margin:0 0 12px;color:var(--text-2)}
+@media(max-width:480px){.correction-details{padding:9px}.correction-change th,.correction-change td{padding:7px 3px;font-size:12px}}
