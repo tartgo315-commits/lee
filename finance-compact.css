@@ -30,3 +30,4 @@
 
 
 .term-portfolio-hd{gap:8px;row-gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.finance-title-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.finance-profit-btn{font:600 12px/1.4 var(--font);font-variant-numeric:tabular-nums;color:var(--text-2);background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:4px 7px;cursor:pointer;white-space:nowrap;min-height:28px;text-transform:none;letter-spacing:normal}.finance-profit-btn.positive{color:var(--up-soft)}.finance-profit-btn.negative{color:var(--dn-soft)}.finance-profit-btn:hover{border-color:currentColor}.finance-profit-btn:focus-visible{outline:2px solid var(--up);outline-offset:2px}#ov-region-us h3{display:flex;align-items:center;gap:7px;flex-wrap:wrap}#ov-region-us .ov-group-heading{flex-wrap:wrap}#finance-profit-modal .modal{max-width:min(620px,96vw)}#finance-profit-body p{font-size:14px;line-height:1.65;margin:8px 0;overflow-wrap:anywhere}

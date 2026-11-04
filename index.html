@@ -1285,10 +1285,9 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
       <div id="us-stock-panel" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:12px;margin-bottom:20px"></div>
       <div class="page-header">
         <div>
-          <div class="ph-label"><i class="ti ti-chart-candle"></i> 股票 / 金融</div>
+          <div class="ph-label finance-title-line"><i class="ti ti-chart-candle"></i> 股票 / 金融 <span id="us-growth"></span></div>
           <div class="ph-main" id="us-total">$ —</div>
           <div class="ph-sub" id="us-sub">—</div>
-          <div class="ph-growth" id="us-growth" style="display:none"></div>
         </div>
         <div class="ph-actions">
           <button class="btn btn-outline btn-sm" onclick="refreshStocks()"><i class="ti ti-refresh"></i> 刷新股票</button>
@@ -1509,8 +1508,8 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
         <div class="settings-list">
           <div class="settings-item">
             <div class="settings-item-main">
-              <div class="settings-item-label"><i class="ti ti-chart-candle"></i> Tiger 账户本金（AUD）</div>
-              <div class="settings-item-desc">美国区顶部「相对本金账面变化（含入出金）」增长比例：初始投入澳币 vs 当前市值（含证券+闲置）</div>
+              <div class="settings-item-label"><i class="ti ti-chart-candle"></i> 股票 / 金融累计净投入（AUD）</div>
+              <div class="settings-item-desc">填写截至现在的累计投入减转出，含美股、澳洲股票与券商现金；保存时已有资金记录视为已包含，此后的转入 / 转出自动增减，不重复计入。</div>
               <div id="principal-status"></div>
             </div>
             <div class="settings-item-actions">
@@ -1828,6 +1827,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
     </div><div class="movement-actions"><button type="button" class="btn btn-ghost" onclick="cancelMovement()">返回修改</button><button type="button" class="btn btn-primary" id="mv-submit" onclick="commitMovement()">确认变动并保存</button></div>
   </div>
 </div>
+<div class="overlay" id="finance-profit-modal" role="dialog" aria-modal="true" aria-labelledby="finance-profit-title"><div class="modal"><div class="movement-header"><h2 id="finance-profit-title">股票 / 金融累计盈亏</h2><button type="button" class="btn btn-icon" aria-label="关闭累计盈亏明细" onclick="closeModal('finance-profit-modal')">×</button></div><div id="finance-profit-body" class="holding-details-body"></div></div></div>
 <div class="overlay" id="modal-ledger" role="dialog" aria-modal="true" aria-labelledby="ledger-title">
  <div class="modal"><div class="movement-header"><h2 id="ledger-title">资金工作台</h2><button type="button" class="btn btn-icon" aria-label="关闭资金工作台" onclick="LedgerUI.close()">×</button></div>
  <div class="mobile-modal-scroll"><div id="ledger-form" class="ledger-form-grid"></div><div id="ledger-preview" aria-live="polite"></div><p id="ledger-error" role="alert"></p></div>
@@ -3286,33 +3286,8 @@ function totalCNY(region){
   return s;
 }
 /** 美国区相对初始本金（AUD，由用户设置）的增长 */
-function getUsPrincipalGrowth(){
-  const rcny=totalCNY('us');
-  const principalAUD=Number(D.settings?.usPrincipalAUD)>0?Number(D.settings.usPrincipalAUD):0;
-  const currentAUD=fromCNY(rcny,'AUD');
-  const currentUSD=fromCNY(rcny,'USD');
-  const principalCny=toCNY(principalAUD,'AUD');
-  const pnlAUD=currentAUD-principalAUD;
-  const pnlCNY=rcny-principalCny;
-  const pnlUSD=currentUSD-fromCNY(principalCny,'USD');
-  const pnlPct=principalAUD>0?(pnlAUD/principalAUD*100):0;
-  return{principalAUD,currentAUD,currentUSD,pnlAUD,pnlUSD,pnlCNY,pnlPct,isPos:pnlAUD>=0};
-}
-function updateUsGrowthDisplay(){
-  const el=document.getElementById('us-growth');
-  if(!el)return;
-  const rcny=totalCNY('us');
-  if(!(rcny>0)||!(Number(D.settings?.usPrincipalAUD)>0)||!valuationStatus('us').complete){
-    el.style.display='none';
-    el.innerHTML='';
-    return;
-  }
-  const g=getUsPrincipalGrowth();
-  const sign=g.isPos?'+':'';
-  const col=g.isPos?'var(--up)':'var(--dn)';
-  el.style.display='block';
-  el.innerHTML=`<span style="color:${col}">${sign}${fc(g.pnlAUD,'AUD',0)} · ${sign}${safePctFixed(g.pnlPct,1)}%</span><div class="ph-growth-sub">本金 ${fc(g.principalAUD,'AUD',0)} → 现值 ${fc(g.currentAUD,'AUD',0)}</div>`;
-}
+function getUsPrincipalGrowth(){const p=financeProfitStatus();return {...p,principalAUD:p.netAud,currentAUD:p.currentAud,pnlAUD:p.profitAud,pnlPct:p.percent,isPos:p.profitAud>=0};}
+function updateUsGrowthDisplay(){const el=document.getElementById('us-growth');if(el){el.style.display='inline-flex';el.innerHTML=financeProfitHtml();}}
 
 // ══ PAGE NAV ══
 const titles={overview:'总览',cn:'🇨🇳 中国境内',us:'股票 / 金融',au:'🇦🇺 澳洲',history:'NAV 历史',news:'📰 资讯',fx:'汇率设置',settings:'系统设置'};
@@ -4989,6 +4964,7 @@ function renderOverviewHoldings(){
       cell.colSpan=6;wrap.className='ov-group-heading';title.textContent=row.label;total.className='ov-group-total';
       text(total,row.count+' 项持仓'+(row.missing?' · '+row.missing+' 项估值不完整':''));
       const amount=document.createElement('div');if(typeof threeCurrencyHtml==='function')amount.innerHTML=(row.missing?'已知部分 ':'')+threeCurrencyHtml(row.knownCny);else amount.textContent=(row.missing?'已知部分 ':'合计 ')+fc(row.knownCny,'CNY',0);total.append(amount);
+      if(row.heading==='region'&&row.region==='us'&&row.count===all.filter(r=>r.region==='us').length){const pnl=document.createElement('span');pnl.innerHTML=financeProfitHtml();title.append(pnl);}
       wrap.append(title,total);cell.append(wrap);tr.append(cell);regionBody.append(tr);continue;
     }
     const p=row.product,v=row.valuation,tr=document.createElement('tr');tr.dataset.holdingKey=row.key;
@@ -6848,7 +6824,7 @@ function renderSettings(){
   document.getElementById('export-calc-backup').disabled=!localStorage.getItem(SK+'_before_calculation_v3');
   document.getElementById('accounting-zone').value=D.settings?.accountingTimeZone||'Asia/Shanghai';
   if(!D.settings) D.settings={};
-  document.getElementById('cfg-principal-aud').value = D.settings.usPrincipalAUD || '';
+  document.getElementById('cfg-principal-aud').value = FinanceView.capital(D).netAud ?? '';
   document.getElementById('cfg-principal-usd').value = D.settings.usPrincipalUSD || '';
   document.getElementById('pin-status').textContent=localStorage.getItem('lee_pin_hash')?'已设置 PIN。':'尚未设置 PIN。';
   checkGateStatus();
@@ -6867,7 +6843,7 @@ function savePrincipal(){
   const v = parseFloat(document.getElementById('cfg-principal-aud').value);
   if(!D.settings) D.settings={};
   if(!Number.isFinite(v)||v<=0){showToast({message:'请输入大于零的本金',type:'warn'});return;}
-  D.settings.usPrincipalAUD=v; save(); renderOverview();
+  D.settings.usPrincipalAUD=v;D.settings.financePrincipalIncludedIds=(D.movementLog||[]).filter(e=>!e.reversedAt).map(e=>e.id);save();renderOverview();if(document.getElementById('page-us').classList.contains('active'))renderFinancePage();
   const s=document.getElementById('principal-status');
   s.innerHTML='<div class="alert alert-ok">✅ 已保存</div>';
   setTimeout(()=>s.innerHTML='',3000);

@@ -27,11 +27,8 @@ check('New accounts have no personal principal or financial goal',()=>{
   assert.equal(data.products.length,0);
 });
 check('Previously configured principal is retained, never replaced by a preset',()=>{
-  const context=vm.createContext({D:{settings:{usPrincipalAUD:1000}},totalCNY:()=>2000,fromCNY:v=>v/2,toCNY:v=>v*2});
-  vm.runInContext(definition('getUsPrincipalGrowth'),context);
-  assert.equal(vm.runInContext('getUsPrincipalGrowth().principalAUD',context),1000);
-  context.D.settings={};
-  assert.equal(vm.runInContext('getUsPrincipalGrowth().principalAUD',context),0);
+  const context=vm.createContext({});for(const file of ['calculation-engine.js','finance-view.js'])vm.runInContext(fs.readFileSync(file,'utf8'),context);
+  const d={settings:{usPrincipalAUD:1000},products:[],movementLog:[]};assert.equal(context.FinanceView.capital(d).netAud,1000);assert.equal(d.settings.usPrincipalAUD,1000);d.settings={};assert.equal(context.FinanceView.capital(d).available,false);assert.equal(context.FinanceView.capital(d).netAud,null);
 });
 check('AI context and structured payload use anonymized builders',()=>{
   const context=vm.createContext({buildRiskEvidenceContext:()=> 'SAFE LOCAL EVIDENCE',buildSanitizedPortfolio:()=> 'SAFE SUMMARY',buildEventsCalendarContext:()=> 'PUBLIC EVENTS',getSanitizedPortfolioPayload:()=>[{market:'US'}],buildFullPortfolioText:()=>{throw Error('private builder called');},buildFullPortfolioPayload:()=>{throw Error('private builder called');}});
