@@ -1,19 +1,19 @@
 /* LEE Wealth — quiet surfaces, clear actions, dense financial information.
    References and design decisions: DESIGN.md. No accounting logic lives here. */
 :root{
- --bg-page:#101114;--bg-card:#191b20;--bg-muted:#202228;--bg-hover:#272a31;
- --border:#2e3139;--border-light:#272a31;--border-hover:#505661;--border-accent:#577f73;
- --text-1:#f0f1f4;--text-2:#c8cbd3;--text-3:#9a9faa;--text-4:#858b98;
- --accent:#a7e5ce;--accent-blue:#a6bdf7;--up:#74d3aa;--up-soft:#74d3aa;--up-bg:#1e342c;
+ --bg-page:#080e16;--bg-card:#101a27;--bg-muted:#172435;--bg-hover:#203249;
+ --border:#293b50;--border-light:#203044;--border-hover:#617893;--border-accent:#4c8d79;
+ --text-1:#eef4fc;--text-2:#c3d0e2;--text-3:#9aaec8;--text-4:#91a4bd;
+ --accent:#9fe3cb;--accent-blue:#9cbcf3;--up:#74d3aa;--up-soft:#74d3aa;--up-bg:#12352b;
  --dn:#f28a92;--dn-soft:#f28a92;--dn-bg:#352329;--warn:#e5b978;--warn-bg:#332c22;
  --purple:#b8a7e5;--purple-bg:#2b2638;
- --card-surface:#191b20;--card-border:#30333b;--card-hover-border:#424853;
+ --card-surface:#101a27;--card-border:#293b50;--card-hover-border:#4a6585;
  --font:'Inter','Microsoft YaHei','PingFang SC',system-ui,sans-serif;
  --mono:var(--font);--radius-sm:7px;--radius-md:9px;--radius-lg:14px;
- --control-bg:#282b32;--control-hover:#333842;--control-border:#505662;--control-text:#eef0f5;
- --control-primary:#a7e5ce;--control-primary-hover:#c2f1df;--control-on-primary:#14281f;
- --control-selected:#293e37;--control-selected-border:#7fbea6;--control-link:#b6c9f6;
- --control-danger-bg:#302229;--control-danger-text:#f29ca3;--control-danger-border:#75464f;
+ --control-bg:#1d2c40;--control-hover:#293e58;--control-border:#71849d;--control-text:#eef4fc;
+ --control-primary:#9fe3cb;--control-primary-hover:#c2f1df;--control-on-primary:#112b23;
+ --control-selected:#173b31;--control-selected-border:#82bfa9;--control-link:#b6cffa;
+ --control-danger-bg:#321f2b;--control-danger-text:#f5a5b0;--control-danger-border:#ac6b7b;
  --control-focus:#b9d7ff;
 }
 body.light{
@@ -84,7 +84,7 @@ body .nav-btn.active{background:var(--bg-hover)!important;color:var(--text-1)!im
 .terminal-dashboard>.term-zone-head{height:auto;min-height:0;grid-template-rows:auto}
 .term-zone-head{gap:12px;grid-template-columns:minmax(240px,1.2fr) minmax(240px,1.5fr) repeat(3,minmax(140px,.85fr));min-height:206px}
 .term-zone-head>:is(.term-nav-hero,.term-nav-chart,.term-nav-goal,.term-alloc-card){padding:20px;border:1px solid var(--card-border);border-radius:14px;background:var(--bg-card);min-height:206px;transform:none!important}
-.term-nav-hero{border-color:#496358!important;background:#1c2824!important}
+.term-nav-hero{border-color:#356957!important;background:#0b2520!important}
 #page-overview .term-nav-hero #ov-cny{font-family:var(--font);font-size:clamp(32px,2.35vw,45px);font-weight:550;letter-spacing:-1.5px;line-height:1.2}
 #page-overview .ov-nav-lbl{font-size:12px;letter-spacing:0;color:var(--text-2);font-weight:500}
 #page-overview .ov-hero-delta{font-size:12px;margin-top:6px}

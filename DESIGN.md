@@ -10,7 +10,7 @@ The implementation uses original CSS, not third-party assets or copied source.
 
 ## Decisions
 
-- Charcoal neutral canvas, separate card surfaces, mint as the primary action accent. Profit/loss retains its own green/red meaning.
+- Blue-black canvas, cool navy card surfaces and mint as the primary action accent. Blue and green share a cool hue family; the darker canvas separates cards without a gray wash. Profit/loss retains its own green/red meaning.
 - One prominent workflow in each toolbar; secondary actions retain a visible neutral surface and border. Navigation uses a quiet tab treatment instead of raised buttons.
 - Net worth is the main visual anchor, with USD/AUD equivalents visible alongside the primary CNY value.
 - Holdings remain two-line summaries. Names use a detail chevron and hover/focus affordance instead of a box and dotted underline around every title.
