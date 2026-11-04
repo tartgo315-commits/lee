@@ -2,7 +2,7 @@ function threeCurrencyHtml(cny){return '<span class="three-currency">'+['CNY','U
 function holdingRef(row){return row.manual?'m:us::'+row.account:'p:'+row.product.id;}
 function compactHoldingHtml(row){
  const p=row.product,v=row.valuation,ref=holdingRef(row),stock=p.type==='stock_us',currency=stock?WealthMath.stockIdentity(p).currency:v.currency||p.currency||p.tdCur||p.fundCurrency||'CNY',profit=overviewHoldingProfit(row);
- const title=stock?WealthMath.stockIdentity(p).ticker:p.name||p.account||'资产';let meta=currency+' 现金';
+ const title=stock?WealthMath.stockIdentity(p).ticker:p.name||p.account||'资产';let meta=currency+(p.type==='other'?' 其他资产':' 现金');
  if(stock)meta=fmt(p.shares,4)+' 股 · 成本 '+fc(WealthMath.number(p.costPrice),currency,3)+' · 现价 '+fc(v.price,currency,2);
  else if(p.type==='fund_cn')meta=fmt(p.fundShares,4)+' 份 · 成本 '+fc(p.fundCost,currency,4)+' · 净值 '+fmt(v.price,4);
  else if(p.type==='gold')meta=fmt(p.grams,4)+' 克 · 成本 '+fc(p.goldCost,currency,2)+'/克 · 现价 '+fc(v.price,currency,2)+'/克';

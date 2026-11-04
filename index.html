@@ -3196,7 +3196,7 @@ function sumStockUsCNY(aps){return aps.filter(p=>p.type==='stock_us').reduce((s,
 function looksLikeUsdBrokerCash(p){
   return /可用|闲置|购买力|预估|现金额|应计利息|美元|美金|\bUSD\b|\$|Tiger|券商/i.test((p.name||'')+(p.note||''));
 }
-function isUsdIdleProduct(p){return p.currency==='USD'&&(p.type==='cash'||p.type==='other'&&looksLikeUsdBrokerCash(p));}
+function isUsdIdleProduct(p){return p.currency==='USD'&&(p.type==='cash'||p.type==='other'&&!/应计|应收|未到账|accrued|receivable/i.test(p.name||'')&&looksLikeUsdBrokerCash(p));}
 /** 美国账户内美元闲置（计入明确 USD 现金 + 误标 CNY 但名称像券商美元现金的条目） */
 function sumUsdCashCNY(aps){return aps.filter(isUsdIdleProduct).reduce((s,p)=>s+pCNY(p),0);}
 /** localStorage 键：美国某账户手填的 Tiger「闲置资金」USD（与证券持仓分列，和券商一致） */
@@ -6627,7 +6627,7 @@ function movementChangeText(change){
   const before=change.before,after=change.after,left=WealthMovements.info(change.ref,before),right=WealthMovements.info(change.ref,after);
   const label=movementLabel(change.ref,after||before);
   if(left.cash||right.cash)return label+'：'+(before&&left.amount!==null?fc(left.amount,left.currency,2):'未登记')+' → '+(after&&right.amount!==null?fc(right.amount,right.currency,2):'移除')+(before&&after&&left.amount!==null&&right.amount!==null&&left.currency===right.currency?'（'+(right.amount-left.amount>0?'+':'')+fc(WealthMath.sum([right.amount,-left.amount]),right.currency,2)+'）':'');
-  const fields={shares:'股数',costPrice:'成本价',currentPrice:'现价',fundShares:'基金份额',fundCost:'基金成本',fundPrice:'基金净值',grams:'克数',goldCost:'黄金成本',goldPrice:'黄金价格',principal:'本金',rate:'年利率',tdPaidInterest:'已付利息',account:'账户',region:'地区',type:'资产类型',currency:'币种',tdCur:'定存币种',fundCurrency:'基金币种',costFxToCny:'成本汇率',costDate:'买入日期',tdStart:'起息日',tdEnd:'到期日',tdContractStart:'合同起始日',tdContractEnd:'合同到期日',tdMethod:'计息方式',tdDayCount:'计息规则',tdPaidInterestDate:'利息支付日',name:'名称',note:'备注'};
+  const fields={amount:'金额',idleUsd:'闲置美元余额',shares:'股数',costPrice:'成本价',currentPrice:'现价',fundShares:'基金份额',fundCost:'基金成本',fundPrice:'基金净值',grams:'克数',goldCost:'黄金成本',goldPrice:'黄金价格',principal:'本金',rate:'年利率',tdPaidInterest:'已付利息',account:'账户',region:'地区',type:'资产类型',currency:'币种',tdCur:'定存币种',fundCurrency:'基金币种',costFxToCny:'成本汇率',costDate:'买入日期',tdStart:'起息日',tdEnd:'到期日',tdContractStart:'合同起始日',tdContractEnd:'合同到期日',tdMethod:'计息方式',tdDayCount:'计息规则',tdPaidInterestDate:'利息支付日',name:'名称',note:'备注'};
   return label+'：'+(!after?'删除资产':(!before?'新增资产；':'')+Object.entries(fields).filter(([k])=>String(before?.[k]??'')!==String(after[k]??'')).map(([k,label])=>label+' '+String(before?.[k]??'未登记')+' → '+String(after[k]??'未填')).join('；')||'合同 / 资料更新');
 }
 function updateMovementPreview(){
