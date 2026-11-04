@@ -1,12 +1,13 @@
 import fs from 'node:fs';import vm from 'node:vm';import assert from 'node:assert/strict';
 const html=fs.readFileSync('index.html','utf8'),elements=new Map();
 function get(id){if(!elements.has(id))elements.set(id,{value:'',open:false,scrollTop:0,textContent:''});return elements.get(id);}
-const ctx=vm.createContext({Intl,Date,document:{getElementById:get},D:{products:[]},today:()=> '2026-10-18',onType(){},updateFundModalTip(){},openModal(region){get('m-tdzone').value={cn:'Asia/Shanghai',us:'America/New_York',au:'Australia/Sydney'}[region];get('m-tdround').value='cents';}});
+const ctx=vm.createContext({Intl,Date,document:{getElementById:get,querySelector:selector=>get(selector)},D:{products:[]},today:()=> '2026-10-18',onType(){},updateFundModalTip(){},openModal(region){get('m-tdzone').value={cn:'Asia/Shanghai',us:'America/New_York',au:'Australia/Sydney'}[region];get('m-tdround').value='cents';}});
 vm.runInContext(fs.readFileSync('calculation-engine.js','utf8'),ctx);
 vm.runInContext(fs.readFileSync('savings-interest.js','utf8'),ctx);
 vm.runInContext(fs.readFileSync('savings-editor.js','utf8'),ctx);
 vm.runInContext(html.slice(html.indexOf('function assetEditorFocusId('),html.indexOf('function openModal(region,account){')),ctx);
 vm.runInContext(html.slice(html.indexOf('function editProduct(id){'),html.indexOf('function deleteProduct(id){')),ctx);
+vm.runInContext(html.slice(html.indexOf('function stockEditorIdentity('),html.indexOf('function onType(){')),ctx);
 let passed=0;function test(name,fn){fn();passed++;console.log('PASS '+name);}
 test('New records focus account entry and existing records focus their main amount field',()=>{
   assert.equal(ctx.assetEditorFocusId(false,'cash'),'m-account');for(const [type,id] of Object.entries({cash:'m-amount',gold:'m-grams',stock_us:'m-shares',fund_cn:'m-fshares',term_deposit:'m-principal'}))assert.equal(ctx.assetEditorFocusId(true,type),id);

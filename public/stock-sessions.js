@@ -9,27 +9,27 @@
   function parse(raw){if(typeof raw==='string'){try{return JSON.parse(raw);}catch{return null;}}return raw;}
   function merge(a,b){const out={symbol:b?.symbol||a?.symbol||'',fetchedAt:Math.max(a?.fetchedAt||0,b?.fetchedAt||0),marketState:b?.marketState||a?.marketState||''};for(const k of [...keys,'fullDay']){const x=a?.[k],y=b?.[k];out[k]=!x?y||null:!y?x:((y.at||0)>(x.at||0)||(y.at||0)===(x.at||0)&&(b?.fetchedAt||0)>=(a?.fetchedAt||0))?y:x;}return out;}
   function fromQuote(raw,symbol='',now=Date.now()){
-    const data=parse(raw),q=data?.quoteResponse?.result?.find(r=>!symbol||String(r.symbol).toUpperCase()===symbol.toUpperCase())||data;if(!q||typeof q!=='object')return null;
+    const data=parse(raw),q=data?.quoteResponse?.result?.find(r=>!symbol||String(r.symbol).toUpperCase()===symbol.toUpperCase())||data;if(!q||typeof q!=='object')return null;if(symbol&&q.symbol&&String(q.symbol).toUpperCase()!==symbol.toUpperCase())return null;if(symbol&&q.currency&&q.currency!==(/\.AX$/i.test(symbol)?'AUD':'USD'))return null;
     const out={symbol:String(q.symbol||symbol).toUpperCase(),fetchedAt:now,marketState:String(q.marketState||'').toUpperCase()};
     for(const [key,prefix] of [['regular','regularMarket'],['pre','preMarket'],['post','postMarket'],['overnight','overnightMarket']])out[key]=point(q[prefix+'Price'],q[prefix+'Time']);
     out.fullDay=point(q.fulldayPrice,null,'yahoo-24h',true);if(out.fullDay)out.fullDay.fetchedAt=now;return keys.some(k=>out[k])||out.fullDay?out:null;
   }
   function fromChart(raw,symbol='',now=Date.now()){
-    const result=parse(raw)?.chart?.result?.[0];if(!result)return null;const meta=result.meta||{},out=fromQuote(meta,symbol,now)||{symbol:String(meta.symbol||symbol).toUpperCase(),fetchedAt:now,marketState:''};
+    const result=parse(raw)?.chart?.result?.[0];if(!result)return null;const meta=result.meta||{};if(symbol&&meta.symbol&&String(meta.symbol).toUpperCase()!==symbol.toUpperCase())return null;if(symbol&&meta.currency&&meta.currency!==(/\.AX$/i.test(symbol)?'AUD':'USD'))return null;const out=fromQuote(meta,symbol,now)||{symbol:String(meta.symbol||symbol).toUpperCase(),fetchedAt:now,marketState:''};
     const stamps=result.timestamp||[],close=result.indicators?.quote?.[0]?.close||[];
-    for(let i=0;i<stamps.length;i++){const row=point(close[i],stamps[i]);if(!row?.at||row.at>now+120000)continue;const kind=session(row.at).kind;if(!out[kind]?.at||row.at>out[kind].at)out[kind]=row;}
+    for(let i=0;i<stamps.length;i++){const row=point(close[i],stamps[i]);if(!row?.at||row.at>now+120000)continue;const kind=/\.AX$/.test(out.symbol)?'regular':session(row.at).kind;if(!out[kind]?.at||row.at>out[kind].at)out[kind]=row;}
     return keys.some(k=>out[k])||out.fullDay?out:null;
   }
   function select(snapshot,now=Date.now()){
     if(!snapshot)return null;
-    const candidates=keys.map(kind=>snapshot[kind]?{...snapshot[kind],kind}:null).filter(p=>p?.at&&p.at<=now+120000).sort((a,b)=>b.at-a.at);
-    const latest=candidates[0]||null,full=snapshot.fullDay;
+    const asx=/\.AX$/.test(snapshot.symbol||''),marketKeys=asx?['regular']:keys;const candidates=marketKeys.map(kind=>snapshot[kind]?{...snapshot[kind],kind}:null).filter(p=>p?.at&&p.at<=now+120000).sort((a,b)=>b.at-a.at);
+    const latest=candidates[0]||null,full=asx?null:snapshot.fullDay;
     // Yahoo's fullday field has no execution timestamp: always labelled reference.
     const fullRetrieved=full?.fetchedAt||snapshot.fetchedAt;
     if(full?.price&&nightWindow(now)&&now-fullRetrieved>=0&&now-fullRetrieved<600000&&(!latest||latest.kind!=='overnight'||fullRetrieved-latest.at>900000))return{...full,kind:'overnight',label:'夜盘 / 24h参考',estimated:true,at:null,fetchedAt:fullRetrieved};
     if(latest)return{...latest,label:labels[latest.kind],estimated:false,fetchedAt:snapshot.fetchedAt};
     const state={REGULAR:'regular',PRE:'pre',PREPRE:'pre',PREOPEN:'pre',POST:'post',POSTPOST:'post',OVERNIGHT:'overnight',EXTENDED:'overnight'}[snapshot.marketState];
-    const kind=state&&snapshot[state]?state:keys.find(k=>snapshot[k]);return kind?{...snapshot[kind],kind,label:labels[kind]+'参考',estimated:true,fetchedAt:snapshot.fetchedAt}:null;
+    const kind=!asx&&state&&snapshot[state]?state:marketKeys.find(k=>snapshot[k]);return kind?{...snapshot[kind],kind,label:labels[kind]+'参考',estimated:true,fetchedAt:snapshot.fetchedAt}:null;
   }
   function preferExtendedCache(cached,now=Date.now()){const selection=cached?.selection;if(cached?.source!=='cache'||!selection||selection.kind==='regular')return false;const s=session(now);return !(s.kind==='regular'&&['Mon','Tue','Wed','Thu','Fri'].includes(s.day));}
   root.StockSessions={preferExtendedCache,keys,labels,session,nightWindow,point,merge,fromQuote,fromChart,select};

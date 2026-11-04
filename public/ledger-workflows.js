@@ -6,29 +6,30 @@
   function cash(data,ref){const account=W.cashAccounts(data).find(a=>a.ref===ref);if(!account||!(account.amount>=0))throw Error('请选择有效的实际现金账户');return account;}
   function cashChange(data,account,delta){const before=clone(W.read(data,account.ref)),after=clone(before),amount=M.sum([account.amount,delta]);if(amount<0)throw Error('现金余额不足，不能透支');if(account.ref.startsWith('m:'))after.idleUsd=amount;else after.amount=amount;return{ref:account.ref,before,after};}
   function stockTrade(data,o){
-    const event=base(o,'stock_trade'),account=cash(data,o.cashRef);if(account.currency!=='USD'||account.region!=='us')throw Error('美股交易请选择同一券商账户的美元现金');
+    const event=base(o,'stock_trade'),account=cash(data,o.cashRef);
     const qty=n(o.quantity),price=n(o.price),fee=money(o.fee||0);if(!(qty>0)||qty!==Number(qty.toFixed(10))||!(price>0)||!['buy','sell'].includes(o.side))throw Error('请填写成交数量（最多十位小数）、成交价与买卖方向');
     const gross=M.multiply(qty,price);if(gross<=0)throw Error('成交金额不足一分，请核对数量与价格');
     const before=o.productId?clone(data.products.find(p=>String(p.id)===String(o.productId))):null;
-    const ticker=String(before?.ticker||o.ticker||'').trim().toUpperCase();if(!/^[A-Z][A-Z0-9.\-]{0,14}$/.test(ticker))throw Error('请填写有效美股代码');
-    if(before&&(before.type!=='stock_us'||before.region!=='us'||(before.account||'未分类')!==account.account))throw Error('股票与现金必须属于同一券商账户');
-    if(!before&&data.products.some(p=>p.type==='stock_us'&&(p.account||'未分类')===account.account&&String(p.ticker||'').toUpperCase()===ticker))throw Error('该账户已有此股票，请选择现有持仓');
-    event.trade={side:o.side,ticker,quantity:qty,price,gross,fee,currency:'USD',cashRef:account.ref};event.feeAmount=fee;event.feeCurrency='USD';event.recordOnly=!!o.recordOnly;
+    if(o.productId&&!before)throw Error('持仓不存在，请重新选择');
+    const identity=M.stockIdentity(before||{ticker:o.ticker,stockMarket:o.stockMarket}),ticker=identity.ticker,currency=identity.currency;if(account.currency!==currency)throw Error('请选择同一券商的 '+currency+' 现金');if(!/^[A-Z][A-Z0-9.\-]{0,14}$/.test(ticker))throw Error('请填写有效股票代码');
+    if(before&&(before.type!=='stock_us'||before.region!==account.region||(before.account||'未分类')!==account.account))throw Error('股票与现金必须属于同一券商账户');
+    if(!before&&data.products.some(p=>p.type==='stock_us'&&(p.account||'未分类')===account.account&&M.stockIdentity(p).ticker===ticker))throw Error('该账户已有此股票，请选择现有持仓');
+    event.trade={side:o.side,ticker,quantity:qty,price,gross,fee,currency,cashRef:account.ref};event.feeAmount=fee;event.feeCurrency=currency;event.recordOnly=!!o.recordOnly;
     if(o.recordOnly)return event;
-    const previousTrades=(data.movementLog||[]).filter(e=>!e.reversedAt&&!e.recordOnly&&e.kind==='stock_trade'&&e.trade?.ticker===ticker&&e.trade?.cashRef===account.ref);
+    const previousTrades=(data.movementLog||[]).filter(e=>!e.reversedAt&&!e.recordOnly&&e.kind==='stock_trade'&&e.trade&&M.stockIdentity(e.trade).ticker===ticker&&e.trade?.cashRef===account.ref);
     if(previousTrades.some(e=>e.date>o.date))throw Error('该持仓已有更晚交易，请按发生顺序录入，或选择仅补历史记录');
     const held=before?n(before.shares):0,cost=before?n(before.costPrice):0;if(held===null||held<0||cost===null||cost<0)throw Error('原持股数或成本无效，请先更正');
     if(o.side==='sell'&&(!before||qty>held))throw Error('卖出数量不能超过现有持仓');
-    const id=before?.id||Math.max(Number(data.nextId)||1,...data.products.map(p=>(Number(p.id)||0)+1)),after=before?clone(before):{id,type:'stock_us',region:'us',account:account.account,ticker,name:ticker,createdAt:o.date};
+    const id=before?.id||Math.max(Number(data.nextId)||1,...data.products.map(p=>(Number(p.id)||0)+1)),after=before?clone(before):{id,type:'stock_us',region:account.region,account:account.account,ticker,currency,stockMarket:identity.market,name:ticker,createdAt:o.date};
     const oldBasis=M.multiply(held,cost),quantity=Number((held+(o.side==='buy'?qty:-qty)).toFixed(10));
     if(o.side==='buy'){
-      const spent=M.sum([gross,fee]),basis=M.sum([oldBasis,spent]);event.changes.push(cashChange(data,account,-spent));after.costBasisUsd=basis;after.costPrice=basis/quantity;
+      const spent=M.sum([gross,fee]),basis=M.sum([oldBasis,spent]);event.changes.push(cashChange(data,account,-spent));after.costBasis=basis;after.costPrice=basis/quantity;
       const fx=n(o.fxToCny),oldFx=n(before?.costFxToCny);if(fx!==null&&!(fx>0))throw Error('投入日汇率须大于零');
       after.costFxToCny=fx>0&&(held===0||oldFx>0)?(M.multiply(oldBasis,oldFx||1)+M.multiply(spent,fx))/basis:null;
     }else{
-      const soldBasis=M.multiply(oldBasis,qty/held),received=M.sum([gross,-fee]);if(received<0)throw Error('卖出手续费不能超过成交金额');event.changes.push(cashChange(data,account,received));after.costBasisUsd=M.sum([oldBasis,-soldBasis]);after.costPrice=quantity>0?after.costBasisUsd/quantity:0;event.trade.realizedPnl=M.sum([received,-soldBasis]);
+      const soldBasis=M.multiply(oldBasis,qty/held),received=M.sum([gross,-fee]);if(received<0)throw Error('卖出手续费不能超过成交金额');event.changes.push(cashChange(data,account,received));after.costBasis=M.sum([oldBasis,-soldBasis]);after.costPrice=quantity>0?after.costBasis/quantity:0;event.trade.realizedPnl=M.sum([received,-soldBasis]);
     }
-    after.shares=quantity;delete after.stockList;if(!(n(before?.currentPrice)>0))after.currentPrice=price;after.updatedAt=o.date;event.changes.push({ref:'p:'+id,before,after});return event;
+    after.currency=currency;after.stockMarket=identity.market;after.ticker=ticker;if(currency==='USD')after.costBasisUsd=after.costBasis;else delete after.costBasisUsd;after.shares=quantity;delete after.stockList;if(!(n(before?.currentPrice)>0))after.currentPrice=price;after.updatedAt=o.date;event.changes.push({ref:'p:'+id,before,after});return event;
   }
   function matureDeposit(data,o){
     const event=base({...o,reason:o.reason||'定存到期分配'},'deposit_maturity');

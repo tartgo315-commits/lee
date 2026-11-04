@@ -9,7 +9,7 @@
   if(before&&Math.abs(Number(before.shares)-shares)>1e-8)differences.push('shares');
   if(before&&Math.round(Number(before.costPrice)*100)!==Math.round(cost*100))differences.push('costPrice');
   if(before&&(before.currency||'USD')!==row.currency)differences.push('currency');
-  const invalid=matches.length>1||!/^[A-Z][A-Z0-9.-]{0,14}$/.test(ticker)||!(shares>0&&shares<=1e10)||!(cost!==null&&cost>=0&&cost<=1e8)||row.currency!=='USD';
+  const invalid=matches.length>1||!/^[A-Z][A-Z0-9.-]{0,14}$/.test(ticker)||!(shares>0&&shares<=1e10)||!(cost!==null&&cost>=0&&cost<=1e8)||row.currency!=='USD'||/\.AX$/.test(ticker);
   return{ticker,before,matches,differences,kind:invalid?'review':!before?'new':differences.length?'changed':'unchanged'};
  }
  // Only target-account position facts can invalidate confirmation; quotes and cash are independent.

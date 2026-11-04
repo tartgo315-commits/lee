@@ -94,6 +94,8 @@
     }
     data.calculationVersion=3;return data;
   }
+  // Market identity never follows an account name or its region.
+  function stockIdentity(p={}){const raw=String(p.ticker||'').trim().toUpperCase(),market=/\.AX$/.test(raw)?'ASX':p.stockMarket||(p.currency==='AUD'?'ASX':'US');return{market,currency:market==='ASX'?'AUD':'USD',ticker:market==='ASX'?raw.replace(/\.AX$/,'')+'.AX':raw};}
   function fxRate(currency,fx){const code=String(currency||'').toUpperCase();if(code==='CNY')return 1;const rate=number(fx?.[code]);return rate!==null&&rate>0?rate:null;}
   function productValue(p,context){
     if(!p||typeof p!=='object')return{complete:false,cny:null,reason:'资产记录无效'};
@@ -107,15 +109,15 @@
     }else if(type==='stock_us'||type==='fund_cn'||type==='gold'){
       quantity=number(type==='stock_us'?p.shares:type==='fund_cn'?p.fundShares:p.grams);
       price=number(type==='stock_us'?p.currentPrice:type==='fund_cn'?p.fundPrice:p.goldPrice);
-      currency=type==='stock_us'?'USD':type==='gold'?'CNY':p.fundCurrency||'CNY';
+      currency=type==='stock_us'?stockIdentity(p).currency:type==='gold'?'CNY':p.fundCurrency||'CNY';
       if(quantity===null||quantity<0)return{complete:false,cny:null,reason:'持有数量无效',id:p.id};
       if(quantity===0)return{complete:true,cny:0,amount:0,currency,id:p.id};
       if(!(price>0)){
-        const previous=number(type==='stock_us'?context.quoteCache?.[String(p.ticker||'').toUpperCase()]?.price:p.lastValidPrice);
+        const previous=number(type==='stock_us'?context.quoteCache?.[stockIdentity(p).ticker]?.price:p.lastValidPrice);
         if(previous>0){price=previous;estimated=true;}else return{complete:false,cny:null,reason:'缺少有效价格',id:p.id};
       }
       amount=quantity*price;
-      if(type==='stock_us'&&(p.quoteReference===true||context.quoteMeta?.get(String(p.ticker||'').toUpperCase())?.source==='cache'))estimated=true;
+      if(type==='stock_us'&&(p.quoteReference===true||context.quoteMeta?.get(stockIdentity(p).ticker)?.source==='cache'))estimated=true;
     }else{amount=number(p.amount);currency=p.currency||'CNY';if(type==='in_transit')estimated=true;}
     const rate=fxRate(currency,fx);
     if(amount===null||!Number.isFinite(amount))return{complete:false,cny:null,reason:'金额无效',id:p.id};
@@ -181,5 +183,5 @@
     });
     return{available:true,scenarios};
   }
-  root.WealthMath={number,round,sum,multiply,dayIndex,dateInZone,addMonths,yearFraction,depositZone,depositTerms,depositValue,migrate,fxRate,productValue,summary,gainSplit,xirr,performance,forecast};
+  root.WealthMath={stockIdentity,number,round,sum,multiply,dayIndex,dateInZone,addMonths,yearFraction,depositZone,depositTerms,depositValue,migrate,fxRate,productValue,summary,gainSplit,xirr,performance,forecast};
 })(typeof globalThis!=='undefined'?globalThis:this);

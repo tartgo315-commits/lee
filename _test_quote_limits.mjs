@@ -12,7 +12,7 @@ function setup(shared=new Map()){
   const banner={style:{},textContent:'',className:''};
   const context=vm.createContext({Date:Clock,console,isZeroStock:p=>p.shares===0,syncNavigationNotices(){},location:{protocol:'https:',origin:'https://test.invalid'},D:{products:[{type:'stock_us',ticker:'AAA'},{type:'stock_us',ticker:'BBB'}]},document:{hidden:false,getElementById:()=>banner},localStorage:{getItem:k=>shared.get(k)??null,setItem:(k,v)=>shared.set(k,String(v)),removeItem:k=>shared.delete(k)},fetch:async url=>{calls++;const symbols=new URL(url).searchParams.get('symbol').split(',');return{status:200,json:async()=>symbols.length===1?{price:'10'}:Object.fromEntries(symbols.map(sym=>[sym,{price:'10'}]))};}});
   const pollDeclarations=code.slice(code.indexOf("const STOCK_AUTO_POLL_KEY="),code.indexOf('async function runFinnhubQuotePoll(){'));
-  vm.runInContext(controller+'\n'+definition('parseTwelveDataQuotePayload')+'\n'+definition('fetchTwelveDataStockPriceDetailed')+'\n'+definition('fetchTwelveDataBatch')+'\n'+definition('formatStockCacheAge')+'\n'+definition('updateStockQuoteFallbackBanner')+'\nconst FINNHUB_QUOTE_POLL_MS=1800000;\n'+definition('finnhubDesiredSymbols')+'\n'+pollDeclarations,context);
+  vm.runInContext(fs.readFileSync('calculation-engine.js','utf8'),context);vm.runInContext(controller+'\n'+definition('parseTwelveDataQuotePayload')+'\n'+definition('fetchTwelveDataStockPriceDetailed')+'\n'+definition('fetchTwelveDataBatch')+'\n'+definition('formatStockCacheAge')+'\n'+definition('updateStockQuoteFallbackBanner')+'\nconst FINNHUB_QUOTE_POLL_MS=1800000;\n'+definition('finnhubDesiredSymbols')+'\n'+pollDeclarations,context);
   const run=text=>vm.runInContext(text,context);
   return{context,shared,banner,run,calls:()=>calls};
 }
