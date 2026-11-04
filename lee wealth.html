@@ -1090,7 +1090,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
       <span class="topbar-cmdk-kbd">Ctrl+K</span>
     </button>
     <button type="button" class="topbar-ai" id="topbar-ai" onclick="openAiModal()" title="打开 AI 详细分析" aria-label="AI 今日解读">
-      <span class="topbar-ai-lbl">AI</span>
+      <span class="topbar-ai-lbl">摘要</span>
       <span class="topbar-ai-summary" id="topbar-ai-summary">加载今日解读…</span>
     </button>
     <div class="topbar-right"><button type="button" class="btn btn-outline btn-sm" id="assistant-launcher" data-assistant-launcher aria-controls="ledger-assistant" aria-expanded="false" onclick="LedgerAssistant.open()">AI 账本</button>
@@ -3203,8 +3203,8 @@ function usMetaKey(acc){return 'us::'+(acc||'未分类');}
 function usManualIdleUsd(acc){
   const o=D.usAccountMeta?.[usMetaKey(acc)];
   if(o==null||o.idleUsd==null||o.idleUsd==='')return null;
-  const v=parseFloat(o.idleUsd);
-  return isNaN(v)||v<0?null:v;
+  const v=WealthMath.number(o.idleUsd);
+  return v===null||v<0?null:v;
 }
 /** 该账户闲置资金折合 CNY：优先用手填 Tiger 闲置 USD，否则用现金条合计 */
 function accountUsIdleCny(aps,acc){
@@ -5096,8 +5096,8 @@ function renderNavMiniChart(days,opts){
   days=days==null?ovRange:days;
   let hist=D.navHistory.map(n=>({...n})).sort((a,b)=>a.date.localeCompare(b.date));
   if(days<9999){const cut=new Date();cut.setDate(cut.getDate()-days);hist=hist.filter(n=>n.date>=WealthMath.dateInZone(cut,D.settings.accountingTimeZone||'Asia/Shanghai'));}
-  const td=today(),tcny=totalCNY();
-  if(valuationStatus().complete){
+  const td=today(),tcny=totalCNY(),valuationComplete=valuationStatus().complete;
+  if(valuationComplete){
     if(hist.length&&hist[hist.length-1].date===td)hist[hist.length-1].cny=tcny;
     else hist.push({date:td,cny:tcny});
   }
@@ -5106,9 +5106,10 @@ function renderNavMiniChart(days,opts){
   const lbl=document.getElementById('ov-nav-lbl');
   if(lbl){
     const pct=first>0?chg/first*100:0;
-    const sign=chg>=0?'+':'';
-    lbl.textContent=vals.length>1&&chg!==0?sign+fc(chg,'CNY')+'  '+sign+Math.abs(pct).toFixed(1)+'%':'';
-    lbl.style.color=chg>=0?'var(--up-soft)':chg<0?'var(--dn-soft)':'var(--text-4)';
+    const sign=chg>=0?'+':'−';
+    lbl.textContent=!valuationComplete?'估值未完整，暂不比较':vals.length>1?'较'+lbls[0].slice(5)+' '+sign+fc(Math.abs(chg),'CNY',0)+(first>0?'（'+sign+Math.abs(pct).toFixed(1)+'%）':''):'';
+    lbl.title=valuationComplete&&vals.length>1?'较 '+lbls[0]+' 快照的资产变化，包含资金进出和汇率影响，不等于投资收益。':'请补全估值或记录历史快照后比较。';
+    lbl.style.color=!valuationComplete?'var(--text-3)':chg>=0?'var(--up-soft)':'var(--dn-soft)';
   }
   const ctx=document.getElementById('chart-ov');if(!ctx)return;
   const empty=document.getElementById('ov-trend-empty');
@@ -5267,7 +5268,7 @@ function buildAccountBlocks(ps,region){
         <span class="us-idle-lbl">Tiger 闲置资金 USD（券商左侧数字，如 17.81）</span>
         <input type="number" class="us-idle-inp" step="0.01" placeholder="17.81" id="usidle-${region}-${accIdx}" data-account="${escAttr(acc)}" value="${man!=null?String(man):''}">
         <button type="button" class="btn btn-primary btn-sm" onclick="commitUsIdleInput('${region}',${accIdx})">保存</button>
-        <button type="button" class="btn btn-ghost btn-sm" onclick='setUsAccountIdle(${JSON.stringify(acc)},"")'>清除</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="${escAttr('setUsAccountIdle('+JSON.stringify(acc)+',\"\")')}">清除</button>
       </div>`:'';
     const usSplit=region==='us'?`<div class="us-acc-split">
         <div class="us-acc-split-top">
@@ -5285,20 +5286,20 @@ function buildAccountBlocks(ps,region){
     }):aps;
     const rows=sorted.map(p=>typeof compactHoldingHtml==='function'?compactHoldingHtml({product:p,valuation:WealthMath.productValue(p,valuationContext()),manual:false}):buildProductRow(p,region,primaryCur,acny)).join('');
     return `<div class="account-block">
-      <div class="account-header" data-key="${key}">
+      <div class="account-header" data-key="${escAttr(key)}">
         <div class="acc-ico ${region}">${icons[region]}</div>
         <div class="acc-info">
-          <div class="acc-name">${acc}</div>
+          <div class="acc-name">${escOvHtml(acc)}</div>
           <div class="acc-sub">${aps.length} 个产品</div>
         </div>
         <div class="acc-right">
           <div class="acc-primary">${fc(alocal,primaryCur,0)}</div>
           <div class="acc-secondary">${fc(acny,'CNY',0)} &nbsp;|&nbsp; ${primaryCur!=='USD'?fc(fromCNY(acny,'USD'),'USD',0):fc(fromCNY(acny,'AUD'),'AUD',0)}</div>
         </div>
-        <div class="acc-chevron open" id="chev-${key}">▶</div>
+        <div class="acc-chevron open" id="chev-${escAttr(key)}">▶</div>
       </div>
       ${usSplit}
-      <div class="products-wrap open" id="pw-${key}">
+      <div class="products-wrap open" id="pw-${escAttr(key)}">
         <div class="product-row hdr">
           <div class="pl">产品</div>
           <div class="pl r">当地货币</div>
@@ -5309,7 +5310,7 @@ function buildAccountBlocks(ps,region){
         </div>
         ${rows}
         <div class="add-row">
-          <button class="btn btn-ghost btn-sm" onclick="openModal('${region}','${acc}')">＋ 添加到此账户</button>
+          <button class="btn btn-ghost btn-sm" onclick="${escAttr('openModal('+JSON.stringify(region)+','+JSON.stringify(acc)+')')}">＋ 添加到此账户</button>
         </div>
       </div>
     </div>`;
@@ -5941,26 +5942,16 @@ function refreshOVTotals(){
 }
 
 // ══ NAV HISTORY ══
-const SNAP_TYPE_LBL={cash:'现金',fund_cn:'国内基金',gold:'黄金',stock_us:'美股',term_deposit:'定期',other:'其它'};
-/** Tiger 手填闲置 USD 并入现金分类（扣掉同账户重复计的美元现金条） */
-function applyUsIdleCashToByType(byType){
-  const usPs=D.products.filter(p=>p.region==='us');
-  const accs=[...new Set(usPs.map(p=>p.account||'未分类'))];
-  for(const acc of accs){
-    const m=usManualIdleUsd(acc);
-    if(m==null)continue;
-    byType.cash+=toCNY(m,'USD')-sumUsdCashCNY(usPs.filter(p=>p.account===acc));
-  }
-}
+const SNAP_TYPE_LBL={cash:'现金',fund_cn:'国内基金',gold:'黄金',stock_us:'股票 / ETF',term_deposit:'定期',in_transit:'在途资金',other:'其它'};
+/** 分类使用与当前持仓相同的去重行；不改已有快照。 */
 function snapshotBreakdown(){
   const byRegion={cn:totalCNY('cn'),us:totalCNY('us'),au:totalCNY('au')};
   const keys=['cash','fund_cn','gold','stock_us','term_deposit','in_transit','other'];
   const byType=Object.fromEntries(keys.map(k=>[k,0]));
-  for(const p of D.products){
-    const k=keys.includes(p.type)?p.type:'other';
-    byType[k]=WealthMath.sum([byType[k],pCNY(p)]);
+  for(const row of buildOverviewHoldingRows(D.products,valuationContext(),usManualIdleUsd)){
+    const k=keys.includes(row.type)?row.type:'other';
+    byType[k]=WealthMath.sum([byType[k],row.valuation.complete?row.valuation.cny:0]);
   }
-  applyUsIdleCashToByType(byType);
   return{
     cny:totalCNY(),
     byRegion,
@@ -6131,7 +6122,7 @@ function buildHistBreakRow(n,older){
       <span class="hb-item">🇦🇺 澳洲 <b>${fc(br.au,'CNY',0)}</b></span>
     </div>
     <div class="hb-grid" style="margin-top:6px">
-      ${['cash','fund_cn','gold','stock_us','term_deposit','other'].map(k=>`<span class="hb-item">${SNAP_TYPE_LBL[k]} <b>${fc(bt[k],'CNY',0)}</b></span>`).join('')}
+      ${['cash','fund_cn','gold','stock_us','term_deposit','in_transit','other'].map(k=>`<span class="hb-item">${SNAP_TYPE_LBL[k]} <b>${fc(bt[k],'CNY',0)}</b></span>`).join('')}
     </div>`;
   if(fx)html+=`<div style="margin-top:8px;font-size:11px;color:var(--text3);font-family:var(--mono)">快照汇率 1USD=¥${fx.USD} · 1AUD=¥${fx.AUD}</div>`;
   if(older&&older.byRegion&&older.byType){
@@ -6143,7 +6134,7 @@ function buildHistBreakRow(n,older){
       <span class="hb-item">🇦🇺 ${snapFmtDelta(br.au-oR.au)}</span>
     </div>
     <div class="hb-grid" style="margin-top:6px">
-      ${['cash','fund_cn','gold','stock_us','term_deposit','other'].map(k=>`<span class="hb-item">${SNAP_TYPE_LBL[k]} ${snapFmtDelta(bt[k]-oT[k])}</span>`).join('')}
+      ${['cash','fund_cn','gold','stock_us','term_deposit','in_transit','other'].map(k=>`<span class="hb-item">${SNAP_TYPE_LBL[k]} ${snapFmtDelta(bt[k]-oT[k])}</span>`).join('')}
     </div></div>`;
   }
   return`<tr class="hist-break"><td colspan="7">${html}</td></tr>`;
@@ -6510,11 +6501,14 @@ function openAiModal(){
   try{renderEventsAiMsgs();}catch(e){}
   updateCopilotWealthEmpty();
 }
+function latestComparableSnapshot(snaps,date){
+  return [...(snaps||[])].filter(n=>n&&WealthMath.dayIndex(n.date)!==null&&n.date<=date&&n.complete!==false&&WealthMath.number(n.cny)!==null&&Number(n.cny)>=0).sort((a,b)=>a.date.localeCompare(b.date)).at(-1)||null;
+}
 function buildAiDailyBriefOneLiner(){
   const cny=totalCNY();
-  if(cny<=0) return '添加资产后生成今日解读';
+  if(!D.products?.length) return '添加资产后生成今日解读';
+  if(!valuationStatus().complete)return '估值待补全 · 点击核对行情与汇率';
   const td=localTodayISO();
-  if(D.aiDailyBrief?.version==='evidence-v1'&&D.aiDailyBrief?.date===td&&D.aiDailyBrief?.line) return D.aiDailyBrief.line;
   const bits=[];
   const upcoming=mergeWatchEvents().filter(e=>eventDaysUntil(e.date)>=0).sort((a,b)=>{
     const imp=x=>x.impact==='high'?0:1;
@@ -6524,33 +6518,33 @@ function buildAiDailyBriefOneLiner(){
   if(next){
     const d=eventDaysUntil(next.date);
     const nm=String(next.title||'').replace(/\s+/g,' ').trim();
-    if(d===0) bits.push('今日 '+nm.slice(0,14));
-    else if(d===1) bits.push('明日 '+nm.slice(0,12));
-    else bits.push(`${d}天后 ${nm.slice(0,10)}`);
+    if(d===0) bits.push('今日 '+nm);
+    else if(d===1) bits.push('明日 '+nm);
+    else bits.push(`${d}天后 ${nm}`);
   }
-  const snaps=[...(D.navHistory||[])].filter(n=>n&&n.date&&n.cny!=null&&!isNaN(Number(n.cny))).sort((a,b)=>a.date.localeCompare(b.date));
-  if(snaps.length){
-    const last=snaps[snaps.length-1];
+  const last=latestComparableSnapshot(D.navHistory,td);
+  if(last){
     const dd=cny-Number(last.cny);
-    if(Math.abs(dd)>=1) bits.push(`净值${dd>=0?'+':''}${fc(dd,'CNY',0)}`);
+    bits.push('较'+last.date.slice(5)+'快照 '+(dd>=0?'+':'−')+fc(Math.abs(dd),'CNY',0));
   }
-  const stopNear=D.products.some(p=>{
+  const stopCandidates=D.products.filter(p=>{
     if(p.type!=='stock_us'||!p.ticker||!(p.currentPrice>0))return false;
     const sl=p.stopLoss!=null&&isFinite(Number(p.stopLoss))?Number(p.stopLoss):null;
     if(sl==null||sl<=0)return false;
     return (p.currentPrice-sl)/p.currentPrice*100<5;
   });
-  if(stopNear) bits.push('有持仓逼近止损');
+  if(stopCandidates.length)bits.unshift(stopCandidates.some(p=>p.currentPrice<=Number(p.stopLoss))?'有持仓已触及止损':'有持仓接近止损');
   const line=bits.slice(0,2).join(' · ')||'组合平稳，点击查看详情';
-  if(!D.aiDailyBrief)D.aiDailyBrief={};
-  D.aiDailyBrief.date=td;
-  D.aiDailyBrief.line=line;D.aiDailyBrief.version='evidence-v1';
   return line;
 }
 function updateTopbarAiSummary(text){
   const el=document.getElementById('topbar-ai-summary');
   if(!el)return;
-  el.textContent=text!=null&&String(text).trim()?String(text).trim():buildAiDailyBriefOneLiner();
+  el.textContent=buildAiDailyBriefOneLiner();
+  const last=latestComparableSnapshot(D.navHistory,localTodayISO());
+  const detail=last?'比较基准：'+last.date+' 快照。资产变化包含资金进出和汇率影响，不等于投资收益。':'记录快照后可比较资产变化。';
+  el.title=el.textContent+'。'+detail;
+  const button=document.getElementById('topbar-ai');if(button){button.title='打开详细分析。'+el.title;button.setAttribute('aria-label','资产摘要：'+el.textContent+'。打开详细分析');}
 }
 function setAiDailyBriefFromText(raw){
   const t=String(raw||'').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();

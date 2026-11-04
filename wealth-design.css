@@ -120,6 +120,7 @@ body .nav-btn.active{background:var(--bg-hover)!important;color:var(--text-1)!im
 .term-portfolio-hd .card-title{font-size:17px;letter-spacing:-.3px;font-weight:600}
 .term-portfolio-hd>.btn{font-size:12px;min-height:34px;height:34px;padding:0 12px}
 #ledger-home-status .btn{font-size:11px;min-height:28px}
+#ledger-home-status .ledger-needs-review{background:var(--warn-bg)!important;color:var(--warn)!important;border-color:var(--warn)!important}
 .ov-holding-filters{gap:12px;align-items:center!important}
 .ov-holding-filters>div{flex:0 1 180px}
 .ov-holding-filters label{font-size:11px;white-space:nowrap;color:var(--text-3);margin:0 7px 0 0}
@@ -140,7 +141,7 @@ body .nav-btn.active{background:var(--bg-hover)!important;color:var(--text-1)!im
 .ov-region-panel .ov-account-heading h4{font-size:11px;font-weight:550;color:var(--text-3);letter-spacing:.3px}
 .ov-region-panel tr[data-holding-key]{padding:10px 12px;border-bottom:1px solid var(--border-light)}
 .ov-region-panel tr[data-holding-key]:hover{background:var(--bg-muted)}
-body button.ov-holding-name{background:transparent!important;border:0!important;border-radius:3px;color:var(--text-1)!important;padding:0;text-decoration:none;font-weight:550;cursor:pointer;max-width:100%;font-size:15px;letter-spacing:-.2px}
+body button.ov-holding-name{background:transparent!important;border:0!important;border-radius:3px;color:var(--text-1)!important;padding:0;min-height:24px;text-decoration:none;font-weight:550;cursor:pointer;max-width:100%;font-size:15px;letter-spacing:-.2px}
 body button.ov-holding-name::after{content:' ›';color:var(--text-3);font-size:14px;margin-left:3px}
 body button.ov-holding-name:hover{color:var(--control-link)!important;text-decoration:underline;text-underline-offset:3px}
 .ov-region-panel .ov-holding-money{font-size:16px;font-weight:500;font-variant-numeric:tabular-nums;letter-spacing:-.25px}
@@ -253,4 +254,4 @@ body summary{padding:8px 10px;border:1px solid var(--control-border);border-radi
  .ov-region-panel tr[data-holding-key]{padding-top:8px;padding-bottom:8px}
 }
 @media(max-width:1000px){#ov-filter-toolbar{grid-column:1/-1;min-width:0}#ov-filter-toolbar .ov-holding-filter-tools{border:0;padding:0;margin:4px 0}}
-@media(prefers-reduced-motion:reduce){body button,body [role=button]{transition:none}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
