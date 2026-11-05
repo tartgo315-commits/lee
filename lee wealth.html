@@ -1571,13 +1571,13 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
 <div class="overlay" id="modal-insights" role="dialog" aria-modal="true" aria-label="事件与风险详情">
   <div class="modal insights-modal">
     <div class="modal-title"><span>事件与风险</span><button class="modal-x" onclick="closeModal('modal-insights')" aria-label="关闭"><i class="ti ti-x"></i></button></div>
-    <p class="insights-intro">查看近期事件、持仓到期与风险提示。</p>
-            <aside class="term-zone term-zone-intel intel-mode-events"><div class="intel-switch" aria-label="事件与风险切换"><button type="button" class="btn btn-ghost btn-sm" aria-pressed="true" onclick="setIntelView('events',this)">近期事件</button><button type="button" class="btn btn-ghost btn-sm" aria-pressed="false" onclick="setIntelView('risk',this)">风险检查</button></div>
+    <p class="insights-intro">仅显示未来日程、到期待处理事项和当前风险。</p>
+            <aside class="term-zone term-zone-intel intel-mode-events"><div class="intel-switch" aria-label="事件与风险切换"><button type="button" class="btn btn-ghost btn-sm" aria-pressed="true" onclick="setIntelView('events',this)">未来日程</button><button type="button" class="btn btn-ghost btn-sm" aria-pressed="false" onclick="setIntelView('risk',this)">风险检查</button></div>
           <div class="term-intel-events">
             <div class="card ov-events-card mb-0" id="ov-events-card">
               <div class="ov-events-hd">
                 <div>
-                  <div class="ov-events-title-row"><div class="card-title" style="margin-bottom:0"><i class="ti ti-calendar-event"></i> 近期事件</div><button type="button" id="ov-events-toggle" class="btn btn-ghost btn-sm ov-events-toggle" aria-controls="ov-events-list" aria-expanded="false" onclick="toggleOverviewEvents()" hidden>展开全部</button></div>
+                  <div class="ov-events-title-row"><div class="card-title" style="margin-bottom:0"><i class="ti ti-calendar-event"></i> 未来日程</div><button type="button" id="ov-events-toggle" class="btn btn-ghost btn-sm ov-events-toggle" aria-controls="ov-events-list" aria-expanded="false" onclick="toggleOverviewEvents()" hidden>展开全部</button></div>
                   <div class="ov-events-sub" id="ov-events-range">近1个月已发生 + 未来12个月 · 宏观 + 持仓到期</div>
                 </div>
                 <div class="ov-events-filters" id="ov-events-filters">
@@ -1585,7 +1585,6 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
                   <button type="button" class="ov-events-filter" data-ev-filter="macro" onclick="setEventsFilter('macro',this)">宏观</button>
                   <button type="button" class="ov-events-filter" data-ev-filter="personal" onclick="setEventsFilter('personal',this)">我的持仓</button>
                   <button type="button" class="ov-events-filter" data-ev-filter="high" onclick="setEventsFilter('high',this)">高影响</button>
-                  <button type="button" class="ov-events-filter" data-ev-filter="news" onclick="setEventsFilter('news',this)">资讯</button>
                 </div>
               </div>
               <div class="ov-events-list" id="ov-events-list"></div>
@@ -4491,7 +4490,7 @@ function collectPersonalWatchEvents(){
     const end=p.tdContractEnd||p.tdEnd;
     if(!end)return;
     const d=new Date(end+'T00:00:00');
-    if(d<past||d>horizon)return;
+    if(d>horizon||!(WealthMath.depositTerms(p).principal>0))return;
     const days=eventDaysUntil(end);
     const region=p.region||'au';
     const pastEv=days<0;
@@ -4503,6 +4502,7 @@ function collectPersonalWatchEvents(){
       cat:'personal',
       impact:Math.abs(days)<=30?'high':Math.abs(days)<=90?'medium':'medium',
       personal:true,
+      actionPending:pastEv,
       ...extra
     });
   });
@@ -4552,7 +4552,7 @@ function mergeWatchEvents(){
   return all
     .filter(e=>{
       const d=new Date(e.date+'T00:00:00');
-      return d>=past&&d<=horizon;
+      return (d>=past||e.personal&&e.actionPending)&&d<=horizon;
     })
     .map(e=>{
       if(!e.actualPending||eventDaysUntil(e.date)!==0)return e;
@@ -4655,7 +4655,16 @@ function setEventsFilter(filter,btn){
   renderMajorEventsWatch();
 }
 
+function watchEventPending(ev,asOf=localTodayISO(),now=Date.now()){
+  if(ev.personal&&ev.actionPending)return true;
+  if(ev.time&&!ev.scheduleOnly){
+    const instant=dateTimeInZoneToUtc(ev.date,ev.time,eventSourceTimeZone(ev)).getTime();
+    if(Number.isFinite(instant))return instant>now;
+  }
+  return ev.date>=asOf;
+}
 function selectOverviewEvents(items,expanded,asOf,filter){
+  items=items.filter(e=>e.kind==='news'?filter==='news':e.pending!==false&&(e.date>=asOf||e.actionPending||e.pending===true));
   if(expanded)return items.slice();
   const news=items.filter(e=>e.kind==='news').sort((a,b)=>(b.score||0)-(a.score||0)||b.date.localeCompare(a.date));
   if(filter==='news')return news.slice(0,4);
@@ -4671,43 +4680,19 @@ function renderMajorEventsWatch(){
   const listEl=document.getElementById('ov-events-list');
   const rangeEl=document.getElementById('ov-events-range');
   if(!listEl)return;
-  let events=mergeWatchEvents();
-  let newsItems=[];
+  let events=mergeWatchEvents().map(e=>({...e,pending:watchEventPending(e)})).filter(e=>e.pending);
   if(ovEventsFilter==='macro')events=events.filter(e=>!e.personal);
-  else if(ovEventsFilter==='personal'){
-    events=events.filter(e=>e.personal);
-    newsItems=getWatchNewsItems(1);
-  }else if(ovEventsFilter==='high')events=events.filter(e=>e.impact==='high');
-  else if(ovEventsFilter==='news'){
-    events=[];
-    newsItems=getWatchNewsItems(1);
-  }else{
-    newsItems=getWatchNewsItems(1);
-  }
-
+  else if(ovEventsFilter==='personal')events=events.filter(e=>e.personal);
+  else if(ovEventsFilter==='high')events=events.filter(e=>e.impact==='high');
   const today=new Date(localTodayISO()+'T00:00:00');
-  const past=new Date(today);past.setDate(past.getDate()-30);
-  const end=new Date(today);end.setDate(end.getDate()+365);
-  const fmtR=d=>`${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
-  const eventCount=events.length;
-  const newsCount=newsItems.length;
-  if(rangeEl){
-    if(ovEventsFilter==='news')rangeEl.textContent=`近30天持仓相关资讯 · ${newsCount} 条${D.newsCache?.updatedAt?' · 更新 '+D.newsCache.updatedAt:''}`;
-    else if(newsCount>0)rangeEl.textContent=`${fmtR(past)} — ${fmtR(end)} · ${eventCount} 项日历 · ${newsCount} 条资讯`;
-    else rangeEl.textContent=`${fmtR(past)} — ${fmtR(end)} · 共 ${eventCount} 项`;
-  }
-
-  let combined=[...events.map(e=>({...e,kind:'event'})),...newsItems];
-  if(ovEventsFilter==='news')combined.sort((a,b)=>b.date.localeCompare(a.date)||b.score-a.score);
-  else combined.sort((a,b)=>a.date.localeCompare(b.date)||(a.kind==='event'&&b.kind==='news'?-1:a.kind==='news'&&b.kind==='event'?1:0));
-
+  let combined=events.map(e=>({...e,kind:'event'})).sort((a,b)=>Number(!!b.actionPending)-Number(!!a.actionPending)||a.date.localeCompare(b.date));
   const allCombined=combined;
   combined=selectOverviewEvents(allCombined,true,localTodayISO(),ovEventsFilter);
   const toggle=document.getElementById('ov-events-toggle'),card=document.getElementById('ov-events-card');
   card?.classList.toggle('events-expanded',ovEventsExpanded);
   card?.classList.toggle('events-compact',!ovEventsExpanded);
   if(toggle)toggle.hidden=true;
-  if(rangeEl)rangeEl.textContent=(ovEventsFilter==='news'?'近7天相关资讯':'到期事项与关联日程优先')+' · 显示 '+combined.length+' / '+allCombined.length+' 项';
+  if(rangeEl)rangeEl.textContent='未来日程与待处理到期事项 · '+combined.length+' 项';
   if(!combined.length){
     const emptyMsg=ovEventsFilter==='news'
       ?'暂无持仓相关资讯。可到「资讯」页点击「刷新资讯」。'
@@ -4744,7 +4729,7 @@ function renderMajorEventsWatch(){
     const isPast=days<0;
     const soon=!isPast&&days<=14;
     const impactCls=ev.impact==='high'?'impact-high':'impact-med';
-    rows.push(`<div class="ov-event-row${isToday?' today':''}${isPast?' past':''}${soon&&!isToday?' soon':''}${ev.personal?' personal':''}">
+    rows.push(`<div class="ov-event-row${isToday?' today':''}${isPast?' past':''}${ev.actionPending?' action-pending':''}${soon&&!isToday?' soon':''}${ev.personal?' personal':''}">
       <div class="ov-event-date">${renderEventDualTzHtml(ev)}<span>${yearLbl.trim()||'本年'}</span>${countdown?`<div class="countdown${isPast?' past-days':''}">${countdown}</div>`:''}</div>
       <div class="ov-event-body">
         <div class="ov-event-title">${escOvHtml(ev.title)}</div>
@@ -4756,7 +4741,7 @@ function renderMajorEventsWatch(){
           <span class="ov-event-tag">${catLabel[ev.cat]||ev.cat||'—'}</span>
           <span class="ov-event-tag ${impactCls}">${ev.impact==='high'?'高影响':'中影响'}</span>
           ${isToday?'<span class="ov-event-tag impact-high">📍 今天</span>':''}
-          ${isPast?'<span class="ov-event-tag">已发生</span>':''}
+          ${isPast?'<span class="ov-event-tag impact-high">到期待处理</span>':''}
           ${ev.personal?'<span class="ov-event-tag">📌 自动同步</span>':''}
         </div>
       </div>
@@ -4768,9 +4753,6 @@ function renderMajorEventsWatch(){
       if(calOnly.length&&calOnly.every(e=>eventDaysUntil(e.date)<0))rows.push(todayMarkerHtml());
       else if(calOnly.length&&calOnly.every(e=>eventDaysUntil(e.date)>0))rows.unshift(todayMarkerHtml());
     }
-  }
-  if((ovEventsExpanded||ovEventsFilter==='news')&&newsCount===0&&(ovEventsFilter==='all'||ovEventsFilter==='personal'||ovEventsFilter==='news')&&(!D.newsCache?.items?.length)){
-    rows.push('<div class="ov-events-news-hint">持仓相关新闻尚未拉取。<a href="#" onclick="showPage(\'news\');return false">打开资讯页刷新</a> 或在资讯页点击「刷新资讯」。</div>');
   }
   listEl.innerHTML=rows.join('');
   renderEventsAiMsgs();
@@ -5061,7 +5043,7 @@ function syncIntelColumnHeight(){
   if(!intel||!portfolio||!portfolio.getClientRects().length)return;
   if(intel.closest('#modal-insights')){
     for(const id of ['ov-events-list','ov-insights'])for(const row of document.getElementById(id)?.children||[])row.hidden=false;
-    const label=document.getElementById('ov-events-range');if(label)label.textContent='近期事件与未来安排 · 可按类型筛选';
+    const label=document.getElementById('ov-events-range');if(label)label.textContent='未来日程与待处理事项 · 可按类型筛选';
     return;
   }
   const desktop=window.matchMedia('(min-width:1200px)').matches;
@@ -6511,7 +6493,7 @@ function buildAiDailyBriefOneLiner(){
   if(!valuationStatus().complete)return '估值待补全 · 点击核对行情与汇率';
   const td=localTodayISO();
   const bits=[];
-  const upcoming=mergeWatchEvents().filter(e=>eventDaysUntil(e.date)>=0).sort((a,b)=>{
+  const upcoming=mergeWatchEvents().filter(e=>watchEventPending(e)).sort((a,b)=>{
     const imp=x=>x.impact==='high'?0:1;
     return imp(a)-imp(b)||a.date.localeCompare(b.date);
   });

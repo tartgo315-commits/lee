@@ -353,3 +353,5 @@ body.light .asset-type-transit{--type-color:#89502b;--type-bg:#fff2e9;--type-bor
 #page-overview .ov-region-panel tr[data-holding-key]>td:nth-child(2){display:flex!important;align-items:center;min-width:0}
 #page-overview .ov-region-panel tr[data-holding-key]>td:nth-child(2) .ov-holding-account{min-width:0}
 .finance-item-meta .asset-type-badge{margin-top:-1px}
+
+#modal-insights .ov-event-row.action-pending{opacity:1;border-left:2px solid var(--warn);padding-left:10px!important}
