@@ -4946,7 +4946,7 @@ function renderOverviewHoldings(){
   const display=[];
   for(const region of groupOverviewHoldingRows(selected)){
     display.push({heading:'region',label:HOLDING_SECTIONS[region.region],...region});
-    for(const account of region.accounts){display.push({heading:'account',label:FinanceView.accountLabel(account.account,account.rows.map(r=>r.product)),...account});display.push(...account.rows);}
+    for(const account of region.accounts){display.push({heading:'account',label:FinanceView.accountLabel(account.account,account.rows.map(r=>r.product)),...account});display.push(...account.rows.filter(r=>!financeEmbeddedInterest(r,selected)));}
   }
   let regionBody=null;
   for(const row of display){
@@ -4958,7 +4958,8 @@ function renderOverviewHoldings(){
       tr.className=row.heading==='region'?'ov-region-heading':'ov-account-heading';
       if(row.heading==='region'){tr.id='ov-region-'+row.region;tr.tabIndex=-1;}
       cell.colSpan=6;wrap.className='ov-group-heading';title.textContent=row.label;total.className='ov-group-total';
-      text(total,row.count+' 项持仓'+(row.missing?' · '+row.missing+' 项估值不完整':''));
+      const embedded=row.heading==='region'?selected.filter(r=>r.region===row.region&&financeEmbeddedInterest(r,selected)).length:0;
+      text(total,(row.count-embedded)+' 项持仓'+(embedded?' · 含'+embedded+'笔应计利息':'')+(row.missing?' · '+row.missing+' 项估值不完整':''));
       const amount=document.createElement('div');if(typeof threeCurrencyHtml==='function')amount.innerHTML=(row.missing?'已知部分 ':'')+threeCurrencyHtml(row.knownCny);else amount.textContent=(row.missing?'已知部分 ':'合计 ')+fc(row.knownCny,'CNY',0);total.append(amount);
       if(row.heading==='region'&&row.region==='us'&&row.count===all.filter(r=>r.region==='us').length){const pnl=document.createElement('span');pnl.innerHTML=financeProfitHtml();title.append(pnl);}
       const capital=title.querySelector('.finance-capital-line');
@@ -5009,7 +5010,8 @@ function renderOverviewHoldings(){
   layoutOverviewFinanceColumns(body);
   if(!selected.length){const empty=document.createElement('p');empty.className='ov-holdings-empty';empty.textContent=all.length?'没有符合当前筛选的资产，试试重置筛选。':'尚无资产，点击顶部「添加资产」开始记录。';body.append(empty);}
   const missing=selected.filter(row=>!row.valuation.complete).length,known=WealthMath.sum(selected.filter(row=>row.valuation.complete).map(row=>row.valuation.cny));
-  document.getElementById('ov-holdings-status').textContent='显示 '+selected.length+' / '+all.length+' 项持仓 · '+(missing?'已知部分估值 ':'折合 CNY 合计 ')+fc(known,'CNY',2)+(missing?' · '+missing+' 项估值不完整':'');
+  const embeddedSelected=selected.filter(r=>financeEmbeddedInterest(r,selected)).length,embeddedAll=all.filter(r=>financeEmbeddedInterest(r,all)).length;
+  document.getElementById('ov-holdings-status').textContent='显示 '+(selected.length-embeddedSelected)+' / '+(all.length-embeddedAll)+' 项持仓'+(embeddedSelected?' · 另'+embeddedSelected+'笔应计利息计入总额':'')+' · '+(missing?'已知部分估值 ':'折合 CNY 合计 ')+fc(known,'CNY',2)+(missing?' · '+missing+' 项估值不完整':'');
   document.getElementById('ov-sort-value').textContent=overviewHoldingFilters.sort==='asc'?'金额从低到高 ↑':'金额从高到低 ↓';
   document.getElementById('ov-filter-summary').textContent=overviewHoldingFilters.region||overviewHoldingFilters.account||overviewHoldingFilters.type?'筛选持仓（已筛选）':'筛选持仓（可选）';
   LedgerUI.refresh();renderStockLibrary();
