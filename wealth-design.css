@@ -286,3 +286,15 @@ body .term-intel-events .ov-event-date .tz-line.cn{color:var(--control-link)}
  .topbar>.fx-strip{order:5;flex:0 0 100%;min-width:0;width:100%;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin}
  .topbar>.topbar-right{margin-left:auto}
 }
+
+/* Keep quote feedback and cloud controls on one compact status line. */
+.status-toolbar{display:flex;align-items:center;gap:8px 16px;flex-wrap:wrap;padding:3px var(--gutter-x);border-bottom:1px solid var(--border-light);background:var(--bg-card);min-width:0}
+.status-toolbar>.global-refresh-strip{flex:1 1 480px;min-width:0;padding:0;border:0;background:transparent;overflow-wrap:anywhere}
+.status-toolbar>.global-refresh-strip:empty{display:none}
+.status-toolbar>#cloud-sync-banner{display:flex;align-items:center;gap:12px;flex:0 1 auto;margin:0 0 0 auto!important;padding:0!important;min-height:27px;flex-wrap:wrap}
+.status-toolbar #cloud-sync-status{overflow-wrap:anywhere}
+@media(max-width:1000px){
+ .status-toolbar{gap:3px 10px;padding:3px 10px}
+ .status-toolbar>.global-refresh-strip{flex-basis:100%}
+ .status-toolbar>#cloud-sync-banner{width:100%;justify-content:space-between;flex-wrap:nowrap!important}
+}

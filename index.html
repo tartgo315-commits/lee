@@ -1139,9 +1139,12 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
     <details id="nav-quote-notice" class="nav-notice nav-notice-info" hidden><summary id="nav-quote-summary">行情提示</summary><div class="nav-notice-popup"><div id="stock-quote-fallback-banner" class="alert alert-warn" role="status" style="display:none;margin-bottom:var(--s-5);padding:var(--s-3) var(--gutter-x);border-radius:var(--r);line-height:1.45;font-size:var(--text-xs)"></div></div></details>
   </div>
   </div>
-  <div id="global-refresh-status" class="global-refresh-strip" aria-live="polite"></div>
+  <div class="status-toolbar">
+    <div id="global-refresh-status" class="global-refresh-strip" aria-live="polite"></div>
+    <div id="cloud-sync-banner" class="card"><span id="cloud-sync-status" role="status" aria-live="polite">正在检查线上账本…</span><button type="button" class="btn btn-ghost btn-sm" onclick="showPage('settings')">同步设置</button></div>
+  </div>
 
-  <div class="main"><div id="cloud-sync-banner" class="card" style="padding:10px 14px;margin-bottom:12px;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap"><span id="cloud-sync-status" role="status" aria-live="polite">正在检查线上账本…</span><button type="button" class="btn btn-ghost btn-sm" onclick="showPage('settings')">同步设置</button></div>
+  <div class="main">
     <div id="proxy-miss-banner" class="alert alert-warn" role="alert" style="display:none;margin-bottom:var(--s-5);padding:var(--s-4) var(--gutter-x);border-radius:var(--r);line-height:1.55;font-size:var(--text-sm)"></div>
     <div id="http-data-migrate-banner" class="alert alert-info" role="status" style="display:none;margin-bottom:var(--s-5);padding:var(--s-4) var(--gutter-x);border-radius:var(--r);line-height:1.55;font-size:var(--text-sm)"></div>
 
