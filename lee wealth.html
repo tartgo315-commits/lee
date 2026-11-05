@@ -4910,6 +4910,9 @@ function renderOverviewHoldings(){
       <div id="ov-holdings-status" class="ov-holdings-status" role="status" aria-live="polite"></div>
       <p class="ov-holdings-note">账面盈亏仅对应当前持仓，不包含已卖出资产和分红；通过成交入口记录的买入费用计入成本；整体收益请查看「NAV 历史」。</p>`;
     document.getElementById('ov-filter-toolbar')?.append(root.querySelector('.ov-holding-filter-tools'));
+    const sortLine=root.querySelector('.ov-region-sort'),explanation=sortLine.querySelector('span');
+    explanation.className='portfolio-explainer';document.getElementById('ov-filter-toolbar').after(explanation);
+    document.querySelector('.term-portfolio-hd').append(sortLine.querySelector('#ov-sort-value'));sortLine.remove();
     for(const [id,field] of [['ov-filter-region','region'],['ov-filter-account','account'],['ov-filter-type','type']]){
       document.getElementById(id).addEventListener('change',e=>{overviewHoldingFilters[field]=e.target.value;if(field==='region')overviewHoldingFilters.account='';renderOverviewHoldings();});
     }
