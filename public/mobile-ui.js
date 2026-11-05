@@ -3,7 +3,7 @@
  const el=id=>document.getElementById(id),mobile=()=>matchMedia('(max-width:1000px)').matches;
  const actions=[
   ['刷新全部行情',()=>el('refresh-all-btn').click(),'行情与分析'],
-  ['AI 今日解读',()=>el('topbar-ai').click()],['AI 账本问答',()=>el('assistant-launcher').click()],
+  ['事件与风险',()=>el('topbar-ai').click()],['AI 账本问答',()=>el('assistant-launcher').click()],
   ['记录今日快照',()=>el('snap-btn').click(),'账本与备份'],['导出账本备份',()=>{document.querySelector('.topbar-right [title="导出 JSON"]').click();showToast({message:'已发起导出，请在浏览器下载或文件中确认保存',type:'info'});}],
   ['导入账本 / 同步设置',()=>showPage('settings')],['资金工作台',()=>LedgerUI.showWorkspace('records')],['批量导入美股',()=>openBatchModal()],
   ['切换深浅色主题',()=>toggleNight(),'显示与安全'],['锁屏',()=>showPinOverlay()],
