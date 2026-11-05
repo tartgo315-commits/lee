@@ -4961,7 +4961,11 @@ function renderOverviewHoldings(){
       text(total,row.count+' 项持仓'+(row.missing?' · '+row.missing+' 项估值不完整':''));
       const amount=document.createElement('div');if(typeof threeCurrencyHtml==='function')amount.innerHTML=(row.missing?'已知部分 ':'')+threeCurrencyHtml(row.knownCny);else amount.textContent=(row.missing?'已知部分 ':'合计 ')+fc(row.knownCny,'CNY',0);total.append(amount);
       if(row.heading==='region'&&row.region==='us'&&row.count===all.filter(r=>r.region==='us').length){const pnl=document.createElement('span');pnl.innerHTML=financeProfitHtml();title.append(pnl);}
-      wrap.append(title,total);cell.append(wrap);tr.append(cell);regionBody.append(tr);continue;
+      const capital=title.querySelector('.finance-capital-line');
+      if(row.heading==='region'&&row.region==='us'&&capital){
+        wrap.classList.add('finance-heading-compact');const line=document.createElement('div');line.className='finance-heading-bottom';line.append(capital,total);wrap.append(title,line);
+      }else wrap.append(title,total);
+      cell.append(wrap);tr.append(cell);regionBody.append(tr);continue;
     }
     const p=row.product,v=row.valuation,tr=document.createElement('tr');tr.dataset.holdingKey=row.key;
     const cells=Array.from({length:6},()=>document.createElement('td'));tr.append(...cells);

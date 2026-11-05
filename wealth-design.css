@@ -361,3 +361,13 @@ body.light .asset-type-transit{--type-color:#89502b;--type-bg:#fff2e9;--type-bor
 .term-portfolio-hd>#ov-sort-value{flex:none;font-size:11px;min-height:32px;margin:0}
 @media(min-width:1001px){#ov-filter-toolbar{flex:0 1 auto}}
 @media(max-width:1000px){.term-portfolio-hd>.portfolio-explainer{flex-basis:100%;margin:0}.term-portfolio-hd>#ov-sort-value{min-height:40px}}
+
+/* Finance totals share the capital line below the title and profit. */
+.finance-heading-bottom{display:flex;align-items:center;flex-wrap:wrap;gap:4px 12px;width:100%;min-width:0}
+#ov-region-us .finance-heading-bottom .finance-capital-line{flex:0 1 auto}
+#ov-region-us .finance-heading-bottom .ov-group-total{margin-left:auto;flex-wrap:wrap;min-width:0}
+@media(min-width:1500px){
+ #ov-region-us .finance-heading-bottom{flex-wrap:nowrap}
+ #ov-region-us .finance-heading-bottom .ov-group-total{flex-wrap:nowrap}
+ #ov-region-us .finance-heading-bottom .three-currency{flex-wrap:nowrap}
+}
