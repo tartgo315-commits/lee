@@ -298,3 +298,11 @@ body .term-intel-events .ov-event-date .tz-line.cn{color:var(--control-link)}
  .status-toolbar>.global-refresh-strip{flex-basis:100%}
  .status-toolbar>#cloud-sync-banner{width:100%;justify-content:space-between;flex-wrap:nowrap!important}
 }
+
+/* Sync status shares the navigation row, with no dedicated empty row below. */
+.navigation-row>#cloud-sync-banner{display:flex;align-items:center;gap:12px;flex:0 0 auto;margin:0 16px 0 auto!important;padding:0!important;min-height:27px;white-space:nowrap}
+.status-toolbar:has(>.global-refresh-strip:empty){display:none}
+@media(max-width:1000px){
+ .navigation-row{flex-wrap:wrap}
+ .navigation-row>#cloud-sync-banner{margin:3px 10px 3px auto!important;min-width:0;white-space:normal;gap:8px}
+}

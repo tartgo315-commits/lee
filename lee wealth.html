@@ -1138,10 +1138,10 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
     <details id="nav-valuation-notice" class="nav-notice nav-notice-warn" hidden><summary id="nav-valuation-summary">估值提示</summary><div class="nav-notice-popup"><div id="valuation-notice" class="alert alert-warn" role="status" hidden></div></div></details>
     <details id="nav-quote-notice" class="nav-notice nav-notice-info" hidden><summary id="nav-quote-summary">行情提示</summary><div class="nav-notice-popup"><div id="stock-quote-fallback-banner" class="alert alert-warn" role="status" style="display:none;margin-bottom:var(--s-5);padding:var(--s-3) var(--gutter-x);border-radius:var(--r);line-height:1.45;font-size:var(--text-xs)"></div></div></details>
   </div>
+    <div id="cloud-sync-banner" class="card"><span id="cloud-sync-status" role="status" aria-live="polite">正在检查线上账本…</span><button type="button" class="btn btn-ghost btn-sm" onclick="showPage('settings')">同步设置</button></div>
   </div>
   <div class="status-toolbar">
     <div id="global-refresh-status" class="global-refresh-strip" aria-live="polite"></div>
-    <div id="cloud-sync-banner" class="card"><span id="cloud-sync-status" role="status" aria-live="polite">正在检查线上账本…</span><button type="button" class="btn btn-ghost btn-sm" onclick="showPage('settings')">同步设置</button></div>
   </div>
 
   <div class="main">
