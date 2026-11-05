@@ -272,3 +272,17 @@ body .ov-region-heading .three-currency small{color:var(--text-3)}
 
 body .nav-quote-status{color:var(--text-3)}
 body .term-intel-events .ov-event-date .tz-line.cn{color:var(--control-link)}
+/* Quote values never surrender their width to search or summary controls. */
+@media(min-width:1001px){
+ .topbar{gap:10px}
+ .topbar>.fx-strip{flex:0 0 auto;min-width:max-content;overflow:visible}
+ .topbar .fx-chip{flex:0 0 auto}
+ .topbar>.topbar-cmdk{flex:1 1 160px;max-width:240px;margin-left:0}
+ .topbar>.topbar-ai{flex:1 1 140px;max-width:260px;margin-left:0}
+ .topbar-brand,.topbar-title,.topbar-right{flex-shrink:0}
+}
+@media(min-width:1001px) and (max-width:1600px){
+ .topbar{flex-wrap:wrap;height:auto;min-height:94px;max-height:none;padding-top:8px;padding-bottom:8px;overflow:visible;row-gap:8px}
+ .topbar>.fx-strip{order:5;flex:0 0 100%;min-width:0;width:100%;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin}
+ .topbar>.topbar-right{margin-left:auto}
+}
