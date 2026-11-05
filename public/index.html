@@ -1089,8 +1089,8 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
       <span class="topbar-cmdk-label">搜索资产、账户、页面或操作…</span>
       <span class="topbar-cmdk-kbd">Ctrl+K</span>
     </button>
-    <button type="button" class="topbar-ai" id="topbar-ai" onclick="openAiModal()" title="打开 AI 详细分析" aria-label="AI 今日解读">
-      <span class="topbar-ai-lbl">摘要</span>
+    <button type="button" class="topbar-ai" id="topbar-ai" onclick="openInsightsHub()" aria-haspopup="dialog" aria-controls="modal-insights" title="打开 AI 详细分析" aria-label="AI 今日解读">
+      <span class="topbar-ai-lbl">事件与风险</span>
       <span class="topbar-ai-summary" id="topbar-ai-summary">加载今日解读…</span>
     </button>
     <div class="topbar-right"><button type="button" class="btn btn-outline btn-sm" id="assistant-launcher" data-assistant-launcher aria-controls="ledger-assistant" aria-expanded="false" onclick="LedgerAssistant.open()">AI 账本</button>
@@ -1233,30 +1233,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
           <div id="ov-regions"></div>
         </section>
 
-        <aside class="term-zone term-zone-intel intel-mode-events"><div class="intel-switch" aria-label="事件与风险切换"><button type="button" class="btn btn-ghost btn-sm" aria-pressed="true" onclick="setIntelView('events',this)">近期事件</button><button type="button" class="btn btn-ghost btn-sm" aria-pressed="false" onclick="setIntelView('risk',this)">风险检查</button></div>
-          <div class="term-intel-events">
-            <div class="card ov-events-card mb-0" id="ov-events-card">
-              <div class="ov-events-hd">
-                <div>
-                  <div class="ov-events-title-row"><div class="card-title" style="margin-bottom:0"><i class="ti ti-calendar-event"></i> 近期事件</div><button type="button" id="ov-events-toggle" class="btn btn-ghost btn-sm ov-events-toggle" aria-controls="ov-events-list" aria-expanded="false" onclick="toggleOverviewEvents()" hidden>展开全部</button></div>
-                  <div class="ov-events-sub" id="ov-events-range">近1个月已发生 + 未来12个月 · 宏观 + 持仓到期</div>
-                </div>
-                <div class="ov-events-filters" id="ov-events-filters">
-                  <button type="button" class="ov-events-filter active" data-ev-filter="all" onclick="setEventsFilter('all',this)">全部</button>
-                  <button type="button" class="ov-events-filter" data-ev-filter="macro" onclick="setEventsFilter('macro',this)">宏观</button>
-                  <button type="button" class="ov-events-filter" data-ev-filter="personal" onclick="setEventsFilter('personal',this)">我的持仓</button>
-                  <button type="button" class="ov-events-filter" data-ev-filter="high" onclick="setEventsFilter('high',this)">高影响</button>
-                  <button type="button" class="ov-events-filter" data-ev-filter="news" onclick="setEventsFilter('news',this)">资讯</button>
-                </div>
-              </div>
-              <div class="ov-events-list" id="ov-events-list"></div>
-              <div class="term-intel-risk">
-                <div class="term-intel-hd risk-heading"><span><i class="ti ti-shield-check"></i> 持仓风险检查</span><button type="button" class="btn btn-ghost btn-sm" onclick="openRiskAnalysis()">查看分析</button></div>
-                <div id="ov-insights" class="ov-insights"></div>
-              </div>
-            </div>
-          </div>
-        </aside>
+
       </div>
       <div class="sr-only-totals" aria-hidden="true">
         <span id="ov-cny-sub">—</span>
@@ -1591,6 +1568,37 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
 </div>
 
 <!-- BATCH IMPORT MODAL -->
+<div class="overlay" id="modal-insights" role="dialog" aria-modal="true" aria-label="事件与风险详情">
+  <div class="modal insights-modal">
+    <div class="modal-title"><span>事件与风险</span><button class="modal-x" onclick="closeModal('modal-insights')" aria-label="关闭"><i class="ti ti-x"></i></button></div>
+    <p class="insights-intro">查看近期事件、持仓到期与风险提示。</p>
+            <aside class="term-zone term-zone-intel intel-mode-events"><div class="intel-switch" aria-label="事件与风险切换"><button type="button" class="btn btn-ghost btn-sm" aria-pressed="true" onclick="setIntelView('events',this)">近期事件</button><button type="button" class="btn btn-ghost btn-sm" aria-pressed="false" onclick="setIntelView('risk',this)">风险检查</button></div>
+          <div class="term-intel-events">
+            <div class="card ov-events-card mb-0" id="ov-events-card">
+              <div class="ov-events-hd">
+                <div>
+                  <div class="ov-events-title-row"><div class="card-title" style="margin-bottom:0"><i class="ti ti-calendar-event"></i> 近期事件</div><button type="button" id="ov-events-toggle" class="btn btn-ghost btn-sm ov-events-toggle" aria-controls="ov-events-list" aria-expanded="false" onclick="toggleOverviewEvents()" hidden>展开全部</button></div>
+                  <div class="ov-events-sub" id="ov-events-range">近1个月已发生 + 未来12个月 · 宏观 + 持仓到期</div>
+                </div>
+                <div class="ov-events-filters" id="ov-events-filters">
+                  <button type="button" class="ov-events-filter active" data-ev-filter="all" onclick="setEventsFilter('all',this)">全部</button>
+                  <button type="button" class="ov-events-filter" data-ev-filter="macro" onclick="setEventsFilter('macro',this)">宏观</button>
+                  <button type="button" class="ov-events-filter" data-ev-filter="personal" onclick="setEventsFilter('personal',this)">我的持仓</button>
+                  <button type="button" class="ov-events-filter" data-ev-filter="high" onclick="setEventsFilter('high',this)">高影响</button>
+                  <button type="button" class="ov-events-filter" data-ev-filter="news" onclick="setEventsFilter('news',this)">资讯</button>
+                </div>
+              </div>
+              <div class="ov-events-list" id="ov-events-list"></div>
+              <div class="term-intel-risk">
+                <div class="term-intel-hd risk-heading"><span><i class="ti ti-shield-check"></i> 持仓风险检查</span><button type="button" class="btn btn-ghost btn-sm" onclick="openRiskAnalysis()">查看分析</button></div>
+                <div id="ov-insights" class="ov-insights"></div>
+              </div>
+            </div>
+          </div>
+        </aside>
+    <div class="insights-footer"><button type="button" class="btn btn-ghost" onclick="closeModal('modal-insights');openAiModal()">打开资产分析 <i class="ti ti-arrow-right"></i></button></div>
+  </div>
+</div>
 <div class="overlay" id="modal-ai" role="dialog" aria-modal="true" aria-label="资产与分析窗口">
   <div class="modal modal-ai">
     <p class="privacy-note">AI 请求会发送脱敏资产摘要和你输入的问题至所选服务商。请勿在问题中填写账号或其他敏感资料；「本地」分析无需发送资产信息。</p>
@@ -5048,6 +5056,11 @@ let intelFitFrame=0;
 function syncIntelColumnHeight(){
   const intel=document.querySelector('.term-zone-intel'),portfolio=document.querySelector('.term-zone-portfolio');
   if(!intel||!portfolio||!portfolio.getClientRects().length)return;
+  if(intel.closest('#modal-insights')){
+    for(const id of ['ov-events-list','ov-insights'])for(const row of document.getElementById(id)?.children||[])row.hidden=false;
+    const label=document.getElementById('ov-events-range');if(label)label.textContent='近期事件与未来安排 · 可按类型筛选';
+    return;
+  }
   const desktop=window.matchMedia('(min-width:1200px)').matches;
   intel.style.setProperty('--intel-fit-height',Math.ceil(portfolio.getBoundingClientRect().height)+'px');
   const risk=intel.classList.contains('intel-mode-risk'),list=document.getElementById(risk?'ov-insights':'ov-events-list');if(!list)return;
@@ -6474,6 +6487,12 @@ function showModal(id){
 }
 function closeModal(id){const el=document.getElementById(id||'modal');if(!el.classList.contains('open'))return;el.classList.remove('open');modalReturnFocus?.focus();}
 
+function openInsightsHub(){
+  ovEventsExpanded=true;
+  renderMajorEventsWatch();
+  showModal('modal-insights');
+  scheduleIntelHeightSync();
+}
 function openAiModal(){
   const m=document.getElementById('modal-ai');
   if(m)showModal('modal-ai');
@@ -6523,7 +6542,7 @@ function updateTopbarAiSummary(text){
   const last=latestComparableSnapshot(D.navHistory,localTodayISO());
   const detail=last?'比较基准：'+last.date+' 快照。资产变化包含资金进出和汇率影响，不等于投资收益。':'记录快照后可比较资产变化。';
   el.title=el.textContent+'。'+detail;
-  const button=document.getElementById('topbar-ai');if(button){button.title='打开详细分析。'+el.title;button.setAttribute('aria-label','资产摘要：'+el.textContent+'。打开详细分析');}
+  const button=document.getElementById('topbar-ai');if(button){button.title='查看事件与风险详情。'+el.title;button.setAttribute('aria-label','事件与风险：'+el.textContent+'。点击查看详情');}
 }
 function setAiDailyBriefFromText(raw){
   const t=String(raw||'').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();
