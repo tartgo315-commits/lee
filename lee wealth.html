@@ -4966,7 +4966,7 @@ function renderOverviewHoldings(){
   let regionBody=null;
   for(const row of display){
     if(row.heading==='region'){
-      const panel=document.createElement('section'),table=document.createElement('table'),caption=document.createElement('caption');panel.className='ov-region-panel';panel.setAttribute('aria-label',row.label+'持仓');table.className='ov-holdings-table';caption.className='sr-only';caption.textContent=row.label+'持仓：资产、持仓信息、原币估值、人民币折算、账面盈亏与操作';regionBody=document.createElement('tbody');table.append(caption,regionBody);panel.append(table);body.append(panel);
+      const panel=document.createElement('section'),table=document.createElement('table'),caption=document.createElement('caption');panel.className='ov-region-panel';panel.dataset.region=row.region;panel.setAttribute('aria-label',row.label+'持仓');table.className='ov-holdings-table';caption.className='sr-only';caption.textContent=row.label+'持仓：资产、持仓信息、原币估值、人民币折算、账面盈亏与操作';regionBody=document.createElement('tbody');table.append(caption,regionBody);panel.append(table);body.append(panel);
     }
     if(row.heading){
       const tr=document.createElement('tr'),cell=document.createElement('th'),wrap=document.createElement('div'),title=document.createElement(row.heading==='region'?'h3':'h4'),total=document.createElement('div');
@@ -5015,6 +5015,7 @@ function renderOverviewHoldings(){
     if(p.type==='term_deposit'){const maturity=document.createElement('button');maturity.type='button';maturity.className='btn btn-ghost btn-sm';maturity.textContent='到期处理';maturity.addEventListener('click',()=>LedgerUI.open('maturity',p.id));actions.prepend(maturity);}
     cells[5].append(actions);regionBody.append(tr);
   }
+  layoutOverviewFinanceColumns(body);
   if(!selected.length){const empty=document.createElement('p');empty.className='ov-holdings-empty';empty.textContent=all.length?'没有符合当前筛选的资产，试试重置筛选。':'尚无资产，点击顶部「添加资产」开始记录。';body.append(empty);}
   const missing=selected.filter(row=>!row.valuation.complete).length,known=WealthMath.sum(selected.filter(row=>row.valuation.complete).map(row=>row.valuation.cny));
   document.getElementById('ov-holdings-status').textContent='显示 '+selected.length+' / '+all.length+' 项持仓 · '+(missing?'已知部分估值 ':'折合 CNY 合计 ')+fc(known,'CNY',2)+(missing?' · '+missing+' 项估值不完整':'');

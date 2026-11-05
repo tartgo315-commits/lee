@@ -22,3 +22,23 @@ function renderFinancePage(){
  for(const [key,label] of [['otherCash','其他币种现金'],['transit','在途资金'],['other','其他金融资产']])if(rows.some(r=>FinanceView.category(r.product)===key))html+=section(key,label,'CNY','');
  document.getElementById('us-blocks').innerHTML=html;document.getElementById('us-stock-panel').hidden=true;renderStockLibrary();
 }
+
+// Move each holding once into balanced presentation columns; totals stay shared.
+function layoutOverviewFinanceColumns(root){
+ const panel=root.querySelector('.ov-region-panel[data-region="us"]');if(!panel)return;
+ const table=panel.querySelector('table'),body=table.querySelector('tbody'),heading=body.querySelector('.ov-region-heading');
+ const rows=[...body.children].filter(row=>row!==heading),count=rows.filter(row=>row.dataset.holdingKey).length;
+ if(count<2)return;
+ const head=document.createElement('thead');head.append(heading);table.insertBefore(head,body);
+ const right=document.createElement('tbody');right.className='finance-holdings-column';body.className='finance-holdings-column';table.append(right);panel.classList.add('finance-two-columns');
+ body.replaceChildren();const midpoint=Math.ceil(count/2);let placed=0,account=null,continued=false;
+ for(const row of rows){
+   if(row.classList.contains('ov-account-heading')){account=row;if(placed>=midpoint){right.append(row);continued=true;}continue;}
+   if(!row.dataset.holdingKey)continue;
+   const target=placed<midpoint?body:right;
+   if(target===right&&!continued&&account){const label=account.cloneNode(true);label.classList.add('finance-account-continuation');right.append(label);continued=true;}
+   if(target===body&&account&&!account.isConnected)target.append(account);
+   else if(target===body&&account.parentElement!==body)target.append(account);
+   target.append(row);placed++;
+ }
+}

@@ -320,3 +320,18 @@ body .term-intel-events .ov-event-date .tz-line.cn{color:var(--control-link)}
 #modal-insights .intel-switch .btn{min-height:36px}
 .insights-footer{display:flex;justify-content:flex-end;border-top:1px solid var(--border);padding-top:14px;margin-top:14px}
 @media(max-width:1000px){#modal-insights .insights-modal{padding:16px}#modal-insights .intel-switch{top:-16px}}
+
+/* Four desktop lanes: China, two balanced finance lanes, Australia. */
+.finance-two-columns thead{display:block}
+.finance-two-columns thead th{position:static!important}
+.finance-account-continuation{display:none!important}
+@media(min-width:1500px){
+ #page-overview .ov-region-columns{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+ #page-overview .ov-region-panel[data-region="us"]{grid-column:span 2}
+ #page-overview .ov-region-panel:only-child{grid-column:1/-1}
+ #page-overview .finance-two-columns>.ov-holdings-table{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
+ #page-overview .finance-two-columns thead{grid-column:1/-1}
+ #page-overview .finance-holdings-column{min-width:0}
+ #page-overview .finance-holdings-column+tbody{border-left:1px solid var(--border)}
+ #page-overview .finance-account-continuation{display:block!important}
+}
