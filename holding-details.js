@@ -1,3 +1,8 @@
+function assetTypeBadgeHtml(type){
+ const types={stock_us:['股票 / ETF','stock'],term_deposit:['定存','deposit'],fund_cn:['基金 / 理财','fund'],gold:['黄金','gold'],cash:['现金 / 活期','cash'],in_transit:['在途','transit'],other:['其他','other']};
+ const [label,tone]=types[type]||types.other;
+ return '<span class="asset-type-badge asset-type-'+tone+'">'+label+'</span>';
+}
 function threeCurrencyHtml(cny){return '<span class="three-currency">'+['CNY','USD','AUD'].map(c=>'<span><small>'+c+'</small> '+fc(c==='CNY'?cny:fromCNY(cny,c),c,2)+'</span>').join('')+'</span>';}
 function holdingRef(row){return row.manual?'m:us::'+row.account:'p:'+row.product.id;}
 function compactHoldingHtml(row){
@@ -10,7 +15,7 @@ function compactHoldingHtml(row){
  else if(p.type==='in_transit')meta='在途 · '+(p.transfer?.sourceAccount||p.account)+' → '+(p.transfer?.targetAccount||'转入账户');
  else if(p.updatedAt)meta+=' · 更新 '+p.updatedAt;
  const result=profit?.missing?'缺少成本':profit?(profit.amount>0?'+':'')+fc(profit.amount,currency,2)+' · '+profit.label:'详情 ›';
- return '<button type="button" class="finance-item"'+(p.id!==undefined?' data-product-id="'+escAttr(String(p.id))+'"':'')+' onclick=\'openHoldingDetails('+escAttr(JSON.stringify(ref))+')\'><span class="finance-item-title">'+escOvHtml(title)+(v.estimated?'<small class="finance-quote-tag">缓存 / 暂估</small>':'')+'</span><strong class="finance-item-value">'+(v.complete?fc(v.amount,currency,2):'估值待补')+'</strong><span class="finance-item-meta">'+escOvHtml(meta)+'</span><span class="finance-item-result '+(profit&&!profit.missing?(profit.amount>=0?'pos':'neg'):'')+'">'+escOvHtml(result)+'</span></button>';
+ return '<button type="button" class="finance-item"'+(p.id!==undefined?' data-product-id="'+escAttr(String(p.id))+'"':'')+' onclick=\'openHoldingDetails('+escAttr(JSON.stringify(ref))+')\'><span class="finance-item-title">'+escOvHtml(title)+(v.estimated?'<small class="finance-quote-tag">缓存 / 暂估</small>':'')+'</span><strong class="finance-item-value">'+(v.complete?fc(v.amount,currency,2):'估值待补')+'</strong><span class="finance-item-meta">'+assetTypeBadgeHtml(p.type)+escOvHtml(meta)+'</span><span class="finance-item-result '+(profit&&!profit.missing?(profit.amount>=0?'pos':'neg'):'')+'">'+escOvHtml(result)+'</span></button>';
 }
 let holdingDetailsFocus=null;
 function closeHoldingDetails(){document.getElementById('modal-holding-details')?.classList.remove('open');holdingDetailsFocus?.focus();}

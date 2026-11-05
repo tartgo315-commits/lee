@@ -4990,6 +4990,8 @@ function renderOverviewHoldings(){
     if(p.type==='term_deposit'){details.push((p.rate??'—')+'%');if(p.tdContractEnd||p.tdEnd)details.push('到期 '+(p.tdContractEnd||p.tdEnd));}
     text(cells[1],details.slice(1).join(' · ')||OVERVIEW_TYPES[row.type],'ov-holding-account');
     if(p.type==='stock_us'){const average=WealthMath.number(p.costPrice);cells[1].firstChild.textContent+=' · 成本 '+(average!==null?fc(average,WealthMath.stockIdentity(p).currency,2):'未填写');}
+    if(cells[1].textContent===OVERVIEW_TYPES[row.type])cells[1].replaceChildren();
+    cells[1].insertAdjacentHTML('afterbegin',assetTypeBadgeHtml(row.type));
     if(p.type==='stock_us'){
       if(isStopLossTriggered(p))text(cells[0],'已触发止损提醒','ov-holding-estimate');
       else if(isStopLossNear(p))text(cells[0],'接近已设止损价','ov-holding-estimate');

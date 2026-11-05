@@ -335,3 +335,21 @@ body .term-intel-events .ov-event-date .tz-line.cn{color:var(--control-link)}
  #page-overview .finance-holdings-column+tbody{border-left:1px solid var(--border)}
  #page-overview .finance-account-continuation{display:block!important}
 }
+
+/* Asset classes use quiet labels; green and red remain profit/loss signals. */
+.asset-type-badge{display:inline-flex;align-items:center;flex:0 0 auto;vertical-align:middle;font-size:10px;font-weight:600;line-height:17px;padding:0 5px;border:1px solid var(--type-border,#49505c);border-radius:4px;color:var(--type-color,#b7bec9);background:var(--type-bg,#191c21);white-space:nowrap;margin-right:6px}
+.asset-type-stock{--type-color:#a8c5ff;--type-bg:#121e34;--type-border:#354e77}
+.asset-type-deposit{--type-color:#93d9e1;--type-bg:#10272b;--type-border:#315c63}
+.asset-type-fund{--type-color:#ccb5ff;--type-bg:#251a36;--type-border:#574174}
+.asset-type-gold{--type-color:#e8c780;--type-bg:#2a2314;--type-border:#65532c}
+.asset-type-cash{--type-color:#bdc7d6;--type-bg:#1b2028;--type-border:#465160}
+.asset-type-transit{--type-color:#efb995;--type-bg:#302117;--type-border:#705039}
+body.light .asset-type-stock{--type-color:#2455a6;--type-bg:#edf3ff;--type-border:#adc3e9}
+body.light .asset-type-deposit{--type-color:#176574;--type-bg:#eaf7f8;--type-border:#a1cfd5}
+body.light .asset-type-fund{--type-color:#7540a6;--type-bg:#f5effc;--type-border:#cdb4e6}
+body.light .asset-type-gold{--type-color:#805509;--type-bg:#fff7e3;--type-border:#dbc58c}
+body.light .asset-type-cash,body.light .asset-type-other{--type-color:#536171;--type-bg:#f0f3f6;--type-border:#bcc5cf}
+body.light .asset-type-transit{--type-color:#89502b;--type-bg:#fff2e9;--type-border:#dfbda5}
+#page-overview .ov-region-panel tr[data-holding-key]>td:nth-child(2){display:flex!important;align-items:center;min-width:0}
+#page-overview .ov-region-panel tr[data-holding-key]>td:nth-child(2) .ov-holding-account{min-width:0}
+.finance-item-meta .asset-type-badge{margin-top:-1px}
