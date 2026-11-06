@@ -1,3 +1,14 @@
+// Use the same original-currency unit price as the holding valuation.
+function stockUnitQuoteHtml(p,v){
+ if(p.type!=='stock_us')return '';
+ const identity=WealthMath.stockIdentity(p),price=WealthMath.number(v.price),meta=typeof stockPriceSourceBySym!=='undefined'?stockPriceSourceBySym.get(identity.ticker):null;
+ const valid=price!==null&&price>0,cached=meta?.source==='cache'||v.estimated&&!p.quoteReference,reference=!!p.quoteReference;
+ const status=!valid?'待更新':cached?'缓存':reference?'参考':'';
+ const value=identity.currency+' '+(valid?fmt(price,2):'—'),sources={yahoo:'Yahoo',twelve:'Twelve Data',finnhub:'Finnhub',cache:'本机缓存'};
+ const at=meta?.quoteAt,stamp=Number.isFinite(at)&&at>0?' · 行情时间 '+new Intl.DateTimeFormat('zh-CN',{timeZone:'Asia/Shanghai',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(at))+'（北京时间）':'';
+ const title=identity.ticker+' · 当前单价 '+value+' / 股 · '+(status||'最新可用报价')+' · '+(sources[meta?.source]||'已保存报价')+stamp+'；行情可能延迟，点击名称查看详情';
+ return '<span class="holding-unit-price" title="'+escAttr(title)+'" aria-label="'+escAttr(title)+'">'+escOvHtml(value)+(status?'<small> · '+status+'</small>':'')+'</span>';
+}
 function assetTypeBadgeHtml(type){
  const types={stock_us:['股票 / ETF','stock'],term_deposit:['定存','deposit'],fund_cn:['基金 / 理财','fund'],gold:['黄金','gold'],cash:['现金 / 活期','cash'],in_transit:['在途','transit'],other:['其他','other']};
  const [label,tone]=types[type]||types.other;
@@ -15,7 +26,7 @@ function compactHoldingHtml(row){
  else if(p.type==='in_transit')meta='在途 · '+(p.transfer?.sourceAccount||p.account)+' → '+(p.transfer?.targetAccount||'转入账户');
  else if(p.updatedAt)meta+=' · 更新 '+p.updatedAt;
  const result=profit?.missing?'缺少成本':profit?(profit.amount>0?'+':'')+fc(profit.amount,currency,2)+' · '+profit.label:'详情 ›';
- return '<button type="button" class="finance-item"'+(p.id!==undefined?' data-product-id="'+escAttr(String(p.id))+'"':'')+' onclick=\'openHoldingDetails('+escAttr(JSON.stringify(ref))+')\'><span class="finance-item-title">'+escOvHtml(title)+(v.estimated?'<small class="finance-quote-tag">缓存 / 暂估</small>':'')+'</span><strong class="finance-item-value">'+(v.complete?fc(v.amount,currency,2):'估值待补')+'</strong><span class="finance-item-meta">'+assetTypeBadgeHtml(p.type)+escOvHtml(meta)+'</span><span class="finance-item-result '+(profit&&!profit.missing?(profit.amount>=0?'pos':'neg'):'')+'">'+escOvHtml(result)+'</span></button>';
+ return '<button type="button" class="finance-item"'+(p.id!==undefined?' data-product-id="'+escAttr(String(p.id))+'"':'')+' onclick=\'openHoldingDetails('+escAttr(JSON.stringify(ref))+')\'><span class="finance-item-title">'+escOvHtml(title)+stockUnitQuoteHtml(p,v)+(v.estimated&&p.type!=='stock_us'?'<small class="finance-quote-tag">缓存 / 暂估</small>':'')+'</span><strong class="finance-item-value">'+(v.complete?fc(v.amount,currency,2):'估值待补')+'</strong><span class="finance-item-meta">'+assetTypeBadgeHtml(p.type)+escOvHtml(meta)+'</span><span class="finance-item-result '+(profit&&!profit.missing?(profit.amount>=0?'pos':'neg'):'')+'">'+escOvHtml(result)+'</span></button>';
 }
 let holdingDetailsFocus=null;
 function closeHoldingDetails(){document.getElementById('modal-holding-details')?.classList.remove('open');holdingDetailsFocus?.focus();}

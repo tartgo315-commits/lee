@@ -4972,6 +4972,7 @@ function renderOverviewHoldings(){
     const cells=Array.from({length:6},()=>document.createElement('td'));tr.append(...cells);
     const name=document.createElement('button');name.type='button';name.className='ov-holding-name';name.textContent=p.name||p.ticker||p.fundCode||'未命名资产';name.dataset.holdingAction='view';
     const view=()=>{if(typeof openHoldingDetails==='function')openHoldingDetails(row.manual?'m:us::'+row.account:'p:'+p.id);else if(row.region==='other')editProduct(p.id);else revealCmdkHolding(row.region,row.account,row.manual?undefined:p.id);};name.addEventListener('click',view);cells[0].append(name);
+    if(p.type==='stock_us'){cells[0].classList.add('ov-stock-name-price');cells[0].insertAdjacentHTML('beforeend',stockUnitQuoteHtml(p,v));}
     const details=[OVERVIEW_TYPES[row.type]];
     if(p.ticker&&p.ticker!==p.name)details.push(p.ticker);
     if(p.type==='stock_us')details.push(fmt(p.shares,4)+' 股');

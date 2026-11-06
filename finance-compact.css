@@ -34,3 +34,12 @@
 body button.finance-profit-btn.positive{color:var(--up-soft)!important;background:var(--up-bg)!important}body button.finance-profit-btn.negative{color:var(--dn-soft)!important;background:var(--dn-bg)!important}
 .finance-profit-summary{display:inline-flex;flex-wrap:wrap;align-items:center;gap:4px 8px;max-width:100%;min-width:0}.finance-capital-line{display:flex;flex-wrap:wrap;gap:2px 12px;flex-basis:100%;font:500 12px/1.5 var(--font);font-variant-numeric:tabular-nums;color:var(--text-2);letter-spacing:normal;text-transform:none}.finance-capital-line>span{white-space:nowrap}#ov-region-us h3{align-items:flex-start}#ov-region-us h3>span{min-width:0}#us-growth{max-width:100%}
 .finance-profit-summary,#ov-region-us h3>span{display:contents}#us-growth{display:contents!important}
+
+/* Keep the quote directly after the name; the right column remains total value. */
+.holding-unit-price{display:inline-block;flex:0 0 auto;font-size:13px;font-weight:600;line-height:1.5;font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--text-2)}
+.holding-unit-price small{font-size:10px;font-weight:400;color:var(--text-3)}
+#page-overview .ov-region-panel td.ov-stock-name-price{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 7px;min-width:0}
+#page-overview .ov-stock-name-price .ov-holding-name{flex:0 1 auto;min-width:0;max-width:100%}
+#page-overview .ov-stock-name-price .ov-holding-estimate{flex-basis:100%}
+.finance-item-title:has(.holding-unit-price){display:flex;flex-wrap:wrap;align-items:baseline;gap:0 7px;white-space:normal;overflow:visible}
+@media(max-width:768px){.holding-unit-price{font-size:12px}#page-overview .ov-region-panel td.ov-stock-name-price{column-gap:5px}}
