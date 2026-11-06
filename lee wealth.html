@@ -19,6 +19,7 @@
 <script src="finance-view.js"></script>
 <script src="holding-details.js"></script>
 <script src="finance-page.js"></script>
+<script src="valuation-explainer.js"></script>
 <script src="ledger-assistant-context.js"></script>
 <script src="ledger-assistant-ui.js"></script>
 <script src="portfolio-intelligence.js"></script>
@@ -1153,11 +1154,12 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
       <div class="terminal-dashboard">
         <section class="term-zone term-zone-head" id="ov-dash">
           <div class="term-nav-hero">
-            <div class="ov-hero-label">资产总净值</div><span id="quote-recomputed-at" class="quote-recomputed-at" hidden></span>
+            <div class="ov-hero-label">人民币折算总资产</div><span id="quote-recomputed-at" class="quote-recomputed-at" hidden></span>
             <div class="ov-hero-nav" id="ov-cny">¥ —</div>
             <div class="ov-hero-delta">
               <span class="ov-nav-lbl" id="ov-nav-lbl">—</span>
               <span class="ov-nav-baseline" id="ov-nav-baseline"></span>
+              <div id="valuation-explanation" class="valuation-explanation"></div>
             </div>
             <div class="ov-hero-fx" aria-label="美元和澳元总净值">
               <div class="ov-hero-fx-item"><span class="lbl">USD</span><span class="val" id="ov-usd">$ —</span><span class="sub" id="ov-usd-sub">—</span></div>
@@ -2592,6 +2594,7 @@ let finnhubWs=null,finnhubReconnectTimer=null,finnhubCloseIntent=false,finnhubSa
 function applyFxRatesIfStable(fx,force){
   if(!fx||!(fx.USD>0)||!(fx.AUD>0))return false;
   const pu=FX_RATES.USD_TO_CNY,pa=FX_RATES.AUD_TO_CNY;
+  const valuationBefore=typeof valuationRefreshCapture==='function'?valuationRefreshCapture():null;
   if(!force&&!fx._meta?.live){
     if(pu>0&&Math.abs(fx.USD-pu)/pu>FX_AUTO_MAX_DRIFT_PCT)return false;
     if(pa>0&&Math.abs(fx.AUD-pa)/pa>FX_AUTO_MAX_DRIFT_PCT)return false;
@@ -2599,6 +2602,7 @@ function applyFxRatesIfStable(fx,force){
   const { _meta,...rates }=fx;Object.assign(D.fx,rates);
   D.fxMeta={...(_meta||{source:'日度汇率接口'}),updatedAt:new Date().toISOString()};
   FX_RATES.syncCross();
+  if(valuationBefore){D.lastValuationRefresh=explainValuationRefresh(valuationBefore);renderValuationExplanation();}
   return true;
 }
 function commitLiveQuotePrice(prev,next,force){
@@ -2630,6 +2634,7 @@ function pickStableFundNav(gsz,dwjz,prev){
 let __ovLiveDirty=false,__ovLiveFlushTimer=null;
 /** 行情微调时更新顶部、持仓数据与趋势，保留筛选控件和图表实例 */
 function patchOverviewLive(){
+  if(typeof renderValuationExplanation==='function')renderValuationExplanation();
   maybeRollAuWeeklyCompound();
   const cny=totalCNY(),usd=fromCNY(cny,'USD'),aud=fromCNY(cny,'AUD');
   const e0=document.getElementById('ov-cny');if(e0)e0.textContent=fc(cny,'CNY');
@@ -3539,7 +3544,7 @@ function renderSidebar(){
   // FX strip（交叉汇率由 FX_RATES 矩阵衍生）
   FX_RATES.syncCross();
   const flags={USD:'🇺🇸',AUD:'🇦🇺'};
-  const fxParts=['USD','AUD'].map(c=>`<div class="fx-chip"><span class="fx-chip-pair">${c}/CNY</span><span class="fx-chip-rate">${c==='USD'?FX_RATES.USD_TO_CNY:FX_RATES.AUD_TO_CNY}</span></div>`);
+  const fxParts=['USD','AUD'].map(c=>`<div class="fx-chip"><span class="fx-chip-pair">${c}/CNY</span><span class="fx-chip-rate">${Number(c==='USD'?FX_RATES.USD_TO_CNY:FX_RATES.AUD_TO_CNY).toFixed(5)}</span></div>`);
   const audUsd=FX_RATES.AUD_TO_USD.toFixed(5);
   fxParts.push(`<div class="fx-chip" title="1 澳元 = ${audUsd} 美元${D.fxMeta?.quoteAt?' · 行情时间 '+D.fxMeta.quoteAt:D.fxMeta?.source?' · '+D.fxMeta.source:''}"><span class="fx-chip-pair">AUD/USD</span><span class="fx-chip-rate">${audUsd}</span></div>`);
   fxParts.push(`<div class="fx-chip" id="gold-price-chip" role="button" tabindex="0" title="上海金 AU9999 · 点击刷新" onclick="refreshGoldChip()" style="cursor:pointer"><span class="fx-chip-pair">Au/g</span><span class="fx-chip-rate" id="fc-gold">—</span></div>`);
@@ -5032,6 +5037,7 @@ function renderOverviewHoldings(){
 }
 
 function renderOverview(){
+  if(typeof renderValuationExplanation==='function')renderValuationExplanation();
   document.getElementById('ov-dash').classList.toggle('is-empty',!(D.products||[]).length);
   maybeRollAuWeeklyCompound();
   const cny=totalCNY(),usd=fromCNY(cny,'USD'),aud=fromCNY(cny,'AUD');
@@ -5106,7 +5112,7 @@ function renderNavMiniChart(days,opts){
   if(lbl){
     const pct=first>0?chg/first*100:0;
     const sign=chg>=0?'+':'−';
-    lbl.textContent=!valuationComplete?'估值未完整，暂不比较':vals.length>1?'较'+lbls[0].slice(5)+' '+sign+fc(Math.abs(chg),'CNY',0)+(first>0?'（'+sign+Math.abs(pct).toFixed(1)+'%）':''):'';
+    lbl.textContent=!valuationComplete?'估值未完整，暂不比较':vals.length>1?'资产变化 · 较'+lbls[0].slice(5)+' '+sign+fc(Math.abs(chg),'CNY',0)+(first>0?'（'+sign+Math.abs(pct).toFixed(1)+'%）':''):'';
     lbl.title=valuationComplete&&vals.length>1?'较 '+lbls[0]+' 快照的资产变化，包含资金进出和汇率影响，不等于投资收益。':'请补全估值或记录历史快照后比较。';
     lbl.style.color=!valuationComplete?'var(--text-3)':chg>=0?'var(--up-soft)':'var(--dn-soft)';
   }
@@ -5822,10 +5828,10 @@ function quoteRefreshMessage(report){
   if(quoteAuthRequired)status+=' · 行情登录已失效，请刷新页面后重新登录';return status;
 }
 function showQuoteRefreshResult(rows,before){
-  refreshOVTotals();const report=quoteRefreshReport(rows,before,totalCNY()),message=quoteRefreshMessage(report),strip=document.getElementById('global-refresh-status'),time=new Intl.DateTimeFormat('zh-CN',{hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date());
+  refreshOVTotals();const report=quoteRefreshReport(rows,before,totalCNY()),message=quoteRefreshMessage(report)+(typeof valuationRefreshSummary==='function'&&D.lastValuationRefresh?' · '+valuationRefreshSummary(D.lastValuationRefresh):''),strip=document.getElementById('global-refresh-status'),time=new Intl.DateTimeFormat('zh-CN',{hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date());
   if(strip){strip.textContent=message;strip.className='global-refresh-strip quote-refresh-summary'+(report.warning||quoteAuthRequired?' quote-refresh-warn':'');}
   const stamp=document.getElementById('quote-recomputed-at');if(stamp){stamp.hidden=false;stamp.textContent='已重算 '+time;stamp.title=message;}
-  showToast({message:report.delta!==0?'总资产已重算 '+(report.delta>0?'+':'')+fc(report.delta,'CNY',2):!report.fresh&&rows.length?'未取得股票新报价，已保留原估值':'已重算，总资产不变',type:report.warning||quoteAuthRequired?'warn':'success',duration:5000});
+  showToast({message:report.delta!==0?'人民币估值已重算 '+(report.delta>0?'+':'')+fc(report.delta,'CNY',2):!report.fresh&&rows.length?'未取得股票新报价，已保留原估值':'已重算，总资产不变',type:report.warning||quoteAuthRequired?'warn':'success',duration:5000});
   return report;
 }
 
@@ -5835,6 +5841,7 @@ async function refreshAllQuotes(){
   const busy=on=>{for(const el of [btn,snapBtn])if(el){el.disabled=!!on;el.style.opacity=on?'.55':'1';}};
   busy(true);quoteRefreshBusy=true;quoteAuthRequired=false;
   __woSyncToastId=showToast({message:'正在并行刷新行情…',type:'loading',duration:0});
+  const valuationBefore=typeof valuationRefreshCapture==='function'?valuationRefreshCapture():null;
   const beforeTotal=totalCNY(),stockResults=[],states=new Map(),jobs=[];
   const progress=()=>{if(strip){strip.className='global-refresh-strip quote-refresh-summary';strip.textContent=[...states].map(([label,status])=>label+' '+status).join(' · ');}};
   const add=(label,work)=>{states.set(label,'刷新中');jobs.push(async()=>{let ok=false;try{ok=await work();}catch(e){}states.set(label,ok?'已更新':'未取到新数据，保留原值');refreshOVTotals();progress();});};
@@ -5849,6 +5856,7 @@ async function refreshAllQuotes(){
     const funds=D.products.filter(p=>p.type==='fund_cn'&&p.fundCode&&String(p.fundCode).trim()&&(p.fundCurrency||'CNY')==='CNY');
     if(funds.length)add('基金',async()=>{const rows=await Promise.all(funds.map(async f=>{const res=await quoteWithin(fetchFundPrice(f.fundCode,{prev:f.fundPrice||0,force:true}),12000);if(!(res?.price>0))return false;f.fundPrice=res.price;f.name=f.name||res.name;f.updatedAt=res.date||today();return true;}));save();return rows.every(Boolean);});
     progress();await Promise.all(jobs.map(work=>work()));
+    if(valuationBefore)D.lastValuationRefresh=explainValuationRefresh(valuationBefore);
     save();redrawAllAfterFullQuoteRefresh();refreshCurrentView();
     showQuoteRefreshResult(stockResults,beforeTotal);
     const failed=[...states].filter(([label,status])=>status!=='已更新').map(([label])=>label);
@@ -5932,6 +5940,7 @@ function startFxAutoRefresh(){
 }
 
 function refreshOVTotals(){
+  if(typeof renderValuationExplanation==='function')renderValuationExplanation();
   const cny=totalCNY();
   const e1=document.getElementById('ov-cny');if(e1)e1.textContent=fc(cny,'CNY');
   const e2=document.getElementById('ov-usd');if(e2)e2.textContent=fc(fromCNY(cny,'USD'),'USD');
@@ -6325,7 +6334,7 @@ function mergeNavHistories(local, imp){
 function renderFXPage(){
   FX_RATES.syncCross();
   const meta=D.fxMeta;
-  document.getElementById('fx-provenance').textContent=meta?' 来源：'+meta.source+'；更新：'+new Date(meta.updatedAt).toLocaleString('zh-CN'):' 当前为预设或导入汇率，更新时间未知。';
+  document.getElementById('fx-provenance').textContent=meta?' 来源：'+meta.source+(meta.quoteAt?'；行情时间：'+valuationTime(meta.quoteAt):'；日度或手动汇率，无盘中行情时间')+'；获取时间：'+valuationTime(meta.updatedAt)+'（北京时间）':' 当前为预设或导入汇率，更新时间未知。';
   document.getElementById('fx-usd').value=FX_RATES.USD_TO_CNY||'';
   document.getElementById('fx-aud').value=FX_RATES.AUD_TO_CNY||'';
   document.getElementById('fx-usdaud').value=FX_RATES.USD_TO_AUD.toFixed(5);
@@ -6442,6 +6451,7 @@ async function fetchFX(){
   }catch(e){el.innerHTML='<div class="alert alert-warn">⚠️ 获取失败，请手动输入</div>';}
 }
 function saveFX(){
+  const valuationBefore=typeof valuationRefreshCapture==='function'?valuationRefreshCapture():null;
   const u=parseFloat(document.getElementById('fx-usd').value);
   const a=parseFloat(document.getElementById('fx-aud').value);
   const ua=parseFloat(document.getElementById('fx-usdaud').value);
@@ -6451,7 +6461,8 @@ function saveFX(){
   if(!isNaN(ua)&&ua>0)D.fx.USDAUD=ua;
   // Preserve manually supplied rates for legacy currencies.
   D.fxMeta={source:'手动设置',updatedAt:new Date().toISOString()};
-  save();renderSidebar();renderReverseRates();refreshValuationNotice();
+  if(valuationBefore)D.lastValuationRefresh=explainValuationRefresh(valuationBefore);
+  save();renderSidebar();renderReverseRates();refreshValuationNotice();refreshOVTotals();
   const el=document.getElementById('fx-msg');
   el.innerHTML='<div class="alert alert-ok">✅ 已保存</div>';
   setTimeout(()=>el.innerHTML='',3000);
@@ -7048,7 +7059,7 @@ function refreshValuationNotice(){
   if(ambiguous)warnings.push(ambiguous+' 条现金的名称可能指美元，但登记为人民币；本次严格按已填币种计算，请核对。');
   const transitCount=D.products.filter(p=>p.type==='in_transit').length;if(transitCount)warnings.push(transitCount+' 笔汇款在途，按汇出净额暂估，未计入可用现金。');
   el.hidden=!warnings.length;el.textContent=warnings.join(' ');syncNavigationNotices();
-  const label=document.querySelector('.term-nav-hero .ov-hero-label');if(label)label.textContent=state.complete?'资产总净值':'已知资产估值（不完整）';
+  const label=document.querySelector('.term-nav-hero .ov-hero-label');if(label)label.textContent=state.complete?'人民币折算总资产':'人民币已知估值（不完整）';
 }
 function calculationMessage(message,type='warn'){showToast({message,type,duration:5000});}
 function renderCalculationPanel(refreshForms=true){
