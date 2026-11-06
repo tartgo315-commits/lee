@@ -2592,12 +2592,12 @@ let finnhubWs=null,finnhubReconnectTimer=null,finnhubCloseIntent=false,finnhubSa
 function applyFxRatesIfStable(fx,force){
   if(!fx||!(fx.USD>0)||!(fx.AUD>0))return false;
   const pu=FX_RATES.USD_TO_CNY,pa=FX_RATES.AUD_TO_CNY;
-  if(!force){
+  if(!force&&!fx._meta?.live){
     if(pu>0&&Math.abs(fx.USD-pu)/pu>FX_AUTO_MAX_DRIFT_PCT)return false;
     if(pa>0&&Math.abs(fx.AUD-pa)/pa>FX_AUTO_MAX_DRIFT_PCT)return false;
   }
-  Object.assign(D.fx,fx);
-  D.fxMeta={source:'自动行情接口',updatedAt:new Date().toISOString()};
+  const { _meta,...rates }=fx;Object.assign(D.fx,rates);
+  D.fxMeta={...(_meta||{source:'日度汇率接口'}),updatedAt:new Date().toISOString()};
   FX_RATES.syncCross();
   return true;
 }
@@ -3541,7 +3541,7 @@ function renderSidebar(){
   const flags={USD:'🇺🇸',AUD:'🇦🇺'};
   const fxParts=['USD','AUD'].map(c=>`<div class="fx-chip"><span class="fx-chip-pair">${c}/CNY</span><span class="fx-chip-rate">${c==='USD'?FX_RATES.USD_TO_CNY:FX_RATES.AUD_TO_CNY}</span></div>`);
   const audUsd=FX_RATES.AUD_TO_USD.toFixed(5);
-  fxParts.push(`<div class="fx-chip" title="1 澳元 = ${audUsd} 美元"><span class="fx-chip-pair">AUD/USD</span><span class="fx-chip-rate">${audUsd}</span></div>`);
+  fxParts.push(`<div class="fx-chip" title="1 澳元 = ${audUsd} 美元${D.fxMeta?.quoteAt?' · 行情时间 '+D.fxMeta.quoteAt:D.fxMeta?.source?' · '+D.fxMeta.source:''}"><span class="fx-chip-pair">AUD/USD</span><span class="fx-chip-rate">${audUsd}</span></div>`);
   fxParts.push(`<div class="fx-chip" id="gold-price-chip" role="button" tabindex="0" title="上海金 AU9999 · 点击刷新" onclick="refreshGoldChip()" style="cursor:pointer"><span class="fx-chip-pair">Au/g</span><span class="fx-chip-rate" id="fc-gold">—</span></div>`);
   fxParts.push('<div class="fx-chip" id="td-expiry-chip" style="display:none" aria-live="polite"><span class="fx-chip-pair">近到期</span><span class="fx-chip-rate" id="fc-td-expiry">—</span></div>');
   fxParts.push('<div class="fx-chip" id="topbar-btc" title="Bitcoin · 点击刷新" onclick="refreshBtcPrice()" role="button" tabindex="0"><span class="fx-chip-pair">BTC/USD</span><span class="fx-chip-rate" id="btc-price-usd">—</span><span id="btc-price-cny" hidden></span><span id="btc-change" hidden></span></div>');
@@ -6337,7 +6337,24 @@ function renderReverseRates(){
   document.getElementById('rv-audUSD').textContent=FX_RATES.AUD_TO_USD.toFixed(5);
 }
 /** 以 CNY 为基准拉 USD/AUD（及 USDAUD）。多源依次尝试：currency-api(CF/jsDelivr) → er-api → Frankfurter → allorigins 代理 → exchangerate.host */
+function parseLiveFxChart(raw,symbol,currency,now=Date.now()){
+ let d;try{d=typeof raw==='string'?JSON.parse(raw):raw;}catch{return null;}
+ const m=d?.chart?.result?.[0]?.meta;if(d?.chart?.error||!m||m.symbol!==symbol||m.currency!==currency)return null;
+ const price=Number(m.regularMarketPrice),at=Number(m.regularMarketTime)*1000,weekend=[0,6].includes(new Date(now).getUTCDay()),maxAge=(weekend?72:36)*3600000;
+ if(!(price>0)||!Number.isFinite(price)||!Number.isFinite(at)||at>now+120000||now-at>maxAge)return null;
+ return{price,at};
+}
+async function fetchLiveCnyRates(){
+ const pairs=[['CNY=X','CNY'],['AUDUSD=X','USD']];
+ const rows=await Promise.all(pairs.map(async([symbol,currency])=>{
+  try{const url='https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(symbol)+'?interval=1m&range=1d';return parseLiveFxChart(await fetchProxiedText(url),symbol,currency);}catch{return null;}
+ }));
+ if(rows.some(r=>!r)||Math.abs(rows[0].at-rows[1].at)>6*3600000)return null;
+ const [usdCny,audUsd]=rows;if(usdCny.price<1||usdCny.price>20||audUsd.price<0.1||audUsd.price>3)return null;
+ return{USD:usdCny.price,AUD:usdCny.price*audUsd.price,USDAUD:1/audUsd.price,_meta:{source:'Yahoo 外汇行情',quoteAt:new Date(Math.min(...rows.map(r=>r.at))).toISOString(),live:true}};
+}
 async function fetchCNYRates(){
+  const live=await quoteWithin(fetchLiveCnyRates(),5000);if(live)return live;
   async function directJson(url){
     const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),3000);
     try{const response=await fetch(url,{cache:'no-store',signal:controller.signal});if(!response.ok)return null;return await response.json();}catch(e){return null;}finally{clearTimeout(timer);}
