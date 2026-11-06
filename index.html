@@ -4881,6 +4881,10 @@ function overviewHoldingProfit(row){
   const basis=WealthMath.multiply(quantity,cost),amount=WealthMath.sum([WealthMath.round(v.amount),-basis]);
   return{amount,label:basis>0?(amount/basis*100).toFixed(1)+'%':'账面变化'};
 }
+function overviewAccountTotal(rows,region,account){
+ const list=rows.filter(r=>r.region===region&&r.account===account),known=list.filter(r=>r.valuation.complete),currencies=[...new Set(known.map(r=>r.valuation.currency))],currency=currencies.length===1?currencies[0]:'CNY';
+ return{currency,amount:WealthMath.sum(known.map(r=>currency==='CNY'?r.valuation.cny:r.valuation.amount)),missing:list.length-known.length,count:known.length,mixed:currencies.length>1};
+}
 function resetOverviewHoldingFilters(){overviewHoldingFilters={region:'',account:'',type:'',sort:'desc'};renderOverviewHoldings();}
 function jumpToOverviewRegion(region){
   resetOverviewHoldingFilters();
@@ -4958,6 +4962,12 @@ function renderOverviewHoldings(){
       tr.className=row.heading==='region'?'ov-region-heading':'ov-account-heading';
       if(row.heading==='region'){tr.id='ov-region-'+row.region;tr.tabIndex=-1;}
       cell.colSpan=6;wrap.className='ov-group-heading';title.textContent=row.label;total.className='ov-group-total';
+      if(row.heading==='account'){
+        const accountTotal=overviewAccountTotal(all,row.rows[0]?.region,row.account),value=document.createElement('strong');value.className='ov-account-total';
+        value.textContent=accountTotal.count?(accountTotal.missing?'已知部分 ':accountTotal.mixed?'折合 ':'')+fc(accountTotal.amount,accountTotal.currency,2):'估值待补';
+        value.title='该账户全部资产合计，不随资产类型筛选缩减'+(accountTotal.mixed?'；混合币种按当前汇率折合人民币':'')+(accountTotal.missing?'；'+accountTotal.missing+'项估值不完整':'');
+        value.setAttribute('aria-label','账户总资产 '+value.textContent);title.append(value);
+      }
       const embedded=row.heading==='region'?selected.filter(r=>r.region===row.region&&financeEmbeddedInterest(r,selected)).length:0;
       text(total,(row.count-embedded)+' 项持仓'+(embedded?' · 含'+embedded+'笔应计利息':'')+(row.missing?' · '+row.missing+' 项估值不完整':''));
       const amount=document.createElement('div');if(typeof threeCurrencyHtml==='function')amount.innerHTML=(row.missing?'已知部分 ':'')+threeCurrencyHtml(row.knownCny);else amount.textContent=(row.missing?'已知部分 ':'合计 ')+fc(row.knownCny,'CNY',0);total.append(amount);
