@@ -32,14 +32,14 @@ export async function onRequest(context) {
         const d = JSON.parse(m[1]);
         const gsz = parseFloat(d.gsz);
         const dwjz = parseFloat(d.dwjz);
-        const price = gsz > 0 ? gsz : dwjz > 0 ? dwjz : 0;
+        const price = dwjz > 0 ? dwjz : gsz > 0 ? gsz : 0;
         if (price > 0) {
           return jsonResponse(
             {
               price,
               name: d.name || code,
-              date: d.gztime || d.jzrq || '',
-              type: gsz > 0 ? 'estimate' : 'official',
+              date: dwjz > 0 ? d.jzrq || d.gztime || '' : d.gztime || '',
+              type: dwjz > 0 ? 'official' : 'estimate',
             },
             200,
             { 'Cache-Control': 'no-store, max-age=0' }

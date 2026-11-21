@@ -2614,15 +2614,12 @@ function commitLiveQuotePrice(prev,next,force){
   }
   return true;
 }
-/** 基金：估算净值与单位净值差太大时用单位净值，避免 gsz↔dwjz 来回切换拉歪总净值 */
+/** 基金：正式单位净值优先；只有正式净值尚未公布时，才使用盘中估算值。 */
 function pickStableFundNav(gsz,dwjz,prev){
   const o=dwjz>0&&isFinite(dwjz)?dwjz:0;
   const e=gsz>0&&isFinite(gsz)?gsz:0;
   const p=parseFloat(prev)||0;
-  if(o>0&&e>0){
-    if(Math.abs(e-o)/o<=0.015)return e;
-    return o;
-  }
+  if(o>0&&e>0)return o;
   if(o>0)return o;
   if(e>0){
     if(p>0&&Math.abs(e-p)/p>QUOTE_AUTO_MAX_JUMP_PCT)return p;
@@ -5759,10 +5756,10 @@ function fetchFundPrice(code,opts){
       const t=setTimeout(()=>{delete window[cb];sc.remove();reject(new Error('超时'));},10000);
       window[cb]=d=>{clearTimeout(t);delete window[cb];sc.remove();
         const gsz=parseFloat(d.gsz),dwjz=parseFloat(d.dwjz);
-        const price=opts.force?((gsz>0&&isFinite(gsz))?gsz:((dwjz>0&&isFinite(dwjz))?dwjz:0)):pickStableFundNav(gsz,dwjz,prev);
+        const price=pickStableFundNav(gsz,dwjz,prev);
         if(price>0&&(opts.force||commitLiveQuotePrice(prev,price,false)))
-          resolve({price,name:d.name||code,date:d.gztime||d.jzrq||''});
-        else resolve({price:0,name:d.name||code,date:d.gztime||d.jzrq||''});
+          resolve({price,name:d.name||code,date:dwjz>0?d.jzrq||d.gztime||'':d.gztime||''});
+        else resolve({price:0,name:d.name||code,date:dwjz>0?d.jzrq||d.gztime||'':d.gztime||''});
       };
       sc.src=`https://fundgz.1234567.com.cn/js/${code}.js?callback=${cb}&v=${Date.now()}`;
       sc.onerror=()=>{clearTimeout(t);delete window[cb];sc.remove();reject(new Error('失败'));};
