@@ -6,5 +6,5 @@ export default async function handler(req,res){
   if(req.method==='OPTIONS')return res.status(204).end();
   if(req.method!=='GET')return res.status(405).json({error:'method not allowed'});
   try{return res.json(await fetchCcbGold());}
-  catch{return res.status(502).json({error:'建行官方报价暂不可用，请保留最后有效报价',source:'ccb_redemption',stale:true});}
+  catch(e){return res.status(502).json({errorCode:String(e?.message||'CCB unavailable').slice(0,160),error:'建行官方报价暂不可用，请保留最后有效报价',source:'ccb_redemption',stale:true});}
 }
