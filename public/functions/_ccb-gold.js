@@ -17,12 +17,12 @@ function cookiesOf(response){
 }
 export async function fetchCcbGold(fetcher=fetch,now=Date.now){
   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);
-  const headers={Referer:CCB_PAGE,'User-Agent':'Mozilla/5.0','Accept':'application/json, text/plain, */*'};
+  const headers={Referer:CCB_PAGE,'User-Agent':'Mozilla/5.0','Accept':'application/json, text/plain, */*','Cache-Control':'no-cache'};
   try{
-    const session=await fetcher(CCB_BASE+'100119',{headers,signal:controller.signal,cache:'no-store'});
+    const session=await fetcher(CCB_BASE+'100119',{headers,signal:controller.signal});
     if(!session.ok)throw Error('CCB session HTTP '+session.status);
     const cookie=cookiesOf(session);await session.text();
-    const response=await fetcher(CCB_BASE+'NGJS01&_='+now(),{headers:{...headers,...(cookie?{Cookie:cookie}:{})},signal:controller.signal,cache:'no-store'});
+    const response=await fetcher(CCB_BASE+'NGJS01&_='+now(),{headers:{...headers,...(cookie?{Cookie:cookie}:{})},signal:controller.signal});
     if(!response.ok)throw Error('CCB quote HTTP '+response.status);
     return parseCcbGold(await response.json(),now());
   }finally{clearTimeout(timer);}
