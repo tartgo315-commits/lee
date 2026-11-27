@@ -1,6 +1,6 @@
 /* Attribution compares the same asset facts before/after a refresh; never writes balances. */
 function valuationFactSignature(data){
- const products=(data.products||[]).map(p=>{const x={...p};for(const k of ['currentPrice','fundPrice','goldPrice','goldUpdated','lastValidPrice','quoteReference','quoteSessions','quoteSelection','marketState','updatedAt'])delete x[k];return x;});
+ const products=(data.products||[]).map(p=>{const x={...p};for(const k of ['currentPrice','fundPrice','goldPrice','goldUpdated','goldQuote','goldQuoteFailedAt','lastValidPrice','quoteReference','quoteSessions','quoteSelection','marketState','updatedAt'])delete x[k];return x;});
  return JSON.stringify({products,manual:data.usAccountMeta||{},flows:data.cashFlows||[],movements:data.movementLog||[]});
 }
 function valuationRefreshCapture(data=D,context=valuationContext()){

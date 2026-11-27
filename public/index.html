@@ -1769,7 +1769,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
 
     <!-- Gold -->
     <div id="f-gold" class="asset-editor-section" style="display:none"><h3>黄金持仓</h3>
-      <div class="alert alert-info" style="margin-bottom:12px">🥇 交易日自动拉取<strong>AU9999</strong>；<strong>休市后自动改用国际金价×汇率折算</strong>（无需手填），与建行积存金通常差 1–3 元/克。</div>
+      <div class="alert alert-info" style="margin-bottom:12px">🥇 建行黄金积存采用<strong>建行官网赎回价</strong>估值，每60秒尝试刷新；异常保留最后有效报价并标记过期。成交价以银行实际交易为准。</div>
       <div class="fg-row c3">
         <div class="fg"><label for="m-grams">持有克数</label><input type="number" id="m-grams" placeholder="18.0000" step="any"></div>
         <div class="fg"><label for="m-gcost">持仓均价（元/克）</label><input type="number" id="m-gcost" placeholder="796.3783" step="any"></div>
@@ -3543,7 +3543,7 @@ function renderSidebar(){
   const fxParts=['USD','AUD'].map(c=>`<div class="fx-chip"><span class="fx-chip-pair">${c}/CNY</span><span class="fx-chip-rate">${Number(c==='USD'?FX_RATES.USD_TO_CNY:FX_RATES.AUD_TO_CNY).toFixed(5)}</span></div>`);
   const audUsd=FX_RATES.AUD_TO_USD.toFixed(5);
   fxParts.push(`<div class="fx-chip" title="1 澳元 = ${audUsd} 美元${D.fxMeta?.quoteAt?' · 行情时间 '+D.fxMeta.quoteAt:D.fxMeta?.source?' · '+D.fxMeta.source:''}"><span class="fx-chip-pair">AUD/USD</span><span class="fx-chip-rate">${audUsd}</span></div>`);
-  fxParts.push(`<div class="fx-chip" id="gold-price-chip" role="button" tabindex="0" title="上海金 AU9999 · 点击刷新" onclick="refreshGoldChip()" style="cursor:pointer"><span class="fx-chip-pair">Au/g</span><span class="fx-chip-rate" id="fc-gold">—</span></div>`);
+  fxParts.push(`<div class="fx-chip" id="gold-price-chip" role="button" tabindex="0" title="建行黄金积存赎回价 · 点击刷新" onclick="refreshGoldChip()" style="cursor:pointer"><span class="fx-chip-pair">Au/g</span><span class="fx-chip-rate" id="fc-gold">—</span></div>`);
   fxParts.push('<div class="fx-chip" id="td-expiry-chip" style="display:none" aria-live="polite"><span class="fx-chip-pair">近到期</span><span class="fx-chip-rate" id="fc-td-expiry">—</span></div>');
   fxParts.push('<div class="fx-chip" id="topbar-btc" title="Bitcoin · 点击刷新" onclick="refreshBtcPrice()" role="button" tabindex="0"><span class="fx-chip-pair">BTC/USD</span><span class="fx-chip-rate" id="btc-price-usd">—</span><span id="btc-price-cny" hidden></span><span id="btc-change" hidden></span></div>');
   document.getElementById('fx-strip').innerHTML=fxParts.join('');
@@ -4984,6 +4984,7 @@ function renderOverviewHoldings(){
     const cells=Array.from({length:6},()=>document.createElement('td'));tr.append(...cells);
     const name=document.createElement('button');name.type='button';name.className='ov-holding-name';name.textContent=p.name||p.ticker||p.fundCode||'未命名资产';name.dataset.holdingAction='view';
     const view=()=>{if(typeof openHoldingDetails==='function')openHoldingDetails(row.manual?'m:us::'+row.account:'p:'+p.id);else if(row.region==='other')editProduct(p.id);else revealCmdkHolding(row.region,row.account,row.manual?undefined:p.id);};name.addEventListener('click',view);cells[0].append(name);
+    if(p.type==='gold')cells[0].insertAdjacentHTML('beforeend',goldUnitQuoteHtml(p));
     if(p.type==='stock_us'){cells[0].classList.add('ov-stock-name-price');cells[0].insertAdjacentHTML('beforeend',stockUnitQuoteHtml(p,v));}
     const details=[OVERVIEW_TYPES[row.type]];
     if(p.ticker&&p.ticker!==p.name)details.push(p.ticker);
@@ -5333,7 +5334,7 @@ function buildProductRow(p,region,primaryCur,accountTotalCNY){
   if(p.type==='gold'){
     const price=valuation.price??p.goldPrice??0,grams=p.grams||0,cost=p.goldCost||0;
     const mkt=grams*price,pnl=mkt-grams*cost,pct=(cost>0&&grams>0)?pnl/(grams*cost)*100:0;
-    nameCell=`<div><div class="pr-name">${p.name||'黄金积存'}</div><div class="pr-sub">${fmt(grams,4)}克 · 均价¥${fmt(cost,2)}/克 · ${p.goldUpdated?'更新:'+p.goldUpdated:''}</div></div>`;
+    nameCell=`<div><div class="pr-name">${p.name||'黄金积存'}</div><div class="pr-sub">${fmt(grams,4)}克 · 均价¥${fmt(cost,2)}/克 · ${escOvHtml(goldQuoteDescription(p))}</div></div>`;
     amtCell=price?`<div class="pr-amt primary">¥${fmt(price,2)}/克</div><div class="pr-amt dim">${fc(mkt,'CNY',2)}</div>`:`<div class="pr-amt muted">待刷新金价</div>`;
     pnlCell=price?`<div class="pr-pnl ${pnl>=0?'pos':'neg'}">${pnl>=0?'+':''}${fc(pnl,'CNY',2)}<br>${(pnl>=0?'+':'')+safePctFixed(pct,2)}%</div>`:`<div class="pr-pnl neu">—</div>`;
   } else if(p.type==='stock_us'){
@@ -5634,30 +5635,42 @@ async function fetchIntlGoldCnyPerGram(){
 /**
  * 日/夜盘优先 AU9999；休市或国内源失败时用国际金价×USD/CNY 折算，无需手填。
  */
+function isCcbGold(p){return p.type==='gold'&&/建行|建设银行|CCB/i.test((p.account||'')+' '+(p.name||''));}
+let ccbGoldPending=null;
+function goldQuoteStatus(p,now=Date.now()){
+  const q=p?.goldQuote,at=Date.parse(q?.quoteAt||'');
+  if(q?.source!=='ccb_redemption'||q.price!==p.goldPrice||!Number.isFinite(at))return '历史估值 · 来源未核实（非建行报价）';
+  return p.goldQuoteFailedAt||now-at>180000?'建行赎回价 · 已过期，保留最后有效报价':'建行赎回价 · 最新可用报价';
+}
+function goldQuoteDescription(p){
+  const q=p?.goldQuote,verified=q?.source==='ccb_redemption'&&q.price===p.goldPrice;
+  return goldQuoteStatus(p)+(verified?' · 报价 '+q.quoteAt.replace('T',' ').replace('+08:00','')+'（北京时间） · 来源：建设银行官网':'')+' · 每60秒尝试刷新';
+}
+function goldUnitQuoteHtml(p){
+  if(p.type!=='gold')return '';
+  return '<span class="holding-unit-price" style="white-space:normal;font-size:14px" title="'+escAttr(goldQuoteDescription(p))+'">'+escOvHtml((p.goldPrice>0?'¥'+Number(p.goldPrice).toFixed(2)+'/克 · ':'')+goldQuoteDescription(p))+'</span>';
+}
 async function fetchGoldPrice(){
-  const sess=sgeGoldSessionLabel();
-  if(sess.open){
-    const dom=await fetchGoldPriceDomestic();
-    if(dom>0){
-      __goldQuoteMeta={source:'sge',label:'AU9999'};
-      return dom;
-    }
-  }
-  const intl=await fetchIntlGoldCnyPerGram();
-  if(intl>0){
-    __goldQuoteMeta={
-      source:'intl',
-      label:sess.open?'国际金价折算（国内源暂不可用）':`休市·国际金价×汇率折算（≈建行积存金）`
-    };
-    return intl;
-  }
-  const dom=await fetchGoldPriceDomestic();
-  if(dom>0){
-    __goldQuoteMeta={source:'sge_stale',label:'AU9999收盘价'};
-    return dom;
-  }
-  __goldQuoteMeta={source:'',label:''};
-  return 0;
+  if(ccbGoldPending)return ccbGoldPending;
+  ccbGoldPending=(async()=>{
+    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),14500);
+    try{
+      const response=await fetch(location.origin+'/api/gold-price',{cache:'no-store',signal:controller.signal});
+      if(response.status===401)quoteAuthRequired=true;
+      if(!response.ok)throw Error('CCB unavailable');
+      const q=await response.json(),at=Date.parse(q.quoteAt||'');
+      if(q.source!=='ccb_redemption'||q.unit!=='CNY/g'||!Number.isFinite(at)||at>Date.now()+60000||!(q.price>100&&q.price<20000))throw Error('Invalid CCB quote');
+      const golds=D.products.filter(isCcbGold);
+      if(golds.some(p=>p.goldQuote?.source==='ccb_redemption'&&Date.parse(p.goldQuote.quoteAt)>at))throw Error('Older CCB quote');
+      for(const p of golds){p.goldPrice=q.price;p.goldQuote=q;p.goldUpdated=q.quoteAt;delete p.goldQuoteFailedAt;}
+      __goldQuoteMeta={...q,label:'建行黄金积存赎回价'};
+      return q.price;
+    }catch(e){
+      for(const p of D.products.filter(isCcbGold))p.goldQuoteFailedAt=new Date().toISOString();
+      return 0;
+    }finally{clearTimeout(timer);}
+  })();
+  try{return await ccbGoldPending;}finally{ccbGoldPending=null;}
 }
 /** 上金所 Au99.99 大致交易窗（本地北京时间）；休市时段行情源通常停在最近收盘价 */
 function sgeGoldSessionLabel(now=new Date()){
@@ -5668,59 +5681,23 @@ function sgeGoldSessionLabel(now=new Date()){
   return{open:false,label:'休市'};
 }
 function updateGoldChip(){
-  const el=document.getElementById('fc-gold');
-  const chip=document.getElementById('gold-price-chip');
+  const el=document.getElementById('fc-gold'),chip=document.getElementById('gold-price-chip');
   if(!el)return;
-  const g=D.products.find(p=>p.type==='gold'&&p.goldPrice>0);
-  const sess=sgeGoldSessionLabel();
-  if(g){
-    const intl=__goldQuoteMeta.source==='intl';
-    el.textContent=(intl?'~':'')+'¥'+Number(g.goldPrice).toFixed(2)+'/g';
-    if(chip){
-      const upd=g.goldUpdated?` · 更新 ${g.goldUpdated}`:'';
-      const src=__goldQuoteMeta.label||(__goldQuoteMeta.source==='sge'?'AU9999':intl?'国际金价折算':'AU9999');
-      chip.title=sess.open&&!intl
-        ?`${src} · ${sess.label}交易中${upd}。与建行积存金通常相差约 1–2 元/克。点击刷新`
-        :`${src}${upd}。休市时按 COMEX/现货美元金价×汇率自动折算，无需手填；与建行可能差 1–3 元/克。点击刷新`;
-    }
-    return;
-  }
-  if(chip)chip.title='金价自动：日盘 AU9999，休市国际金价折算。点击刷新';
-  el.textContent='未获取';
+  const g=D.products.find(isCcbGold);
+  el.textContent=g?.goldPrice>0?'¥'+Number(g.goldPrice).toFixed(2)+'/g'+(goldQuoteStatus(g).includes('最新')?'':' · 过期'):'待获取';
+  if(chip){chip.title=g?goldQuoteDescription(g):'建行黄金积存赎回价 · 待获取';chip.setAttribute('aria-label',el.textContent+' · '+chip.title);}
 }
 async function refreshGoldChip(){
-  const el=document.getElementById('fc-gold');
-  if(el)el.textContent='…';
-  try{
-    const price=await fetchGoldPrice();
-    if(price>0){
-      D.products.filter(p=>p.type==='gold').forEach(g=>{g.goldPrice=price;g.goldUpdated=today();});
-      save();
-      renderRegion('cn');renderOverview();renderSidebar();
-    }else{
-      if(el)el.textContent='失败';
-    }
-  }catch(e){if(el)el.textContent='失败';}
+  if(!D.products.some(isCcbGold))return;
+  await fetchGoldPrice();
+  save();updateGoldChip();renderRegion('cn');renderOverview();renderSidebar();
 }
 async function refreshGold(){
-  const golds=D.products.filter(p=>p.type==='gold');
-  if(!golds.length){alert('没有黄金积存产品');return;}
   const el=document.getElementById('cn-refresh-status');
-  el.innerHTML='<div class="alert alert-info">🔄 正在获取国内现货金价（Au99.99）…</div>';
-  let price=0;
-  try{price=await fetchGoldPrice();}catch(e){}
-  if(price>0){
-    golds.forEach(g=>{g.goldPrice=price;g.goldUpdated=today();});
-    save();renderRegion('cn');renderSidebar();renderOverview();
-    updateGoldChip();
-    const srcLbl=__goldQuoteMeta.label||'AU9999';
-    el.innerHTML=`<div class="alert alert-ok">✅ 金价 ¥${price}/克（${srcLbl}），已更新 ${golds.length} 个黄金积存</div>`;
-  }else{
-    el.innerHTML='<div class="alert alert-warn">⚠️ 自动获取失败。请在「编辑」中<strong>手动填写当前金价（元/克）</strong>；若浏览器拦截跨域，可部署带 /proxy 的环境或换网络后再试。</div>';
-  }
-  setTimeout(()=>{if(el)el.innerHTML='';},12000);
+  if(el)el.textContent='正在获取建行黄金积存赎回价…';
+  await refreshGoldChip();
+  if(el)el.textContent=D.products.find(isCcbGold)?goldQuoteDescription(D.products.find(isCcbGold)):'没有建行黄金积存持仓';
 }
-
 // ══ REFRESH STOCKS ══
 async function refreshStocks(){
   const stocks=[...new Map(D.products.filter(p=>p.type==='stock_us'&&!isZeroStock(p)&&p.ticker).map(p=>[WealthMath.stockIdentity(p).ticker,p])).values()];
@@ -5845,8 +5822,8 @@ async function refreshAllQuotes(){
     maybeRollAuWeeklyCompound();
     add('汇率',async()=>{const fx=await quoteWithin(fetchCNYRates(),12000);if(!fx||!applyFxRatesIfStable(fx,true))return false;save();return true;});
     add('BTC',async()=>{const q=await quoteWithin(fetchBtcPrice(),10000);if(!(q?.usd>0))return false;updateBtcTicker(q);return true;});
-    const golds=D.products.filter(p=>p.type==='gold');
-    if(golds.length)add('黄金',async()=>{const price=await quoteWithin(fetchGoldPrice(),16000);if(!(price>0))return false;golds.forEach(g=>{g.goldPrice=price;g.goldUpdated=today();});updateGoldChip();save();return true;});
+    const golds=D.products.filter(isCcbGold);
+    if(golds.length)add('黄金',async()=>{const price=await quoteWithin(fetchGoldPrice(),16000);if(!(price>0))return false;golds.forEach(g=>{g.goldPrice=price;g.goldUpdated=__goldQuoteMeta.quoteAt;});updateGoldChip();save();return true;});
     const stocks=[...new Map(D.products.filter(p=>p.type==='stock_us'&&!isZeroStock(p)&&p.ticker).map(p=>[WealthMath.stockIdentity(p).ticker,p])).values()];
     if(stocks.length)add('股票',async()=>{const rows=await Promise.all(stocks.map(refreshOneStockQuote));stockResults.push(...rows);save();redrawAllAfterFullQuoteRefresh();return rows.every(r=>r.applied&&r.source!=='cache');});
     const funds=D.products.filter(p=>p.type==='fund_cn'&&p.fundCode&&String(p.fundCode).trim()&&(p.fundCurrency||'CNY')==='CNY');
@@ -5879,15 +5856,15 @@ async function autoRefreshQuotesSilent(){
       const btc=await fetchBtcPrice();
       if(btc?.usd>0)updateBtcTicker(btc);
     }catch(e){}
-    const golds=D.products.filter(p=>p.type==='gold');
+    const golds=D.products.filter(isCcbGold);
     if(golds.length){
       try{
         const price=await fetchGoldPrice();
         if(price>0){
           golds.forEach(g=>{
-            if(commitLiveQuotePrice(g.goldPrice||0,price,false)){
+            if(price>0){
               g.goldPrice=price;
-              g.goldUpdated=today();
+              g.goldUpdated=__goldQuoteMeta.quoteAt;
             }
           });
           updateGoldChip();
@@ -5915,7 +5892,11 @@ async function autoRefreshQuotesSilent(){
   finally{quoteRefreshBusy=false;}
 }
 
+let ccbGoldTimer=null;
 function startAutoQuoteRefresh(){
+  if(ccbGoldTimer)clearInterval(ccbGoldTimer);
+  ccbGoldTimer=setInterval(()=>refreshGoldChip(),60000);
+  setTimeout(()=>refreshGoldChip(),1000);
   if(autoQuoteRefreshTimer)clearInterval(autoQuoteRefreshTimer);
   autoQuoteRefreshTimer=setInterval(()=>autoRefreshQuotesSilent(),AUTO_QUOTE_REFRESH_MS);
 }
@@ -6717,7 +6698,7 @@ function commitMovement(){
 }
 function queueMovementQuote(p){
   if(!p)return;
-  if(p.type==='gold'&&!p.goldPrice)setTimeout(async()=>{try{const price=await fetchGoldPrice(),live=D.products.find(x=>x.id===p.id);if(price>0&&live){live.goldPrice=price;live.goldUpdated=today();save();refreshAfterMovement();}}catch(e){}},400);
+  if(isCcbGold(p)&&!p.goldPrice)setTimeout(async()=>{try{const price=await fetchGoldPrice(),live=D.products.find(x=>x.id===p.id);if(price>0&&live){live.goldPrice=price;live.goldUpdated=__goldQuoteMeta.quoteAt;save();refreshAfterMovement();}}catch(e){}},400);
   if(p.type==='fund_cn'&&p.fundCode&&!p.fundPrice&&p.fundCurrency==='CNY')setTimeout(async()=>{try{const quote=await fetchFundPrice(p.fundCode),live=D.products.find(x=>x.id===p.id);if(quote.price>0&&live){live.fundPrice=quote.price;live.name=live.name||quote.name;save();refreshAfterMovement();}}catch(e){}},400);
 }
 function renderMovementLog(){LedgerUI.renderWorkspace();LedgerUI.renderRecords();}
@@ -6759,6 +6740,7 @@ function saveProduct(){
     const gprice=parseFloat(document.getElementById('m-gprice').value)||0;
     if(isNaN(grams)||isNaN(gcost)){status.innerHTML='<div class="alert alert-warn">请填写持有克数和持仓均价</div>';return;}
     p=sanitizeGoldProduct({...p,grams,goldCost:gcost,goldPrice:gprice});
+    if(p.goldQuote?.price!==gprice){delete p.goldQuote;delete p.goldQuoteFailedAt;}
   } else if(type==='stock_us'){
     const identity=stockEditorIdentity(),ticker=identity.ticker;
     const shares=parseFloat(document.getElementById('m-shares').value);

@@ -26,7 +26,7 @@ function compactHoldingHtml(row){
  else if(p.type==='in_transit')meta='在途 · '+(p.transfer?.sourceAccount||p.account)+' → '+(p.transfer?.targetAccount||'转入账户');
  else if(p.updatedAt)meta+=' · 更新 '+p.updatedAt;
  const result=profit?.missing?'缺少成本':profit?(profit.amount>0?'+':'')+fc(profit.amount,currency,2)+' · '+profit.label:'详情 ›';
- return '<button type="button" class="finance-item"'+(p.id!==undefined?' data-product-id="'+escAttr(String(p.id))+'"':'')+' onclick=\'openHoldingDetails('+escAttr(JSON.stringify(ref))+')\'><span class="finance-item-title">'+escOvHtml(title)+stockUnitQuoteHtml(p,v)+(v.estimated&&p.type!=='stock_us'?'<small class="finance-quote-tag">缓存 / 暂估</small>':'')+'</span><strong class="finance-item-value">'+(v.complete?fc(v.amount,currency,2):'估值待补')+'</strong><span class="finance-item-meta">'+assetTypeBadgeHtml(p.type)+escOvHtml(meta)+'</span><span class="finance-item-result '+(profit&&!profit.missing?(profit.amount>=0?'pos':'neg'):'')+'">'+escOvHtml(result)+'</span></button>';
+ return '<button type="button" class="finance-item"'+(p.id!==undefined?' data-product-id="'+escAttr(String(p.id))+'"':'')+' onclick=\'openHoldingDetails('+escAttr(JSON.stringify(ref))+')\'><span class="finance-item-title">'+escOvHtml(title)+stockUnitQuoteHtml(p,v)+(p.type==='gold'?goldUnitQuoteHtml(p):'')+(v.estimated&&p.type!=='stock_us'?'<small class="finance-quote-tag">缓存 / 暂估</small>':'')+'</span><strong class="finance-item-value">'+(v.complete?fc(v.amount,currency,2):'估值待补')+'</strong><span class="finance-item-meta">'+assetTypeBadgeHtml(p.type)+escOvHtml(meta)+'</span><span class="finance-item-result '+(profit&&!profit.missing?(profit.amount>=0?'pos':'neg'):'')+'">'+escOvHtml(result)+'</span></button>';
 }
 let holdingDetailsFocus=null;
 function closeHoldingDetails(){document.getElementById('modal-holding-details')?.classList.remove('open');holdingDetailsFocus?.focus();}
@@ -36,7 +36,7 @@ function openHoldingDetails(ref){
  holdingDetailsFocus=document.activeElement;const items=[['账户',p.account||'未分类'],['账户地区',({cn:'中国境内',us:'美国',au:'澳洲'})[p.region]||'未登记'],['计价货币',v.currency||p.currency||p.tdCur||'—']];
  if(p.type==='stock_us')items.push(['交易市场',WealthMath.stockIdentity(p).market],['股票代码',WealthMath.stockIdentity(p).ticker],['持股数量',fmt(p.shares,6)+' 股'],['平均成本价',fc(p.costPrice,v.currency,4)],['当前估值单价',fc(v.price,v.currency,4)]);
  else if(p.type==='fund_cn')items.push(['基金代码',p.fundCode||'—'],['持有份额',fmt(p.fundShares,4)],['成本均价',fc(p.fundCost,v.currency,4)],['当前净值',fmt(v.price,4)]);
- else if(p.type==='gold')items.push(['持有克数',fmt(p.grams,4)],['成本均价',fc(p.goldCost,v.currency,2)],['当前金价',fc(v.price,v.currency,2)]);
+ else if(p.type==='gold')items.push(['持有克数',fmt(p.grams,4)],['成本均价',fc(p.goldCost,v.currency,2)],['当前估值单价',fc(v.price,v.currency,2)],['报价状态与来源',goldQuoteDescription(p)]);
  else if(p.type==='term_deposit'){const t=WealthMath.depositTerms(p);items.push(['本金',fc(t.principal,v.currency,2)],['年利率',p.rate+'%'],['开始日期',t.start||'—'],['到期日期',t.end||'—'],['计息方式',t.method+' · '+t.basis]);}
  if(p.stopLoss)items.push(['止损价',fc(p.stopLoss,v.currency,4)]);if(p.savingsInterest&&typeof SavingsEditor!=='undefined')items.push(['利率说明',SavingsEditor.text(p)]);if(p.tdPaidInterest)items.push(['已付利息',fc(p.tdPaidInterest,v.currency,2)]);if(p.costDate)items.push(['投入日期',p.costDate]);if(p.costFxToCny)items.push(['投入日汇率',p.costFxToCny+' CNY / '+v.currency]);if(p.updatedAt)items.push(['资料更新日期',p.updatedAt]);if(p.note)items.push(['备注',p.note]);
  const interestRows=p.type==='cash'&&row?financeAccountInterest(row):[];

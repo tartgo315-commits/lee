@@ -1,7 +1,7 @@
 /* One private site ledger, optimistic revision checks, no silent conflict merging. */
 (function(root){
   'use strict';
-  function signature(data){const copy=JSON.parse(JSON.stringify(data));for(const key of ['fx','fxMeta','btcQuote','newsCache','aiDailyBrief','backupStatus'])delete copy[key];for(const p of copy.products||[]){for(const key of ['currentPrice','fundPrice','goldPrice','goldUpdated','lastValidPrice','quoteReference','quoteSessions','quoteSelection','marketState'])delete p[key];if(['stock_us','fund_cn','gold'].includes(p.type))delete p.updatedAt;}return JSON.stringify(copy);}
+  function signature(data){const copy=JSON.parse(JSON.stringify(data));for(const key of ['fx','fxMeta','btcQuote','newsCache','aiDailyBrief','backupStatus'])delete copy[key];for(const p of copy.products||[]){for(const key of ['currentPrice','fundPrice','goldPrice','goldUpdated','goldQuote','goldQuoteFailedAt','lastValidPrice','quoteReference','quoteSessions','quoteSelection','marketState'])delete p[key];if(['stock_us','fund_cn','gold'].includes(p.type))delete p.updatedAt;}return JSON.stringify(copy);}
   const empty=d=>!(d.products?.length||d.navHistory?.length||d.movementLog?.length||d.cashFlows?.length||Number(d.goal?.amount)>0||d.performanceTracking||Object.keys(d.usAccountMeta||{}).length);
   function create(a){
     let meta=a.readMeta()||null,busy=false,paused=false,state='checking',timer,remote=null,started=false;

@@ -119,3 +119,8 @@ body button.finance-profit-btn.positive{color:var(--up-soft)!important;backgroun
 .finance-summary-details-btn{font:400 11px/1.4 var(--font);color:var(--text-3);background:transparent;border:0;padding:0 3px;min-height:24px;white-space:nowrap;cursor:pointer}.finance-summary-details-btn:hover{color:var(--text-1);text-decoration:underline}.finance-summary-details-btn:focus-visible{outline:2px solid var(--up);outline-offset:2px}
 #ov-region-us h3{flex-wrap:nowrap;gap:6px}#ov-region-us .finance-heading-bottom .finance-capital-line{flex-wrap:nowrap;gap:8px}
 @media(max-width:768px){#ov-region-us h3{font-size:13px;gap:4px}#ov-region-us .finance-profit-btn{font-size:10px;min-height:24px;padding:2px 4px}#ov-region-us .finance-heading-bottom .ov-group-total{display:none}#ov-region-us .finance-heading-bottom .finance-capital-line{font-size:11px}.finance-summary-details-btn{font-size:10px;padding:0 2px}}
+
+/* Bank source and quote time stay readable below the gold name. */
+#page-overview .ov-region-panel tr.ov-gold-single-line>td:first-child{grid-column:1 / -1;grid-row:1}
+#page-overview .ov-region-panel tr.ov-gold-single-line>td:nth-child(n+2){grid-row:2}
+#page-overview .ov-region-panel tr.ov-gold-single-line .holding-unit-price{display:block;white-space:normal;overflow-wrap:anywhere;font-size:14px}
