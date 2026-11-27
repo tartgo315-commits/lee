@@ -2169,7 +2169,7 @@ function recordStockSessions(snapshot){
 }
 function stockSessionResult(symbol,price,source='yahoo'){
   const snapshot=yahooQuoteMetaBySym.get(symbol)?.snapshot,selected=StockSessions.select(snapshot);
-  return{price,source,quoteAt:selected?.at||null,session:selected?.kind||null,estimated:!!selected?.estimated,timestamp:Date.now(),sessions:snapshot||null,selection:selected||null};
+  return{price,source:selected?.source==='nasdaq'?'nasdaq':source,delayed:!!selected?.delayed,sourceUrl:selected?.sourceUrl||null,quoteAt:selected?.at||null,session:selected?.kind||null,estimated:!!selected?.estimated,timestamp:Date.now(),sessions:snapshot||null,selection:selected||null};
 }
 function stockSessionHtml(p){
   const currency=WealthMath.stockIdentity(p).currency,prefix=currency==='AUD'?'A$':'$';const snapshot=p.quoteSessions,proposal=StockSessions.select(snapshot),selected=p.quoteSelection&&Math.abs(p.quoteSelection.price-Number(p.currentPrice))<0.0001?p.quoteSelection:proposal,symbol=WealthMath.stockIdentity(p).ticker;
@@ -2177,7 +2177,7 @@ function stockSessionHtml(p){
   const meta=stockPriceSourceBySym.get(symbol),same=selected&&Math.abs(Number(p.currentPrice)-selected.price)<0.0001;
   const basis=same?(selected.label+' '+prefix+fmt(selected.price,2)+' · '+(selected.at?'报价 '+stamp(selected.at):'获取 '+stamp(selected.fetchedAt)+' · 源未提供成交时间')):'当前估值 '+prefix+fmt(p.currentPrice,2)+' · 时段未确认';
   const html=['<div class="stock-session-block"><div class="stock-session-basis">'+escOvHtml(basis+(meta?.source==='cache'?' · 缓存':'')+'（北京时间）')+'</div><div class="stock-session-prices">'];
-  for(const kind of (currency==='AUD'?['regular']:StockSessions.keys)){const reference=kind==='overnight'&&!snapshot?.overnight?snapshot?.fullDay:null,row=snapshot?.[kind]||reference,label=StockSessions.labels[kind]+(reference?'/24h*':'');const title=row?(row.source==='yahoo-24h'?'Yahoo 24小时参考；源未提供成交时间，获取 '+stamp(row.fetchedAt||snapshot.fetchedAt):'Yahoo · '+(row.at?'报价 '+stamp(row.at):'源未提供成交时间'))+'（北京时间）':'当前数据源未返回此时段报价';html.push('<span title="'+escAttr(title)+'">'+escOvHtml(label)+' <b>'+escOvHtml(row?prefix+fmt(row.price,2):'—')+'</b></span>');}
+  for(const kind of (currency==='AUD'?['regular']:StockSessions.keys)){const reference=kind==='overnight'&&!snapshot?.overnight?snapshot?.fullDay:null,row=snapshot?.[kind]||reference,label=StockSessions.labels[kind]+(reference?'/24h*':'');const title=row?(row.source==='yahoo-24h'?'Yahoo 24小时参考；源未提供成交时间，获取 '+stamp(row.fetchedAt||snapshot.fetchedAt):(row.source==='nasdaq'?'Nasdaq':'Yahoo')+' · '+(row.at?'报价 '+stamp(row.at):'源未提供成交时间'))+'（北京时间）':'当前数据源未返回此时段报价';html.push('<span title="'+escAttr(title)+'">'+escOvHtml(label)+' <b>'+escOvHtml(row?prefix+fmt(row.price,2):'—')+'</b></span>');}
   return html.join('')+'</div></div>';
 }
 
@@ -2445,7 +2445,7 @@ function readStockPriceCacheStore(){
 }
 function writeStockPriceCache(sym,price,metadata={}){
   const T=String(sym||'').trim().toUpperCase(),p=Number(price);if(!T||!(p>0)||!Number.isFinite(p))return;
-  const store=readStockPriceCacheStore();store[T]={price:p,timestamp:metadata.timestamp||Date.now(),quoteAt:metadata.quoteAt||null,session:metadata.session||null,estimated:!!metadata.estimated,sessions:metadata.sessions||null,selection:metadata.selection||null};
+  const store=readStockPriceCacheStore();store[T]={price:p,timestamp:metadata.timestamp||Date.now(),quoteAt:metadata.quoteAt||null,session:metadata.session||null,estimated:!!metadata.estimated,provider:metadata.source||metadata.provider||null,delayed:!!metadata.delayed,sourceUrl:metadata.sourceUrl||null,sessions:metadata.sessions||null,selection:metadata.selection||null};
   try{localStorage.setItem(STOCK_PRICE_CACHE_KEY,JSON.stringify(store));}catch(e){}
 }
 function getCachedStockPrice(sym){
@@ -2524,7 +2524,7 @@ function hydrateStocksFromCacheOnLoad(){
     const c=getCachedStockPrice(sym);
     if(!c||!(c.price>0))continue;
     p.currentPrice=c.price;if(c.sessions)recordStockSessions(c.sessions);p.quoteReference=!!c.estimated;p.quoteSelection=c.selection||null;
-    stockPriceSourceBySym.set(sym,{source:'cache',timestamp:c.timestamp,estimated:!!c.estimated,quoteAt:c.quoteAt||null});
+    stockPriceSourceBySym.set(sym,{source:'cache',provider:c.provider||null,session:c.session||null,delayed:!!c.delayed,sourceUrl:c.sourceUrl||null,timestamp:c.timestamp,estimated:!!c.estimated,quoteAt:c.quoteAt||null});
     any=true;
   }
   if(any)updateStockQuoteFallbackBanner();
@@ -2553,16 +2553,33 @@ async function fetchTwelveDataStockPrice(ticker){
 /** chart 已含盘前盘后；成功即更新，不再等待经常拒绝匿名访问的 v7。 */
 async function fetchYahooOnlyStockPrice(ticker){
   const sym=String(ticker||'').trim().toUpperCase();if(!sym)return null;
-  const chart='https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(sym)+'?interval=5m&range=5d&includePrePost=true';
+  const chart='https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(sym)+'?interval=1m&range=1d&includePrePost=true';
   try{const price=parseYahooChartPrice(await fetchTextCrossOrigin(chart),sym);if(price>0)return price;}catch(e){}
   const quote='https://query1.finance.yahoo.com/v7/finance/quote?symbols='+encodeURIComponent(sym);
   try{const price=parseYahooV7Quote(await fetchTextCrossOrigin(quote));if(price>0)return StockSessions.select(yahooQuoteMetaBySym.get(sym)?.snapshot)?.price||price;}catch(e){}
   return null;
 }
 /** 不占 Twelve Data：Yahoo → 缓存（自动轮询在额度用尽时用此路径） */
+const nasdaqRequests=new Map();
+async function fetchNasdaqStockPrice(symbol){
+ if(symbol.endsWith('.AX'))return null;
+ if(nasdaqRequests.has(symbol))return nasdaqRequests.get(symbol);
+ const job=(async()=>{const abort=new AbortController(),timer=setTimeout(()=>abort.abort(),12500);try{
+  const r=await fetch(location.origin+'/api/stock-quote?symbol='+encodeURIComponent(symbol),{cache:'no-store',signal:abort.signal});if(r.status===401)quoteAuthRequired=true;if(!r.ok)return null;
+  const q=await r.json();if(q.symbol!==symbol||q.source!=='nasdaq'||q.currency!=='USD'||!(q.price>0)||!Number.isFinite(q.quoteAt)||q.quoteAt>Date.now()+120000||!StockSessions.keys.includes(q.session))return null;
+  const snapshot={symbol,fetchedAt:q.fetchedAt,marketState:q.marketState,[q.session]:{price:q.price,at:q.quoteAt,source:'nasdaq',delayed:q.delayed,sourceUrl:q.sourceUrl}};
+  const chosen=StockSessions.select(recordStockSessions(snapshot));if(!chosen)return null;
+  return stockSessionResult(symbol,chosen.price,chosen.source==='nasdaq'?'nasdaq':'yahoo');
+ }catch{return null;}finally{clearTimeout(timer);}})();nasdaqRequests.set(symbol,job);try{return await job;}finally{nasdaqRequests.delete(symbol);}
+}
 async function fetchStockPriceYahooOrCacheOnly(ticker){
   const sym=String(ticker||'').trim().toUpperCase();if(!sym)return null;
-  const price=await fetchYahooOnlyStockPrice(sym);if(price>0){const result=stockSessionResult(sym,price);writeStockPriceCache(sym,price,result);return result;}
+  const official=await fetchNasdaqStockPrice(sym);
+  if(official?.price>0&&official.quoteAt&&Date.now()-official.quoteAt<180000){writeStockPriceCache(sym,official.price,official);return official;}
+  const price=await fetchYahooOnlyStockPrice(sym);
+  const yahoo=price>0?stockSessionResult(sym,price):null;
+  const result=official?.price>0&&(!yahoo?.quoteAt||official.quoteAt>=yahoo.quoteAt)?official:yahoo;
+  if(result?.price>0){writeStockPriceCache(sym,result.price,result);return result;}
   const cached=getCachedStockPrice(sym);if(cached?.price>0){if(cached.sessions)recordStockSessions(cached.sessions);return{...cached,source:'cache'};}return null;
 }
 /** 按序 fallback：Twelve Data → Yahoo → localStorage 缓存 */
@@ -2571,7 +2588,7 @@ async function fetchStockPriceWithFallback(ticker){
   if(sym.endsWith('.AX')||__stockTdRateLimited)return fetchStockPriceYahooOrCacheOnly(sym);
   const [tdResult,yResult]=await Promise.allSettled([quoteWithin(fetchTwelveDataStockPriceDetailed(sym),6500),fetchStockPriceYahooOrCacheOnly(sym)]),td=tdResult.status==='fulfilled'?tdResult.value:null,y=yResult.status==='fulfilled'?yResult.value:null;
   if(td?.rateLimited)markTdRateLimited(td);
-  if(y?.price>0&&(y.source==='yahoo'||StockSessions.preferExtendedCache(y)))return y;
+  if(y?.price>0&&(['yahoo','nasdaq'].includes(y.source)||StockSessions.preferExtendedCache(y)))return y;
   if(td?.price>0){const result={price:td.price,source:'twelve',timestamp:td.timestamp||Date.now()};writeStockPriceCache(sym,td.price,result);return result;}
   return y?.price>0?y:null;
 }
@@ -2587,8 +2604,8 @@ async function fetchYahooStockPrice(ticker){
 
 // ══ Finnhub：REST 经同源 /api/finnhub-quote（密钥在 Vercel 环境变量 FINNHUB_TOKEN）；浏览器不再持有 token，故不使用 wss ══
 // Only user-entered holdings consume quote credits.
-/** 后台美股轮询：Twelve Data 批量 → Yahoo → 缓存 fallback；默认 30 分钟 */
-const FINNHUB_QUOTE_POLL_MS=1800000;
+/** 后台股票轮询：Nasdaq美股分时 → Yahoo → 缓存；每60秒尝试刷新 */
+const FINNHUB_QUOTE_POLL_MS=60000;
 const FH_QUOTE_STAGGER_MS=700;
 /** 自动刷新时：汇率单次最大漂移、行情单次最大跳变（防多源 API 噪声导致总净值乱跳） */
 const FX_AUTO_MAX_DRIFT_PCT=0.0008;
@@ -2752,13 +2769,14 @@ function patchUsStockLiveRow(sym,price,opts){
   if(!p)return false;
   const prev=parseFloat(p.currentPrice)||0;
   const snapshot=yahooQuoteMetaBySym.get(T)?.snapshot,cachedSelection=source==='cache'?getCachedStockPrice(T)?.selection:null,selected=cachedSelection&&Math.abs(cachedSelection.price-price)<0.0001?cachedSelection:StockSessions.select(snapshot),sessionMatches=!!selected&&Math.abs(selected.price-price)<0.0001;
-  if(!commitLiveQuotePrice(prev,price,force||source==='cache'||source==='yahoo'&&sessionMatches))return false;
+  if(!commitLiveQuotePrice(prev,price,force||source==='cache'||['yahoo','nasdaq'].includes(source)&&sessionMatches))return false;
   p.currentPrice=price;
   p.updatedAt=today();
-  p.quoteReference=source==='cache'?!!getCachedStockPrice(T)?.estimated:source==='yahoo'&&sessionMatches&&!!selected.estimated;
-  if(sessionMatches&&source==='yahoo'){p.quoteSessions=snapshot;p.marketState={regular:'REGULAR',pre:'PRE',post:'POST',overnight:'OVERNIGHT'}[selected.kind];}
-  for(const other of matching){other.currentPrice=price;other.updatedAt=p.updatedAt;other.quoteReference=p.quoteReference;other.quoteSelection=sessionMatches&&['yahoo','cache'].includes(source)?selected:null;if(sessionMatches&&source==='yahoo'){other.quoteSessions=snapshot;other.marketState=p.marketState;}}
-  const metadata={source,timestamp,estimated:p.quoteReference,quoteAt:sessionMatches?selected.at:null,session:sessionMatches?selected.kind:null,sessions:sessionMatches?snapshot:null,selection:sessionMatches?selected:null};
+  p.quoteReference=source==='cache'?!!getCachedStockPrice(T)?.estimated:['yahoo','nasdaq'].includes(source)&&sessionMatches&&!!selected.estimated;
+  if(sessionMatches&&['yahoo','nasdaq'].includes(source)){p.quoteSessions=snapshot;p.marketState={regular:'REGULAR',pre:'PRE',post:'POST',overnight:'OVERNIGHT'}[selected.kind];}
+  for(const other of matching){other.currentPrice=price;other.updatedAt=p.updatedAt;other.quoteReference=p.quoteReference;other.quoteSelection=sessionMatches&&['yahoo','nasdaq','cache'].includes(source)?selected:null;if(sessionMatches&&['yahoo','nasdaq'].includes(source)){other.quoteSessions=snapshot;other.marketState=p.marketState;}}
+  const cached=source==='cache'?getCachedStockPrice(T):null;
+  const metadata={source,timestamp,provider:cached?.provider||source,delayed:!!(selected?.delayed||cached?.delayed),sourceUrl:selected?.sourceUrl||cached?.sourceUrl||null,estimated:p.quoteReference,quoteAt:sessionMatches?selected.at:null,session:sessionMatches?selected.kind:null,sessions:sessionMatches?snapshot:null,selection:sessionMatches?selected:null};
   stockPriceSourceBySym.set(T,metadata);
   if(source!=='cache')writeStockPriceCache(T,price,metadata);
   refreshOVTotals();
@@ -2882,7 +2900,7 @@ async function pollFinnhubQuotesOnce(){
   if(!signature)return;
   let previous=stockLastPoll;
   try{const shared=JSON.parse(localStorage.getItem(STOCK_AUTO_POLL_KEY)||'null');if(shared&&(!previous||shared.at>previous.at))previous=shared;}catch(e){}
-  if(previous?.signature===signature&&Date.now()-previous.at>=0&&Date.now()-previous.at<FINNHUB_QUOTE_POLL_MS)return;
+  if(previous?.signature===signature&&Date.now()-previous.at>=0&&Date.now()-previous.at<FINNHUB_QUOTE_POLL_MS){if(typeof applySharedStockCache==='function')applySharedStockCache();return;}
   const reservation={signature,at:Date.now()};
   stockLastPoll=reservation;
   try{localStorage.setItem(STOCK_AUTO_POLL_KEY,JSON.stringify(reservation));}catch(e){}
@@ -2896,39 +2914,30 @@ async function pollFinnhubQuotesOnce(){
   return stockPollInFlight;
 }
 async function runFinnhubQuotePoll(){
-  const syms=[...finnhubDesiredSymbols()];
-  if(!syms.length)return;
-  if(location.protocol!=='http:'&&location.protocol!=='https:')return;
-
-  syncTdRateLimitedFromStorage();
-  let tdMap=new Map();
-  if(!__stockTdRateLimited){
-    const batch=await fetchTwelveDataBatch(syms.filter(s=>!s.endsWith('.AX')));
-    tdMap=batch.map;
-    if(batch.rateLimited)markTdRateLimited(batch);
-  }
-
+  const syms=[...finnhubDesiredSymbols()];if(!syms.length||!/^https?:$/.test(location.protocol))return 0;
   let updated=0;
-  for(const sym of syms){
-    let price=tdMap.get(sym)||null,source=price?'twelve':null,timestamp=readFreshTdQuote(sym)?.timestamp||Date.now();
-    const fallback=await fetchStockPriceYahooOrCacheOnly(sym);
-    if(fallback?.price>0&&(fallback.source==='yahoo'||StockSessions.preferExtendedCache(fallback)||!(price>0))){price=fallback.price;source=fallback.source;timestamp=fallback.timestamp||Date.now();}
-    if(price>0&&source==='twelve')writeStockPriceCache(sym,price,{source,timestamp});
-    if(!(price>0))continue;
-    updated++;
-    patchUsStockLiveRow(sym,price,{
-      force:source==='cache',
-      source,
-      timestamp,
-    });
+  // Four simultaneous requests; no repeated paid-provider credits per minute.
+  for(let i=0;i<syms.length;i+=4)await Promise.all(syms.slice(i,i+4).map(async sym=>{
+    try{const row=await fetchStockPriceYahooOrCacheOnly(sym);if(!(row?.price>0))return;
+      const applied=patchUsStockLiveRow(sym,row.price,{force:row.source==='cache',source:row.source,timestamp:row.timestamp||Date.now()});
+      if(applied&&row.source!=='cache')updated++;
+    }catch{}
+  }));
+  updateStockQuoteFallbackBanner();scheduleOverviewLiveRefresh();return updated;
+}
+function applySharedStockCache(){
+  for(const sym of finnhubDesiredSymbols()){
+    const cached=getCachedStockPrice(sym),current=stockPriceSourceBySym.get(sym);
+    if(cached?.price>0&&cached.timestamp>(current?.timestamp||0)&&(!current?.quoteAt||!cached.quoteAt||cached.quoteAt>=current.quoteAt)){
+      if(cached.sessions)recordStockSessions(cached.sessions);
+      patchUsStockLiveRow(sym,cached.price,{force:false,source:'cache',timestamp:cached.timestamp});
+    }
   }
-  updateStockQuoteFallbackBanner();
-  scheduleOverviewLiveRefresh();
-  return updated;
 }
 function startFinnhubQuotePolling(){
   if(finnhubQuotePollTimer)clearInterval(finnhubQuotePollTimer);
   finnhubQuotePollTimer=setInterval(()=>pollFinnhubQuotesOnce(),FINNHUB_QUOTE_POLL_MS);
+  window.addEventListener('storage',event=>{if(event.key===STOCK_PRICE_CACHE_KEY)applySharedStockCache();});
   pollFinnhubQuotesOnce();
 }
 function initFinnhubUsLive(){

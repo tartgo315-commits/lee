@@ -3,10 +3,11 @@ function stockUnitQuoteHtml(p,v){
  if(p.type!=='stock_us')return '';
  const identity=WealthMath.stockIdentity(p),price=WealthMath.number(v.price),meta=typeof stockPriceSourceBySym!=='undefined'?stockPriceSourceBySym.get(identity.ticker):null;
  const valid=price!==null&&price>0,cached=meta?.source==='cache'||v.estimated&&!p.quoteReference,reference=!!p.quoteReference;
- const status=!valid?'待更新':cached?'缓存':reference?'参考':'';
- const value=identity.currency+' '+(valid?fmt(price,2):'—'),sources={yahoo:'Yahoo',twelve:'Twelve Data',finnhub:'Finnhub',cache:'本机缓存'};
+ const session=meta?.session||p.quoteSelection?.kind;
+ const status=[typeof StockSessions!=='undefined'?StockSessions.labels[session]||'':'',!valid?'待更新':cached?'缓存':reference?'参考':meta?.delayed?'延迟':''].filter(Boolean).join(' · ');
+ const value=identity.currency+' '+(valid?fmt(price,2):'—'),sources={nasdaq:'Nasdaq',yahoo:'Yahoo',twelve:'Twelve Data',finnhub:'Finnhub',cache:'本机缓存'};
  const at=meta?.quoteAt,stamp=Number.isFinite(at)&&at>0?' · 行情时间 '+new Intl.DateTimeFormat('zh-CN',{timeZone:'Asia/Shanghai',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(at))+'（北京时间）':'';
- const title=identity.ticker+' · 当前单价 '+value+' / 股 · '+(status||'最新可用报价')+' · '+(sources[meta?.source]||'已保存报价')+stamp+'；行情可能延迟，点击名称查看详情';
+ const title=identity.ticker+' · 当前单价 '+value+' / 股 · '+(status||'最新可用报价')+' · '+(sources[meta?.provider||meta?.source]||'已保存报价')+stamp+'；每60秒尝试刷新，行情可能延迟，点击名称查看详情';
  return '<span class="holding-unit-price" title="'+escAttr(title)+'" aria-label="'+escAttr(title)+'">'+escOvHtml(value)+(status?'<small> · '+status+'</small>':'')+'</span>';
 }
 function assetTypeBadgeHtml(type){

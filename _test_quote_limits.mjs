@@ -12,7 +12,7 @@ function setup(shared=new Map()){
   const banner={style:{},textContent:'',className:''};
   const context=vm.createContext({Date:Clock,console,isZeroStock:p=>p.shares===0,syncNavigationNotices(){},location:{protocol:'https:',origin:'https://test.invalid'},D:{products:[{type:'stock_us',ticker:'AAA'},{type:'stock_us',ticker:'BBB'}]},document:{hidden:false,getElementById:()=>banner},localStorage:{getItem:k=>shared.get(k)??null,setItem:(k,v)=>shared.set(k,String(v)),removeItem:k=>shared.delete(k)},fetch:async url=>{calls++;const symbols=new URL(url).searchParams.get('symbol').split(',');return{status:200,json:async()=>symbols.length===1?{price:'10'}:Object.fromEntries(symbols.map(sym=>[sym,{price:'10'}]))};}});
   const pollDeclarations=code.slice(code.indexOf("const STOCK_AUTO_POLL_KEY="),code.indexOf('async function runFinnhubQuotePoll(){'));
-  vm.runInContext(fs.readFileSync('calculation-engine.js','utf8'),context);vm.runInContext(controller+'\n'+definition('parseTwelveDataQuotePayload')+'\n'+definition('fetchTwelveDataStockPriceDetailed')+'\n'+definition('fetchTwelveDataBatch')+'\n'+definition('formatStockCacheAge')+'\n'+definition('updateStockQuoteFallbackBanner')+'\nconst FINNHUB_QUOTE_POLL_MS=1800000;\n'+definition('finnhubDesiredSymbols')+'\n'+pollDeclarations,context);
+  vm.runInContext(fs.readFileSync('calculation-engine.js','utf8'),context);vm.runInContext(controller+'\n'+definition('parseTwelveDataQuotePayload')+'\n'+definition('fetchTwelveDataStockPriceDetailed')+'\n'+definition('fetchTwelveDataBatch')+'\n'+definition('formatStockCacheAge')+'\n'+definition('updateStockQuoteFallbackBanner')+'\n'+code.match(/const FINNHUB_QUOTE_POLL_MS=\d+;/)[0]+'\n'+definition('finnhubDesiredSymbols')+'\n'+pollDeclarations,context);
   const run=text=>vm.runInContext(text,context);
   return{context,shared,banner,run,calls:()=>calls};
 }
@@ -91,15 +91,15 @@ await test('Late success never clears a concurrent daily limit',async()=>{
 await test('Empty ledgers do not query a fixed watchlist',()=>{
   const t=setup();t.context.D.products=[];assert.equal(t.run('finnhubDesiredSymbols().size'),0);
 });
-await test('Returning to a tab respects the existing 30-minute polling interval',async()=>{
+await test('Returning to a tab respects the 60-second polling interval',async()=>{
   const t=setup();let polls=0;t.context.runFinnhubQuotePoll=async()=>{polls++;return 1;};
   await t.run('pollFinnhubQuotesOnce()');await t.run('pollFinnhubQuotesOnce()');assert.equal(polls,1);
-  now+=1800001;await t.run('pollFinnhubQuotesOnce()');assert.equal(polls,2);
+  now+=60001;await t.run('pollFinnhubQuotesOnce()');assert.equal(polls,2);
 });
 await test('Polling interval is shared with another tab and hidden tabs pause',async()=>{
   const t=setup();t.context.runFinnhubQuotePoll=async()=>1;await t.run('pollFinnhubQuotesOnce()');
   const other=setup(t.shared);let polls=0;other.context.runFinnhubQuotePoll=async()=>{polls++;return 1;};await other.run('pollFinnhubQuotesOnce()');assert.equal(polls,0);
-  now+=1800001;other.context.document.hidden=true;await other.run('pollFinnhubQuotesOnce()');assert.equal(polls,0);
+  now+=60001;other.context.document.hidden=true;await other.run('pollFinnhubQuotesOnce()');assert.equal(polls,0);
   other.context.document.hidden=false;await other.run('pollFinnhubQuotesOnce()');assert.equal(polls,1);
 });
 await test('Failed polls allow retry after one minute',async()=>{
@@ -107,11 +107,11 @@ await test('Failed polls allow retry after one minute',async()=>{
   await t.run('pollFinnhubQuotesOnce()');now+=59000;await t.run('pollFinnhubQuotesOnce()');assert.equal(polls,1);
   now+=1001;await t.run('pollFinnhubQuotesOnce()');assert.equal(polls,2);
 });
-await test('Polling batch failures go directly to Yahoo instead of retrying Twelve Data per symbol',async()=>{
+await test('Automatic polling uses public quote sources without consuming Twelve Data credits',async()=>{
   const t=setup();let batchCalls=0,fallbackCalls=0;
-  Object.assign(t.context,{fetchTwelveDataBatch:async()=>{batchCalls++;return{map:new Map(),rateLimited:false};},fetchStockPriceYahooOrCacheOnly:async()=>{fallbackCalls++;return{price:10,source:'yahoo'};},fetchStockPriceWithFallback:()=>{throw Error('duplicate credit use');},patchUsStockLiveRow:()=>{},updateStockQuoteFallbackBanner:()=>{},scheduleOverviewLiveRefresh:()=>{}});
+  Object.assign(t.context,{fetchTwelveDataBatch:async()=>{batchCalls++;return{map:new Map(),rateLimited:false};},fetchStockPriceYahooOrCacheOnly:async()=>{fallbackCalls++;return{price:10,source:'yahoo'};},fetchStockPriceWithFallback:()=>{throw Error('duplicate credit use');},patchUsStockLiveRow:()=>true,updateStockQuoteFallbackBanner:()=>{},scheduleOverviewLiveRefresh:()=>{}});
   vm.runInContext(definition('runFinnhubQuotePoll'),t.context);
-  assert.equal(await t.run('runFinnhubQuotePoll()'),2);assert.equal(batchCalls,1);assert.equal(fallbackCalls,2);
+  assert.equal(await t.run('runFinnhubQuotePoll()'),2);assert.equal(batchCalls,0);assert.equal(fallbackCalls,2);
 });
 await test('Limit state initialization occurs after its declarations',()=>{
   assert.ok(code.lastIndexOf('\nsyncTdRateLimitedFromStorage();')>code.indexOf('let __stockTdLimitUntil='));
