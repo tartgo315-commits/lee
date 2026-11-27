@@ -9,6 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
 <script src="calculation-engine.js"></script>
+<script src="ledger-safety.js"></script>
 <script src="savings-interest.js"></script>
 <script src="savings-editor.js"></script>
 <script src="stock-sessions.js"></script>
@@ -1519,6 +1520,7 @@ body.light .topbar,body:not(.light) .topbar{background:var(--bg-card)}
               <button class="btn btn-ghost" onclick="document.getElementById('fi-import').click()"><i class="ti ti-upload"></i> 导入 JSON</button>
               <button type="button" class="btn btn-ghost" onclick="exportBeforeStockCurrencyUpgrade()">导出股票多币种升级前账本</button><button id="export-calc-backup" type="button" class="btn btn-ghost" onclick="exportBeforeCalculationUpgrade()">导出升级前账本</button>
               <input type="file" id="fi-import" accept=".json" style="display:none" onchange="importData(this)">
+              <button type="button" class="btn btn-ghost btn-sm" onclick="exportPreImportBackup()">下载导入前备份</button>
             </div>
           </div>
         </div>
@@ -2038,9 +2040,11 @@ function dismissToast(id){
   setTimeout(function(){el.remove();},220);
 }
 let calculationStorageReadFailed=false;
+const ledgerStore=LedgerSafety.create(localStorage,SK);
 function load(){
   try{
     const raw=localStorage.getItem(SK);
+    if(typeof ledgerStore!=='undefined')ledgerStore.observe(raw);
     if(raw){
       const parsed=JSON.parse(raw);
       // Preserve the complete original ledger before any new stock valuation or save.
@@ -2052,7 +2056,7 @@ function load(){
 }
 function save(){
   if(calculationStorageReadFailed){calculationMessage('账本读取失败，已暂停自动保存；请先导入有效备份');return;}
-  localStorage.setItem(SK,JSON.stringify(D));
+  try{ledgerStore.write(D);}catch(error){if(typeof CloudSyncUI!=='undefined'&&error.code==='STALE_TAB')CloudSyncUI.storageConflict();calculationMessage(error.message);return false;}
   if(typeof CloudSyncUI!=='undefined')CloudSyncUI.changed();
   clearTimeout(__woSaveToastT);
   __woSaveToastT=setTimeout(function(){
@@ -6250,7 +6254,7 @@ function renderHistory(){
       const snapUsd=snapUsdRate?n.cny/snapUsdRate:null;
       const snapAud=snapAudRate?n.cny/snapAudRate:null;
       const main=`<tr>
-        <td class="mono" style="font-size:12px">${n.date}</td>
+        <td class="mono" style="font-size:12px">${n.date}${LedgerSafety.snapshotLabel(n)?'<div style="font-size:14px;color:var(--warn)" title="'+escAttr(LedgerSafety.snapshotDetail(n))+'">'+escOvHtml(LedgerSafety.snapshotLabel(n))+'</div>':''}</td>
         <td class="mono tr">${fc(n.cny,'CNY')}</td>
         <td class="mono tr">${fc(snapUsd,'USD')}</td>
         <td class="mono tr">${fc(snapAud,'AUD')}</td>
@@ -6268,9 +6272,10 @@ function takeSnapshot(){
   const d=today();
   const payload=snapshotBreakdown();
   const idx=D.navHistory.findIndex(n=>n.date===d);
-  const entry={date:d,...payload,complete:true,calculationVersion:3,timeZone:D.settings?.accountingTimeZone||'Asia/Shanghai',recordedAt:new Date().toISOString()};
-  if(idx>=0)D.navHistory[idx]=entry;else D.navHistory.push(entry);
-  save();renderSidebar();
+  const quoteQuality=LedgerSafety.snapshotQuality(D.products);
+  const entry={date:d,...payload,complete:true,estimated:quality.estimated.length>0||quoteQuality.estimated,quoteQuality,calculationVersion:3,timeZone:D.settings?.accountingTimeZone||'Asia/Shanghai',recordedAt:new Date().toISOString()};
+  const next={...D,navHistory:D.navHistory.slice()};if(idx>=0)next.navHistory[idx]=entry;else next.navHistory.push(entry);
+  try{persistMovementLedger(next);}catch(error){calculationMessage(error.message);return;}renderSidebar();
   if(document.getElementById('page-history')?.classList.contains('active'))renderHistory();
   if(document.getElementById('page-overview')?.classList.contains('active'))renderOverviewDashboard();
   showToast({message:'今日快照已记录',type:'success'});
@@ -6680,8 +6685,9 @@ function updateMovementPreview(){
 function cancelMovement(){document.getElementById('modal-movement').classList.remove('open');const focus=pendingMovement?.returnFocus,meta=pendingMovement?.ref.startsWith('m:');pendingMovement=null;if(meta&&document.getElementById('page-us').classList.contains('active'))renderRegion('us');focus?.focus();}
 function persistMovementLedger(next){
   if(calculationStorageReadFailed)throw Error('账本读取失败，请先导入有效备份');
+  ledgerStore.assertWritable();
   if(!localStorage.getItem(SK+'_before_movement_v1'))localStorage.setItem(SK+'_before_movement_v1',JSON.stringify(D));
-  localStorage.setItem(SK,JSON.stringify(next));D=next;if(typeof CloudSyncUI!=='undefined')CloudSyncUI.changed();
+  ledgerStore.write(next);D=next;if(typeof CloudSyncUI!=='undefined')CloudSyncUI.changed();
 }
 function refreshAfterMovement(){renderOverview();renderSidebar();const active=document.querySelector('.page.active')?.id;if(['page-cn','page-us','page-au'].includes(active))renderRegion(active.slice(5));if(active==='page-history')renderCalculationPanel(false);}
 function commitMovement(){
@@ -6892,33 +6898,36 @@ function savePrincipalUSD(){
 }
 function exportData(){
   const next=JSON.parse(JSON.stringify(D));next.backupStatus={signature:LedgerWorkflows.fingerprint(D),requestedAt:new Date().toISOString()};
-  try{persistMovementLedger(next);}catch(error){calculationMessage(error.message);return;}
+  try{persistMovementLedger(next);}catch(error){calculationMessage(error.message+'；仍可导出本页备份');}
   const b=new Blob([JSON.stringify(D,null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='LEEsWealth_'+today()+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);LedgerUI.refresh();
 }
 function importData(input){
   const f=input.files[0];if(!f)return;
   const r=new FileReader();
-  r.onload=e=>{try{
-    const raw=JSON.parse(e.target.result);
-    calculationStorageReadFailed=false;
-    if(isAssetV2Payload(raw)){
-      const list=Array.isArray(raw)?raw:raw.assets;
-      const n=importAssetsV2(list);
-      save();renderOverview();renderSidebar();maybeShowHttpDataTip();
-      if(document.getElementById('page-us')?.classList.contains('active'))renderRegion('us');
-      showToast({message:`已导入 ${n} 条资产（v2 统一格式）`,type:'success',duration:3600});
-      return;
+  r.onload=e=>{const previous=D,readFailed=calculationStorageReadFailed;let committed=false;try{
+    const raw=JSON.parse(e.target.result),kind=LedgerSafety.validateImport(raw);
+    ledgerStore.assertWritable();
+    let candidate,count=0;
+    if(kind==='v2'){
+      D=JSON.parse(JSON.stringify(previous));
+      try{const list=Array.isArray(raw)?raw:raw.assets;count=importAssetsV2(list);if(count!==list.length)throw Error('包含不支持的资产，未导入任何记录');candidate=D;}finally{D=previous;}
+    }else{
+      candidate=WealthMath.migrate(Object.assign(blank(),raw));
+      candidate.navHistory=mergeNavHistories(previous.navHistory||[],raw.navHistory);
+      if(!candidate.goal||!(Number(candidate.goal.amount)>0))candidate.goal={amount:0,currency:'CNY',label:'存款目标'};
     }
-    const localNav=[...(D.navHistory||[])];
-    D=WealthMath.migrate(Object.assign(blank(),raw));
-    D.navHistory=mergeNavHistories(localNav,raw.navHistory||[]);
-    if(!D.goal||typeof D.goal!=='object'||!(Number(D.goal.amount)>0))
-      D.goal={amount:0,currency:'CNY',label:'存款目标'};
-    save();renderOverview();maybeShowHttpDataTip();
-    showToast({message:'导入成功，NAV 历史已按日期与本地合并',type:'success',duration:3600});
-  }catch(err){showToast({message:'导入失败：'+err.message,type:'warn',duration:5000});}};
+    ledgerStore.backup();
+    ledgerStore.write(candidate);D=candidate;calculationStorageReadFailed=false;committed=true;
+    if(typeof CloudSyncUI!=='undefined')CloudSyncUI.changed();
+    refreshAfterMovement();maybeShowHttpDataTip();
+    showToast({message:(kind==='v2'?'已导入 '+count+' 条资产':'导入成功，NAV历史已合并')+'；导入前账本已自动备份',type:'success',duration:4000});
+  }catch(err){if(!committed){D=previous;calculationStorageReadFailed=readFailed;}showToast({message:(committed?'导入已保存，页面刷新失败，请刷新页面：':'导入未完成：')+err.message,type:'warn',duration:6000});}};
   r.readAsText(f);input.value='';
+}
+function exportPreImportBackup(){
+  const raw=localStorage.getItem(SK+'_before_import_latest');if(!raw)return calculationMessage('暂无导入前备份');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([raw],{type:'application/json'}));a.download='LEEsWealth_before_import_'+today()+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 }
 function clearAll(){if(!confirm(typeof CloudSyncUI!=='undefined'&&CloudSyncUI.isConnected()?'确定清空账本？此操作会同步到其他设备，请先导出备份。':'确定清空所有数据？'))return;calculationStorageReadFailed=false;D=WealthMath.migrate(blank());save();renderOverview();renderSidebar();maybeShowHttpDataTip();showToast({message:'已清空本地账本',type:'info',duration:2800});}
 
@@ -7032,6 +7041,7 @@ function refreshValuationNotice(){
   const state=valuationStatus();
   const warnings=[];
   if(calculationStorageReadFailed)warnings.push('本机账本读取失败，自动保存已暂停。请先导入可用备份，避免覆盖原始记录。');
+  const goldQuality=LedgerSafety.snapshotQuality(D.products);if(goldQuality.estimated)warnings.push('黄金包含过期或未核实报价，当前按保留价格暂估；新快照会记录该状态。');
   if(!state.complete)warnings.push('估值不完整：'+state.missing.length+' 条资产缺少有效价格、合同参数或汇率。总览仅为已知部分，暂不能记录完整快照或计算收益。');
   const ambiguous=D.products.filter(p=>p.region==='us'&&p.type==='cash'&&p.currency==='CNY'&&looksLikeUsdBrokerCash(p)).length;
   if(ambiguous)warnings.push(ambiguous+' 条现金的名称可能指美元，但登记为人民币；本次严格按已填币种计算，请核对。');

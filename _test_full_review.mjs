@@ -3,7 +3,7 @@ import vm from 'node:vm';
 import assert from 'node:assert/strict';
 const html=fs.readFileSync('index.html','utf8');
 function def(name){const found=html.match(new RegExp('function '+name+'\\([^)]*\\)\\{[\\s\\S]*?\\n\\}'));assert.ok(found,name);return found[0];}
-const label={textContent:'',style:{}},c=vm.createContext({Intl,Date,current:90,complete:true,ovRange:9999,ovChart:null,D:{products:[{type:'cash'}],navHistory:[{date:'2026-10-01',cny:100}],settings:{}},document:{getElementById:id=>id==='ov-nav-lbl'?label:null},today:()=> '2026-11-04',localTodayISO:()=> '2026-11-04',mergeWatchEvents:()=>[],eventDaysUntil:()=>1,fc:(v,cur,d=0)=>'¥'+Number(v).toFixed(d)});
+const label={textContent:'',style:{}},c=vm.createContext({Intl,Date,current:90,complete:true,ovRange:9999,ovChart:null,D:{products:[{type:'cash'}],navHistory:[{date:'2026-10-01',cny:100}],settings:{}},document:{getElementById:id=>id==='ov-nav-lbl'?label:null},today:()=> '2026-11-04',localTodayISO:()=> '2026-11-04',mergeWatchEvents:()=>[],eventDaysUntil:()=>1,watchEventPending:()=>true,fc:(v,cur,d=0)=>'¥'+Number(v).toFixed(d)});
 vm.runInContext(fs.readFileSync('calculation-engine.js','utf8'),c);
 vm.runInContext('function totalCNY(){return current;}function valuationStatus(){return {complete};}',c);
 for(const name of ['latestComparableSnapshot','buildAiDailyBriefOneLiner','renderNavMiniChart','usMetaKey','usManualIdleUsd'])vm.runInContext(def(name),c);
