@@ -2,7 +2,7 @@
 (function(root){
  'use strict';
  const clone=v=>JSON.parse(JSON.stringify(v)),object=v=>v&&typeof v==='object'&&!Array.isArray(v);
- function signature(data){const copy=clone(data);for(const k of ['fx','fxMeta','btcQuote','newsCache','aiDailyBrief','backupStatus'])delete copy[k];for(const p of copy.products||[]){for(const k of ['currentPrice','fundPrice','goldPrice','goldUpdated','goldQuote','goldQuoteFailedAt','lastValidPrice','quoteReference','quoteSessions','quoteSelection','marketState'])delete p[k];if(['stock_us','fund_cn','gold'].includes(p.type))delete p.updatedAt;}return JSON.stringify(copy);}
+ function signature(data){const copy=clone(data);for(const k of ['fx','fxMeta','btcQuote','newsCache','aiDailyBrief','lastValuationRefresh','backupStatus'])delete copy[k];for(const p of copy.products||[]){for(const k of ['currentPrice','fundPrice','goldPrice','goldUpdated','goldQuote','goldQuoteFailedAt','lastValidPrice','quoteReference','quoteSessions','quoteSelection','marketState'])delete p[k];if(['stock_us','fund_cn','gold'].includes(p.type))delete p.updatedAt;}return JSON.stringify(copy);}
  function create(storage,key){
   let baseline,blocked=false;
   const facts=raw=>{if(raw===null)return null;try{return signature(JSON.parse(raw));}catch{return 'unreadable:'+raw;}};

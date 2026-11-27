@@ -1,13 +1,13 @@
 /* One private site ledger, optimistic revision checks, no silent conflict merging. */
 (function(root){
   'use strict';
-  function signature(data){const copy=JSON.parse(JSON.stringify(data));for(const key of ['fx','fxMeta','btcQuote','newsCache','aiDailyBrief','backupStatus'])delete copy[key];for(const p of copy.products||[]){for(const key of ['currentPrice','fundPrice','goldPrice','goldUpdated','goldQuote','goldQuoteFailedAt','lastValidPrice','quoteReference','quoteSessions','quoteSelection','marketState'])delete p[key];if(['stock_us','fund_cn','gold'].includes(p.type))delete p.updatedAt;}return JSON.stringify(copy);}
+  function signature(data){const copy=JSON.parse(JSON.stringify(data));for(const key of ['fx','fxMeta','btcQuote','newsCache','aiDailyBrief','lastValuationRefresh','backupStatus'])delete copy[key];for(const p of copy.products||[]){for(const key of ['currentPrice','fundPrice','goldPrice','goldUpdated','goldQuote','goldQuoteFailedAt','lastValidPrice','quoteReference','quoteSessions','quoteSelection','marketState'])delete p[key];if(['stock_us','fund_cn','gold'].includes(p.type))delete p.updatedAt;}return JSON.stringify(copy);}
   const empty=d=>!(d.products?.length||d.navHistory?.length||d.movementLog?.length||d.cashFlows?.length||Number(d.goal?.amount)>0||d.performanceTracking||Object.keys(d.usAccountMeta||{}).length);
   function create(a){
     let meta=a.readMeta()||null,busy=false,paused=false,state='checking',timer,remote=null,started=false;
-    if(meta&&meta.signatureVersion!==2){try{meta={...meta,signature:signature(JSON.parse(meta.signature)),signatureVersion:2};a.writeMeta(meta);}catch{meta=null;}}
+    if(meta&&meta.signatureVersion!==3){try{meta={...meta,signature:signature(JSON.parse(meta.signature)),signatureVersion:3};a.writeMeta(meta);}catch{meta=null;}}
     const status=(kind,message)=>{state=kind;a.onState({kind,message,revision:meta?.revision||0});};
-    const mark=(revision,data)=>{meta={revision,signature:signature(data),signatureVersion:2};a.writeMeta(meta);};
+    const mark=(revision,data)=>{meta={revision,signature:signature(data),signatureVersion:3};a.writeMeta(meta);};
     async function request(method,body){const response=await a.fetch('/api/ledger-sync'+(method==='GET'&&meta?'?since='+meta.revision:''),{method,credentials:'same-origin',cache:'no-store',headers:{'X-Wealth-Sync':'1',...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{})});let value;try{value=await response.json();}catch{throw Error('线上同步接口暂不可用，本机账本已保留');}if(!response.ok){const e=Error(value.error||'线上同步失败');e.status=response.status;throw e;}return value;}
     async function fullRemote(){const saved=meta;meta=null;try{return await request('GET');}finally{meta=saved;}}
     function conflict(value){remote=value;paused=true;status('conflict','两端账本不同，已暂停自动覆盖，请在设置中选择保留哪一份。');}
